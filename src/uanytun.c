@@ -61,10 +61,15 @@ int main(int argc, char* argv[])
   log_printf(INFO, "entering main loop");
   u_int8_t buf[1600];
   int len = 0;
-  while(1) {
+  unsigned int cnt = 0;
+  while(cnt < 10) {
     len = tun_read(dev, buf, 1600);
     printf("read %d bytes from device\n", len);
+    cnt++;
   }
+  tun_close(&dev);
+
+  return 0;
 }
   
   

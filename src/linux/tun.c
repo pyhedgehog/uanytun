@@ -116,6 +116,15 @@ void tun_close(tun_device_t** dev)
   if((*dev)->fd_ > 0)
     close((*dev)->fd_);
 
+  if((*dev)->actual_name_)
+    free((*dev)->actual_name_);
+
+  if((*dev)->local_)
+    free((*dev)->local_);
+
+  if((*dev)->remote_netmask_)
+    free((*dev)->remote_netmask_);
+
   free(*dev);
   *dev = NULL;
 }
@@ -188,4 +197,6 @@ void tun_do_ifconfig(tun_device_t* dev)
     log_printf(ERR, "Execution of ifconfig failed");
   else
     log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
+
+  free(command);
 }
