@@ -47,11 +47,24 @@ int main(int argc, char* argv[])
   signal_init();
 
 //  chrootAndDrop("/var/run/", "nobody");
-  daemonize();
-  log_printf(INFO, "running in background now");
+//  daemonize();
+//  log_printf(INFO, "running in background now");
+
+  tun_device_t* dev;
+  tun_init(&dev, "tun0", "tun", "192.168.23.1", "192.168.23.2");
+  if(!dev) {
+    log_printf(ERR, "error on tun_init");
+    exit -1;
+  }
+
 
   log_printf(INFO, "entering main loop");
-  while(1) sleep(1);
+  u_int8_t buf[1600];
+  int len = 0;
+  while(1) {
+    len = tun_read(dev, buf, 1600);
+    printf("read %d bytes from device\n", len);
+  }
 }
   
   

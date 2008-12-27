@@ -33,3 +33,159 @@
  */
 
 #include "tun.h"
+
+#include "tun_helper.h"
+
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <net/if.h>
+#include <linux/ip.h>
+#include <linux/if_ether.h>
+#include <linux/if_tun.h>
+#define DEFAULT_DEVICE "/dev/net/tun"
+
+#include "log.h"
+
+void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp)
+{
+  if(!dev) return;
+ 
+  *dev = malloc(sizeof(tun_device_t));
+  if(!*dev) return;
+
+  tun_conf(*dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
+
+	(*dev)->fd_ = open(DEFAULT_DEVICE, O_RDWR);
+	if((*dev)->fd_ < 0) {
+    log_printf(ERR, "can't open device file (%s): %m", DEFAULT_DEVICE);
+    free(*dev);
+    *dev = NULL;
+    return;
+  }
+
+	struct ifreq ifr;
+	memset(&ifr, 0, sizeof(ifr));
+
+  if((*dev)->type_ == TYPE_TUN) {
+    ifr.ifr_flags = IFF_TUN;
+    (*dev)->with_pi_ = 1;
+  } 
+  else if((*dev)->type_ == TYPE_TAP) {
+    ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+    (*dev)->with_pi_ = 0;
+  } 
+  else {
+    log_printf(ERR, "unable to recognize type of device (tun or tap)");
+    free(*dev);
+    *dev = NULL;
+    return;
+  }
+
+	if(dev_name)
+		strncpy(ifr.ifr_name, dev_name, IFNAMSIZ);
+
+	if(!ioctl((*dev)->fd_, TUNSETIFF, &ifr)) {
+		(*dev)->actual_name_ = strdup(ifr.ifr_name);
+	} else if(!ioctl((*dev)->fd_, (('T' << 8) | 202), &ifr)) {
+		(*dev)->actual_name_ = strdup(ifr.ifr_name);
+	} else {
+    log_printf(ERR, "tun/tap device ioctl failed: %m");
+    free(*dev);
+    *dev = NULL;
+    return;
+  }
+
+  if(ifcfg_lp && ifcfg_rnmp)
+    tun_do_ifconfig(*dev);
+}
+
+void tun_init_post(tun_device_t* dev)
+{
+// nothing yet
+}
+
+void tun_close(tun_device_t** dev)
+{
+  if(!dev || !(*dev))
+    return;
+
+  if((*dev)->fd_ > 0)
+    close((*dev)->fd_);
+
+  free(*dev);
+  *dev = NULL;
+}
+
+int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
+{
+  if(!dev || dev->fd_ < 0)
+    return -1;
+
+  if(dev->with_pi_)
+  {
+    struct iovec iov[2];
+    struct tun_pi tpi;
+    
+    iov[0].iov_base = &tpi;
+    iov[0].iov_len = sizeof(tpi);
+    iov[1].iov_base = buf;
+    iov[1].iov_len = len;
+    return(tun_fix_return(readv(dev->fd_, iov, 2), sizeof(tpi)));
+  }
+  else
+    return(read(dev->fd_, buf, len));
+}
+
+int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
+{
+  if(!dev || dev->fd_ < 0)
+    return -1;
+
+  if(dev->with_pi_)
+  {
+    struct iovec iov[2];
+    struct tun_pi tpi;
+    struct iphdr *hdr = (struct iphdr *)buf;
+    
+    tpi.flags = 0;
+    if(hdr->version == 4)
+      tpi.proto = htons(ETH_P_IP);
+    else
+      tpi.proto = htons(ETH_P_IPV6);
+    
+    iov[0].iov_base = &tpi;
+    iov[0].iov_len = sizeof(tpi);
+    iov[1].iov_base = buf;
+    iov[1].iov_len = len;
+    return(tun_fix_return(writev(dev->fd_, iov, 2), sizeof(tpi)));
+  }
+  else
+    return(write(dev->fd_, buf, len));
+}
+
+void tun_do_ifconfig(tun_device_t* dev)
+{
+  if(!dev)
+    return;
+
+  char* command = NULL;
+  if(dev->type_ == TYPE_TUN)
+    asprintf(&command, "/sbin/ifconfig %s %s pointopoint %s mtu %d" , dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_);
+  else
+    asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d" , dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_);
+
+  if(!command) {
+    log_printf(ERR, "Execution of ifconfig failed");
+    return;
+  }
+
+  int result = system(command);
+  if(result == -1)
+    log_printf(ERR, "Execution of ifconfig failed");
+  else
+    log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
+}

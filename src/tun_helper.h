@@ -32,41 +32,59 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TUN_H_
-#define _TUN_H_
+#ifndef _TUN_HELPER_H_
+#define _TUN_HELPER_H_
 
-#include <stdlib.h>
+#include <string.h>
 
-typedef unsigned char u_int8_t;
-typedef unsigned short int u_int16_t;
-typedef unsigned int u_int32_t;
+void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp, u_int16_t mtu)
+{
+  if(!dev) return;
 
-
-enum device_type_enum { TYPE_UNDEF, TYPE_TUN, TYPE_TAP };
-typedef enum device_type_enum device_type_t;
-
-struct tun_device_struct {
-  int fd_;
-  unsigned int with_pi_;
-  char* actual_name_;
-  device_type_t type_;
-  u_int16_t mtu_;
-  char* local_;
-  char* remote_netmask_;
-};
-typedef struct tun_device_struct tun_device_t;
-
-void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp);
-void tun_init_post(tun_device_t* dev);
-void tun_do_ifconfig(tun_device_t* dev);
-void tun_close(tun_device_t** dev);
+  dev->mtu_ = mtu;
+  dev->type_ = TYPE_UNDEF;
+  if(dev_type) {
+    if(!strncmp(dev_type, "tun", 3))
+      dev->type_ = TYPE_TUN;
+    else if (!strncmp(dev_type, "tap", 3))
+      dev->type_ = TYPE_TAP;
+  }
+  else if(dev_name) {
+    if(!strncmp(dev_name, "tun", 3))
+      dev->type_ = TYPE_TUN;
+    else if(!strncmp(dev_name, "tap", 3))
+      dev->type_ = TYPE_TAP;
+  }
   
-int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len);
-int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len);
+  if(ifcfg_lp)
+    dev->local_ = strdup(ifcfg_lp);
+  if(ifcfg_rnmp)
+    dev->remote_netmask_ = strdup(ifcfg_rnmp);
+}
 
-// in tun_helper.h
-void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp, u_int16_t mtu);
-int tun_fix_return(int ret, size_t pi_length);
-const char* tun_get_type_string(tun_device_t* dev);
+
+int tun_fix_return(int ret, size_t pi_length)
+{
+  if(ret < 0)
+    return ret;
+
+  return ((size_t)ret > pi_length ? (ret - pi_length) : 0);
+}
+
+const char* tun_get_type_string(tun_device_t* dev)
+{
+  if(!dev || dev->fd_ < 0)
+    return "";
+  
+  switch(dev->type_)
+  {
+  case TYPE_UNDEF: return "undef"; break;
+  case TYPE_TUN: return "tun"; break;
+  case TYPE_TAP: return "tap"; break;
+  }
+  return "";
+}
+
+
 
 #endif
