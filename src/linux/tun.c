@@ -62,6 +62,10 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
 	(*dev)->fd_ = open(DEFAULT_DEVICE, O_RDWR);
 	if((*dev)->fd_ < 0) {
     log_printf(ERR, "can't open device file (%s): %m", DEFAULT_DEVICE);
+    if((*dev)->local_)
+      free((*dev)->local_);
+    if((*dev)->remote_netmask_)
+      free((*dev)->remote_netmask_);
     free(*dev);
     *dev = NULL;
     return;
@@ -80,6 +84,10 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
   } 
   else {
     log_printf(ERR, "unable to recognize type of device (tun or tap)");
+    if((*dev)->local_)
+      free((*dev)->local_);
+    if((*dev)->remote_netmask_)
+      free((*dev)->remote_netmask_);
     free(*dev);
     *dev = NULL;
     return;
@@ -178,14 +186,14 @@ int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
 
 void tun_do_ifconfig(tun_device_t* dev)
 {
-  if(!dev)
+  if(!dev || !dev->actual_name_ || !dev->local_ || !dev->remote_netmask_)
     return;
 
   char* command = NULL;
   if(dev->type_ == TYPE_TUN)
-    asprintf(&command, "/sbin/ifconfig %s %s pointopoint %s mtu %d" , dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_);
+    asprintf(&command, "/sbin/ifconfig %s %s pointopoint %s mtu %d", dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_);
   else
-    asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d" , dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_);
+    asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d", dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_);
 
   if(!command) {
     log_printf(ERR, "Execution of ifconfig failed");

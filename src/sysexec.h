@@ -32,46 +32,35 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
+#ifndef _SYSEXEC_H_
+#define _SYSEXEC_H_
 
-#include "log.h"
-#include "signal.h"
-#include "tun.h"
-
-#include "daemon.h"
-#include "sysexec.h"
-
-int main(int argc, char* argv[])
+int exec_script(const char* script, const char* ifname)
 {
-  log_init("uanytun", DAEMON);
-  signal_init();
+  if(!script || !ifname)
+    return;
 
-//  chrootAndDrop("/var/run/", "nobody");
-//  daemonize();
-//  log_printf(INFO, "running in background now");
+  pid_t pid;
+  pid = fork();
+  if(!pid) {
+    int fd;
+    for (fd=getdtablesize();fd>=0;--fd) // close all file descriptors
+      close(fd);
 
-  tun_device_t* dev;
-  tun_init(&dev, NULL, "tun", "192.168.23.1", "192.168.23.2");
-  if(!dev) {
-    log_printf(ERR, "error on tun_init");
-    exit(-1);
+    fd = open("/dev/null",O_RDWR);        // stdin
+    if(fd == -1)
+      log_printf(WARNING,  "can't open stdin");
+    else {
+      if(dup(fd) == -1)   // stdout
+        log_printf(WARNING,  "can't open stdout");
+      if(dup(fd) == -1)   // stderr
+        log_printf(WARNING,  "can't open stderr");
+    }
+    return execl("/bin/sh", "/bin/sh", script, ifname, NULL);
   }
-
-/*   int ret = exec_script("post-up.sh", dev->actual_name_); */
-/*   log_printf(NOTICE, "post-up script returned %d", ret); */
-
-  log_printf(INFO, "entering main loop");
-  u_int8_t buf[1600];
-  int len = 0;
-  unsigned int cnt = 0;
-  while(cnt < 5) {
-    len = tun_read(dev, buf, 1600);
-    printf("read %d bytes from device\n", len);
-//    tun_write(dev, buf, len);
-    cnt++;
-  }
-  tun_close(&dev);
-
-  return 0;
+  int status = 0;
+  waitpid(pid, &status, 0);
+  return status;
 }
+
+#endif
