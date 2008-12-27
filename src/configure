@@ -37,12 +37,12 @@ TARGET=`uname -s`
 
 case $TARGET in 
 	Linux)
-		rm -rf tunDevice.c
-		ln -sf linux/tunDevice.c
+		rm -rf tun.c
+		ln -sf linux/tun.c
 	;;
 	OpenBSD|FreeBSD|NetBSD)
-		rm -rf tunDevice.c
-		ln -sf bsd/tunDevice.c
+		rm -rf tun.c
+		ln -sf bsd/tun.c
 	;;
 	*)
 		echo "Plattform not supported"

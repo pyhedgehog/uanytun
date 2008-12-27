@@ -47,6 +47,7 @@ endif
 
 OBJS = log.o \
        signal.o \
+       tun.o \
        uanytun.o
 
 EXECUTABLE = uanytun
@@ -65,9 +66,13 @@ log.o: log.c log.h
 signal.o: signal.c signal.h
 	$(CC) $(CCFLAGS) $< -c
 
+tun.o: tun.c tun.h
+	$(CC) $(CCFLAGS) $< -c
+
 distclean: clean
 	find . -name *.o -exec rm -f {} \;
-	rm -f tunDevice.c
+	find . -name "*.\~*" -exec rm -rf {} \;
+	rm -f tun.c
 
 clean:
 	rm -f *.o

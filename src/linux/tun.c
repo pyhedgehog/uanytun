@@ -32,26 +32,4 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "log.h"
-#include "daemon.h"
-#include "signal.h"
-
 #include "tun.h"
-
-int main(int argc, char* argv[])
-{
-  log_init("uanytun", DAEMON);
-  signal_init();
-
-//  chrootAndDrop("/var/run/", "nobody");
-  daemonize();
-  log_printf(INFO, "running in background now");
-
-  log_printf(INFO, "entering main loop");
-  while(1) sleep(1);
-}
-  
-  
