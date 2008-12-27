@@ -32,6 +32,8 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "datatypes.h"
+
 #include <stdarg.h>
 #include "log.h"
 

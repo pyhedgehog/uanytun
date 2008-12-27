@@ -32,6 +32,8 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "datatypes.h"
+
 #include "log.h"
 #include "signal.h"
 #include <signal.h>

@@ -32,6 +32,8 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "datatypes.h"
+
 #include "tun.h"
 
 #include "tun_helper.h"

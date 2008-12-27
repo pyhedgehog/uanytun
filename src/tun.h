@@ -37,11 +37,6 @@
 
 #include <stdlib.h>
 
-typedef unsigned char u_int8_t;
-typedef unsigned short int u_int16_t;
-typedef unsigned int u_int32_t;
-
-
 enum device_type_enum { TYPE_UNDEF, TYPE_TUN, TYPE_TAP };
 typedef enum device_type_enum device_type_t;
 

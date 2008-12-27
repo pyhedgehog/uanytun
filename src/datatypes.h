@@ -32,48 +32,36 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "datatypes.h"
+#ifndef _DATATYPES_H_
+#define _DATATYPES_H_
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <stdint.h>
 
-#include "log.h"
-#include "signal.h"
-#include "tun.h"
+typedef uint8_t u_int8_t;
+typedef uint16_t u_int16_t;
+typedef uint32_t u_int32_t;
+typedef uint64_t u_int64_t;
+typedef int8_t int8_t;
+typedef int16_t int16_t;
+typedef int32_t int32_t;
+typedef int64_t int64_t;
 
-#include "daemon.h"
-#include "sysexec.h"
+typedef u_int32_t window_size_t;
 
-int main(int argc, char* argv[])
-{
-  log_init("uanytun", DAEMON);
-  signal_init();
+typedef u_int32_t seq_nr_t;
+#define SEQ_NR_T_NTOH(a) ntohl(a)
+#define SEQ_NR_T_HTON(a) htonl(a)
 
-//  chrootAndDrop("/var/run/", "nobody");
-//  daemonize();
-//  log_printf(INFO, "running in background now");
+typedef u_int16_t sender_id_t;
+#define SENDER_ID_T_NTOH(a) ntohs(a)
+#define SENDER_ID_T_HTON(a) htons(a)
 
-  tun_device_t* dev;
-  tun_init(&dev, NULL, "tun", "192.168.23.1", "192.168.23.2");
-  if(!dev) {
-    log_printf(ERR, "error on tun_init");
-    exit(-1);
-  }
+typedef u_int16_t payload_type_t;
+#define PAYLOAD_TYPE_T_NTOH(a) ntohs(a)
+#define PAYLOAD_TYPE_T_HTON(a) htons(a)
 
-/*   int ret = exec_script("post-up.sh", dev->actual_name_); */
-/*   log_printf(NOTICE, "post-up script returned %d", ret); */
+typedef u_int16_t mux_t;
+#define MUX_T_NTOH(a) ntohs(a)
+#define MUX_T_HTON(a) htons(a)
 
-  log_printf(INFO, "entering main loop");
-  u_int8_t buf[1600];
-  int len = 0;
-  unsigned int cnt = 0;
-  while(cnt < 5) {
-    len = tun_read(dev, buf, 1600);
-    printf("read %d bytes from device\n", len);
-//    tun_write(dev, buf, len);
-    cnt++;
-  }
-  tun_close(&dev);
-
-  return 0;
-}
+#endif
