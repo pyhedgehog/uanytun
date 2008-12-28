@@ -32,36 +32,49 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _PLAIN_PACKET_H_
-#define _PLAIN_PACKET_H_
+#ifndef _ENCRYPTED_PACKET_H_
+#define _ENCRYPTED_PACKET_H_
 
-#define PLAIN_PACKET_SIZE_MAX 1600
+#define ENCRYPTED_PACKET_SIZE_MAX 1600
 
 #define PAYLOAD_TYPE_TAP 0x6558
 #define PAYLOAD_TYPE_TUN 0x0000
 #define PAYLOAD_TYPE_TUN4 0x0800
 #define PAYLOAD_TYPE_TUN6 0x86DD 
 
-struct plain_packet_struct {
+struct __attribute__ ((__packed__)) encrypted_packet_header_struct {
+  seq_nr_t seq_nr_;
+  sender_id_t sender_id_;
+  mux_t mux_;
+};
+typedef struct encrypted_packet_header_struct encrypted_packet_header_t;
+
+struct encrypted_packet_struct {
   u_int32_t payload_length_;
   union __attribute__ ((__packed__)) {
-    u_int8_t buf_[PLAIN_PACKET_SIZE_MAX];
-    payload_type_t payload_type_;
-  } data_;
+    u_int8_t buf_[ENCRYPTED_PACKET_SIZE_MAX];
+    encrypted_packet_header_t header_;
+ } data_;
 };
-typedef struct plain_packet_struct plain_packet_t;
+typedef struct encrypted_packet_struct encrypted_packet_t;
 
-void plain_packet_init(plain_packet_t* packet);
+void encrypted_packet_init(encrypted_packet_t* packet);
 
-u_int8_t* plain_packet_get_packet(plain_packet_t* packet);
-u_int32_t plain_packet_get_length(plain_packet_t* packet);
+u_int8_t* encrypted_packet_get_packet(encrypted_packet_t* packet);
+u_int32_t encrypted_packet_get_length(encrypted_packet_t* packet);
 
-u_int8_t* plain_packet_get_payload(plain_packet_t* packet);
-u_int32_t plain_packet_get_payload_length(plain_packet_t* packet);
-void plain_packet_set_payload_length(plain_packet_t* packet, u_int32_t len);
+u_int8_t* encrypted_packet_get_payload(encrypted_packet_t* packet);
+u_int32_t encrypted_packet_get_payload_length(encrypted_packet_t* packet);
+void encrypted_packet_set_payload_length(encrypted_packet_t* packet, u_int32_t len);
 
-payload_type_t plain_packet_get_type(plain_packet_t* packet);
-void plain_packet_set_type(plain_packet_t* packet, payload_type_t type);
+seq_nr_t encrypted_packet_get_seq_nr(encrypted_packet_t* packet);
+void encrypted_packet_set_seq_nr(encrypted_packet_t* packet, seq_nr_t seq_nr);
+
+sender_id_t encrypted_packet_get_sender_id(encrypted_packet_t* packet);
+void encrypted_packet_set_sender_id(encrypted_packet_t* packet, sender_id_t sender_id);
+
+mux_t encrypted_packet_get_mux(encrypted_packet_t* packet);
+void encrypted_packet_set_mux(encrypted_packet_t* packet, mux_t mux);
 
 
 #endif

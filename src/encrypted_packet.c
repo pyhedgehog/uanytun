@@ -34,12 +34,12 @@
 
 #include "datatypes.h"
 
-#include "plain_packet.h"
+#include "encrypted_packet.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-void plain_packet_init(plain_packet_t* packet)
+void encrypted_packet_init(encrypted_packet_t* packet)
 {
   if(!packet)
     return;
@@ -47,7 +47,7 @@ void plain_packet_init(plain_packet_t* packet)
   memset (packet, 0, sizeof(*packet));
 }
 
-u_int8_t* plain_packet_get_packet(plain_packet_t* packet)
+u_int8_t* encrypted_packet_get_packet(encrypted_packet_t* packet)
 {
   if(!packet)
     return NULL;
@@ -55,23 +55,23 @@ u_int8_t* plain_packet_get_packet(plain_packet_t* packet)
   return packet->data_.buf_;
 }
 
-u_int32_t plain_packet_get_length(plain_packet_t* packet)
+u_int32_t encrypted_packet_get_length(encrypted_packet_t* packet)
 {
   if(!packet)
     return 0;
 
-  return (packet->payload_length_ + sizeof(payload_type_t));
+  return (packet->payload_length_ + sizeof(encrypted_packet_header_t));
 }
 
-u_int8_t* plain_packet_get_payload(plain_packet_t* packet)
+u_int8_t* encrypted_packet_get_payload(encrypted_packet_t* packet)
 {
   if(!packet)
     return NULL;
 
-  return (packet->data_.buf_ + sizeof(payload_type_t));
+  return (packet->data_.buf_ + sizeof(encrypted_packet_header_t));
 }
 
-u_int32_t plain_packet_get_payload_length(plain_packet_t* packet)
+u_int32_t encrypted_packet_get_payload_length(encrypted_packet_t* packet)
 {
   if(!packet)
     return 0;
@@ -79,29 +79,61 @@ u_int32_t plain_packet_get_payload_length(plain_packet_t* packet)
   return packet->payload_length_;
 }
 
-void plain_packet_set_payload_length(plain_packet_t* packet, u_int32_t len)
+void encrypted_packet_set_payload_length(encrypted_packet_t* packet, u_int32_t len)
 {
   if(!packet)
     return;
 
-  if(len > PLAIN_PACKET_SIZE_MAX || (len + sizeof(payload_type_t)) > PLAIN_PACKET_SIZE_MAX)
-    len = PLAIN_PACKET_SIZE_MAX - sizeof(payload_type_t);
+  if(len > ENCRYPTED_PACKET_SIZE_MAX || (len + sizeof(encrypted_packet_header_t)) > ENCRYPTED_PACKET_SIZE_MAX)
+    len = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t);
 
   packet->payload_length_ = len;
 }
 
-payload_type_t plain_packet_get_type(plain_packet_t* packet)
+seq_nr_t encrypted_packet_get_seq_nr(encrypted_packet_t* packet)
 {
   if(!packet)
     return 0;
 
-  return PAYLOAD_TYPE_T_NTOH(packet->data_.payload_type_);
+  return SEQ_NR_T_NTOH(packet->data_.header_.seq_nr_);
 }
 
-void plain_packet_set_type(plain_packet_t* packet, payload_type_t type)
+void encrypted_packet_set_seq_nr(encrypted_packet_t* packet, seq_nr_t seq_nr)
 {
   if(!packet)
     return;
 
-  packet->data_.payload_type_ = PAYLOAD_TYPE_T_HTON(type);
+  packet->data_.header_.seq_nr_ = SEQ_NR_T_HTON(seq_nr);
+}
+
+sender_id_t encrypted_packet_get_sender_id(encrypted_packet_t* packet)
+{
+  if(!packet)
+    return 0;
+
+  return SENDER_ID_T_NTOH(packet->data_.header_.sender_id_);
+}
+
+void encrypted_packet_set_sender_id(encrypted_packet_t* packet, sender_id_t sender_id)
+{
+  if(!packet)
+    return;
+
+  packet->data_.header_.sender_id_ = SENDER_ID_T_HTON(sender_id);
+}
+
+mux_t encrypted_packet_get_mux(encrypted_packet_t* packet)
+{
+  if(!packet)
+    return 0;
+  
+  return MUX_T_NTOH(packet->data_.header_.mux_);
+}
+
+void encrypted_packet_set_mux(encrypted_packet_t* packet, mux_t mux)
+{
+  if(!packet)
+    return;
+
+  packet->data_.header_.mux_ = MUX_T_HTON(mux);
 }
