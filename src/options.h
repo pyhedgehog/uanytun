@@ -35,12 +35,6 @@
 #ifndef _OPTIONS_H_
 #define _OPTIONS_H_
 
-struct buffer_struct {
-  u_int32_t length_;
-  u_int8_t* buf_;
-};
-typedef struct buffer_struct buffer_t;
-
 struct options_struct {
   char* progname_;
   int daemonize_;

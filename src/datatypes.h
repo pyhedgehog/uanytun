@@ -64,4 +64,10 @@ typedef u_int16_t mux_t;
 #define MUX_T_NTOH(a) ntohs(a)
 #define MUX_T_HTON(a) htons(a)
 
+struct buffer_struct {
+  u_int32_t length_;
+  u_int8_t* buf_;
+};
+typedef struct buffer_struct buffer_t;
+
 #endif
