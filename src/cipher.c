@@ -80,7 +80,7 @@ void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len)
     free(c->key_.buf_);
   c->key_.buf_ = malloc(len);
   if(!c->key_.buf_) {
-    c->key_.buf_.length_ = 0;
+    c->key_.length_ = 0;
     return;
   }
   memcpy(c->key_.buf_, key, len);
