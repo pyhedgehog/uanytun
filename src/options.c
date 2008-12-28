@@ -40,6 +40,88 @@
 #include <stdio.h>
 #include <string.h>
 
+#define PARSE_BOOL_PARAM(SHORT, LONG, VALUE)             \
+    else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
+      VALUE = 1;
+
+#define PARSE_INVERSE_BOOL_PARAM(SHORT, LONG, VALUE)     \
+    else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
+      VALUE = 0;
+
+#define PARSE_INT_PARAM(SHORT, LONG, VALUE)              \
+    else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
+    {                                                    \
+      if(argc < 1 || argv[i+1][0] == '-')                \
+        return -1;                                       \
+      VALUE = atoi(argv[i+1]);                           \
+      argc--;                                            \
+      i++;                                               \
+    }
+
+#define PARSE_STRING_PARAM(SHORT, LONG, VALUE)           \
+    else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
+    {                                                    \
+      if(argc < 1 || argv[i+1][0] == '-')                \
+        return -1;                                       \
+      if(VALUE) free(VALUE);                             \
+      VALUE = strdup(argv[i+1]);                         \
+      argc--;                                            \
+      i++;                                               \
+    }
+
+#define PARSE_STRING_PARAM2(SHORT, LONG, VALUE1, VALUE2) \
+    else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
+    {                                                    \
+      if(argc < 2 ||                                     \
+         argv[i+1][0] == '-' || argv[i+2][0] == '-')     \
+        return -1;                                       \
+      if(VALUE1) free(VALUE1);                           \
+      VALUE1 = strdup(argv[i+1]);                        \
+      if(VALUE2) free(VALUE2);                           \
+      VALUE2 = strdup(argv[i+2]);                        \
+      argc-=2;                                           \
+      i+=2;                                              \
+    }
+
+#define PARSE_HEXSTRING_PARAM_SEC(SHORT, LONG, VALUE)    \
+    else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
+    {                                                    \
+      if(argc < 1 || argv[i+1][0] == '-')                \
+        return -1;                                       \
+      if(VALUE.buf_) free(VALUE.buf_);                   \
+      VALUE = options_parse_hex_string(argv[i+1]);       \
+      if(!VALUE.buf_) return -1;                         \
+      size_t j;                                          \
+      for(j=0; j < strlen(argv[i+1]); ++j)               \
+        argv[i+1][j] = '#';                              \
+      argc--;                                            \
+      i++;                                               \
+    }
+
+buffer_t options_parse_hex_string(const char* hex)
+{
+  u_int32_t hex_len = strlen(hex);
+  buffer_t buffer;
+
+  buffer.length_ = 0;
+  buffer.buf_ = NULL;
+
+  if(hex_len%2) return buffer;
+  
+  buffer.length_ = hex_len/2;
+  buffer.buf_ = malloc(buffer.length_);
+  if(!buffer.buf_) {
+    buffer.length_ = 0;
+    return buffer;
+  }
+
+  int i;
+  for(i=0;i<buffer.length_;++i) buffer.buf_[i] = (u_int8_t)i; // TODO
+
+  return buffer;
+}
+
+
 int options_parse(options_t** opt, int argc, char* argv[])
 {
   if(!opt)
@@ -47,6 +129,44 @@ int options_parse(options_t** opt, int argc, char* argv[])
 
   *opt = malloc(sizeof(options_t));
   options_default(*opt);
+
+  if((*opt)->progname_)
+    free((*opt)->progname_);
+  (*opt)->progname_ = strdup(argv[0]);
+  argc--;
+
+  int i;
+  for(i=1; argc > 0; ++i)
+  {
+    char* str = argv[i];
+    argc--;
+
+    if(!strcmp(str,"-h") || !strcmp(str,"--help"))
+      return 1;
+    PARSE_INVERSE_BOOL_PARAM("-D","--nodaemonize", (*opt)->daemonize_)
+    PARSE_BOOL_PARAM("-C","--chroot", (*opt)->chroot_)
+    PARSE_STRING_PARAM("-u","--username", (*opt)->username_)
+    PARSE_STRING_PARAM("-H","--chroot-dir", (*opt)->chroot_dir_)
+    PARSE_STRING_PARAM("-P","--write-pid", (*opt)->pid_file_)
+    PARSE_STRING_PARAM("-i","--interface", (*opt)->local_addr_)
+    PARSE_STRING_PARAM("-p","--port", (*opt)->local_port_)
+    PARSE_STRING_PARAM("-r","--remote-host", (*opt)->remote_addr_)
+    PARSE_STRING_PARAM("-o","--remote-port", (*opt)->remote_port_)
+    PARSE_STRING_PARAM("-d","--dev", (*opt)->dev_name_)
+    PARSE_STRING_PARAM("-t","--type", (*opt)->dev_type_)
+    PARSE_STRING_PARAM2("-n","--ifconfig", (*opt)->ifconfig_param_local_, (*opt)->ifconfig_param_remote_netmask_)
+    PARSE_STRING_PARAM("-x","--post-up-script", (*opt)->post_up_script_)
+    PARSE_INT_PARAM("-s","--sender-id", (*opt)->sender_id_)
+    PARSE_INT_PARAM("-m","--mux", (*opt)->mux_)
+    PARSE_INT_PARAM("-w","--window-size", (*opt)->seq_window_size_)
+    PARSE_STRING_PARAM("-c","--cipher", (*opt)->cipher_)
+    PARSE_STRING_PARAM("-k","--kd-prf", (*opt)->kd_prf_)
+    PARSE_STRING_PARAM("-a","--auth-algo", (*opt)->auth_algo_)
+    PARSE_HEXSTRING_PARAM_SEC("-K","--key", (*opt)->key_)
+    PARSE_HEXSTRING_PARAM_SEC("-A","--salt", (*opt)->salt_)
+    else 
+      return -1;
+  }
 
   return 0;
 }
@@ -77,10 +197,10 @@ void options_default(options_t* opt)
   opt->kd_prf_ = strdup("aes-ctr");
   opt->auth_algo_ = strdup("sha1");
   opt->mux_ = 0;
-  opt->key_ = NULL;
-  opt->key_length_ = 0;
-  opt->salt_ = NULL;
-  opt->salt_length_ = 0;
+  opt->key_.buf_ = NULL;
+  opt->key_.length_ = 0;
+  opt->salt_.buf_ = NULL;
+  opt->salt_.length_ = 0;
 }
 
 void options_clear(options_t** opt)
@@ -120,10 +240,10 @@ void options_clear(options_t** opt)
     free((*opt)->kd_prf_);
   if((*opt)->auth_algo_)
     free((*opt)->auth_algo_);
-  if((*opt)->key_)
-    free((*opt)->key_);
-  if((*opt)->salt_)
-    free((*opt)->salt_);
+  if((*opt)->key_.buf_)
+    free((*opt)->key_.buf_);
+  if((*opt)->salt_.buf_)
+    free((*opt)->salt_.buf_);
 
   free(*opt);
   *opt = NULL;
@@ -154,8 +274,8 @@ void options_print_usage()
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
 //  printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
-//  printf("        [-K|--key] <master key>             master key to use for encryption\n");
-//  printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
+  printf("        [-K|--key] <master key>             master key to use for encryption\n");
+  printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
 }
 
 void options_print(options_t* opt)
@@ -183,11 +303,11 @@ void options_print(options_t* opt)
   printf("kd_prf: '%s'\n", opt->kd_prf_);
 
   u_int32_t i;
-  printf("key_[%d]: '", opt->key_length_);
-  for(i=0; i<opt->key_length_; ++i) printf("%02X", opt->key_[i]);
+  printf("key_[%d]: '", opt->key_.length_);
+  for(i=0; i<opt->key_.length_; ++i) printf("%02X", opt->key_.buf_[i]);
   printf("'\n");
 
-  printf("salt_[%d]: '", opt->salt_length_);
-  for(i=0; i<opt->salt_length_; ++i) printf("%02X", opt->salt_[i]);
+  printf("salt_[%d]: '", opt->salt_.length_);
+  for(i=0; i<opt->salt_.length_; ++i) printf("%02X", opt->salt_.buf_[i]);
   printf("'\n");
 }

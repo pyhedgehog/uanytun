@@ -35,6 +35,12 @@
 #ifndef _OPTIONS_H_
 #define _OPTIONS_H_
 
+struct buffer_struct {
+  u_int32_t length_;
+  u_int8_t* buf_;
+};
+typedef struct buffer_struct buffer_t;
+
 struct options_struct {
   char* progname_;
   int daemonize_;
@@ -57,19 +63,18 @@ struct options_struct {
   char* kd_prf_;
   char* auth_algo_;
   mux_t mux_;
-  u_int8_t* key_;
-  u_int32_t key_length_;
-  u_int8_t* salt_;
-  u_int32_t salt_length_;
+  buffer_t key_;
+  buffer_t salt_;
 };
 typedef struct options_struct options_t;
+
+buffer_t options_parse_hex_string(const char* hex);
 
 int options_parse(options_t** opt, int argc, char* argv[]);
 void options_default(options_t* opt);
 void options_clear(options_t** opt);
 void options_print_usage();
 void options_print(options_t* opt);
-
 
 #endif
 

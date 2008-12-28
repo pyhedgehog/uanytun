@@ -115,8 +115,10 @@ int main(int argc, char* argv[])
 
   options_t* opt;
   int ret = options_parse(&opt, argc, argv);
-  if(ret)
+  if(ret) {
+    options_print_usage();
     exit(ret);
+  }
 
   options_print(opt);
 
