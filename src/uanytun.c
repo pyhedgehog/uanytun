@@ -40,6 +40,8 @@
 
 #include "log.h"
 #include "signal.h"
+#include "options.h"
+
 #include "tun.h"
 #include "udp.h"
 
@@ -111,6 +113,13 @@ int main(int argc, char* argv[])
   log_init("uanytun", DAEMON);
   signal_init();
 
+  options_t* opt;
+  int ret = options_parse(&opt, argc, argv);
+  if(ret)
+    exit(ret);
+
+  options_print(opt);
+
 //  chrootAndDrop("/var/run/", "nobody");
 //  daemonize();
 //  log_printf(INFO, "running in background now");
@@ -144,6 +153,7 @@ int main(int argc, char* argv[])
 
 /*   tun_close(&dev); */
 /*   udp_close(&sock); */
+  options_clear(&opt);
 
   return 0;
 }

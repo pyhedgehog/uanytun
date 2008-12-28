@@ -47,6 +47,7 @@ endif
 
 OBJS = log.o \
        signal.o \
+       options.o \
        tun.o \
        udp.o \
        plain_packet.o \
@@ -67,6 +68,9 @@ log.o: log.c log.h
 	$(CC) $(CCFLAGS) $< -c
 
 signal.o: signal.c signal.h
+	$(CC) $(CCFLAGS) $< -c
+
+options.o: options.c options.h
 	$(CC) $(CCFLAGS) $< -c
 
 tun.o: tun.c tun.h
