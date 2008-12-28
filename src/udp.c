@@ -114,6 +114,9 @@ void udp_close(udp_socket_t** sock)
 
   if((*sock)->fd_ > 0)
     close((*sock)->fd_);
+
+  free(*sock);
+  *sock = NULL;
 }
   
 int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, struct sockaddr_storage* remote_end_)

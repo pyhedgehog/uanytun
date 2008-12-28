@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
     exit(-1);
   }
 
+
   log_printf(INFO, "entering main loop");
   u_int8_t buf[1600];
   int len = 0;
@@ -82,6 +83,7 @@ int main(int argc, char* argv[])
     cnt++;
   }
   tun_close(&dev);
+  udp_close(&sock);
 
   return 0;
 }
