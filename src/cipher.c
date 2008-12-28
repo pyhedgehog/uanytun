@@ -56,8 +56,8 @@ void cipher_init(cipher_t** c, const char* type)
   (*c)->type_ = unknown;
   if(!strcmp(type, "null"))
     (*c)->type_ = null;
-  else if(!strcmp(type, "aes-ctr"))
-    (*c)->type_ = aes_ctr;
+/*   else if(!strcmp(type, "aes-ctr")) */
+/*     (*c)->type_ = aes_ctr; */
   else {
     log_printf(ERR, "unknown cipher type");
   }
@@ -128,10 +128,10 @@ void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, se
   if(c->type_ = null)
     len = cipher_null_encrypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
                               encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
-  else if(c->type_ = aes_ctr)
-    len = cipher_aesctr_encrypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
-                                encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out),
-                                seq_nr, sender_id, mux);
+/*   else if(c->type_ = aes_ctr) */
+/*     len = cipher_aesctr_encrypt(plain_packet_get_packet(in), plain_packet_get_length(in),  */
+/*                                 encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out), */
+/*                                 seq_nr, sender_id, mux); */
   else {
     log_printf(ERR, "unknown cipher type");
     return;
@@ -153,11 +153,11 @@ void cipher_decrypt(cipher_t* c, encrypted_packet_t* in, plain_packet_t* out)
   if(c->type_ = null)
     len = cipher_null_decrypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                               plain_packet_get_packet(out), plain_packet_get_length(out));
-  else if(c->type_ = aes_ctr)
-    len = cipher_aesctr_decrypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
-                                plain_packet_get_packet(out), plain_packet_get_length(out), 
-                                encrypted_packet_get_seq_nr(in), encrypted_packet_get_sender_id(in), 
-                                encrypted_packet_get_mux(in));
+/*   else if(c->type_ = aes_ctr) */
+/*     len = cipher_aesctr_decrypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in), */
+/*                                 plain_packet_get_packet(out), plain_packet_get_length(out),  */
+/*                                 encrypted_packet_get_seq_nr(in), encrypted_packet_get_sender_id(in),  */
+/*                                 encrypted_packet_get_mux(in)); */
   else {
     log_printf(ERR, "unknown cipher type");
     return;

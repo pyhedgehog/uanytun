@@ -41,6 +41,7 @@
 #define PAYLOAD_TYPE_TUN 0x0000
 #define PAYLOAD_TYPE_TUN4 0x0800
 #define PAYLOAD_TYPE_TUN6 0x86DD 
+#define PAYLOAD_TYPE_UNKNOWN 0xFFFF
 
 struct plain_packet_struct {
   u_int32_t payload_length_;

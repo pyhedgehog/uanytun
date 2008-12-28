@@ -53,7 +53,7 @@
 #include "daemon.h"
 #include "sysexec.h"
 
-void main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
+int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 {
   log_printf(INFO, "entering main loop");
 
@@ -65,6 +65,13 @@ void main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   udp_endpoint_t remote;
   seq_nr_t seq_nr = 0;
 
+  cipher_t* c;
+  cipher_init(&c, opt->cipher_);
+  if(!c) {
+    log_printf(ERR, "could not initialize cipher of type %s", opt->cipher_);
+    return -1;
+  }
+
   while(1) {
     plain_packet_set_payload_length(&plain_packet, -1);
     encrypted_packet_set_length(&encrypted_packet, -1);
@@ -72,42 +79,51 @@ void main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 // TODO: add select 
 
 // if dev->fd_ is ready:
-    len = tun_read(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
-    plain_packet_set_payload_length(&plain_packet, len);
-    
-   // TODO: cipher packet
-   // TODO: add auth-tag
-
-    encrypted_packet_set_seq_nr(&encrypted_packet, seq_nr);
-    encrypted_packet_set_sender_id(&encrypted_packet, opt->sender_id_);
-    encrypted_packet_set_mux(&encrypted_packet, opt->mux_);
-
-    udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet));
-    
-
-
-// if sock->fd_ is ready:
-    len = udp_read(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet), &remote);
-    encrypted_packet_set_length(&encrypted_packet, len);
-
-   // TODO: check auth-tag
-
-    if(encrypted_packet_get_mux(&encrypted_packet) != opt->mux_)
-      continue;
-
-   // TODO: check seq nr for sender id
-
-    if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) {
-      memcpy(&(sock->remote_end_), &remote, sizeof(remote));
-      char* addrstring = udp_endpoint_to_string(remote);
-      log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
-      free(addrstring);
+    if(1) {
+      len = tun_read(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
+      plain_packet_set_payload_length(&plain_packet, len);
+      
+      if(dev->type_ = TYPE_TUN)
+        plain_packet_set_type(&plain_packet, PAYLOAD_TYPE_TUN);
+      else if(dev->type_ = TYPE_TAP)
+        plain_packet_set_type(&plain_packet, PAYLOAD_TYPE_TAP);    
+      else
+        plain_packet_set_type(&plain_packet, PAYLOAD_TYPE_UNKNOWN);
+      
+      cipher_encrypt(c, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
+      seq_nr++;
+      
+          // TODO: add auth-tag
+      
+      udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet));
     }
 
-   // TODO: decipher packet
+// if sock->fd_ is ready:
+/*     len = udp_read(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet), &remote); */
+/*     encrypted_packet_set_length(&encrypted_packet, len); */
 
-    tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
+/*    // TODO: check auth-tag */
+
+/*     if(encrypted_packet_get_mux(&encrypted_packet) != opt->mux_) */
+/*       continue; */
+
+/*    // TODO: check seq nr for sender id */
+
+/*     if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) { */
+/*       memcpy(&(sock->remote_end_), &remote, sizeof(remote)); */
+/*       char* addrstring = udp_endpoint_to_string(remote); */
+/*       log_printf(NOTICE, "autodetected remote host changed %s", addrstring); */
+/*       free(addrstring); */
+/*     } */
+
+/*    // TODO: decipher packet */
+
+/*     tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet)); */
   }
+
+  cipher_close(&c);
+
+  return 0;
 }
 
 void print_hex_dump(const u_int8_t* buf, u_int32_t len)
@@ -195,13 +211,14 @@ int main(int argc, char* argv[])
     fclose(pid_file);
   }
 
-  main_loop(dev, sock, opt);
+  ret = main_loop(dev, sock, opt);
 
   tun_close(&dev);
   udp_close(&sock);
   options_clear(&opt);
 
-  log_printf(NOTICE, "normal shutdown");
+  if(!ret)
+    log_printf(NOTICE, "normal shutdown");
 
-  return 0;
+  return ret;
 }

@@ -38,6 +38,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <netinet/ip.h>
 
 void plain_packet_init(plain_packet_t* packet)
 {
@@ -118,5 +119,18 @@ void plain_packet_set_type(plain_packet_t* packet, payload_type_t type)
   if(!packet)
     return;
 
-  packet->data_.payload_type_ = PAYLOAD_TYPE_T_HTON(type);
+  if(type == PAYLOAD_TYPE_TUN) {
+    if(!packet->payload_length_) {
+      packet->data_.payload_type_ = PAYLOAD_TYPE_T_HTON(PAYLOAD_TYPE_TUN);
+      return;
+    }
+
+    struct ip* hdr = (struct ip*)(packet->data_.buf_ + sizeof(payload_type_t));
+    if(hdr->ip_v == 4)
+      packet->data_.payload_type_ = PAYLOAD_TYPE_T_HTON(PAYLOAD_TYPE_TUN4);
+    else if(hdr->ip_v == 6)
+      packet->data_.payload_type_ = PAYLOAD_TYPE_T_HTON(PAYLOAD_TYPE_TUN6);
+  }
+  else
+    packet->data_.payload_type_ = PAYLOAD_TYPE_T_HTON(type);
 }
