@@ -48,6 +48,7 @@ endif
 OBJS = log.o \
        signal.o \
        tun.o \
+       udp.o \
        uanytun.o
 
 EXECUTABLE = uanytun
@@ -67,6 +68,9 @@ signal.o: signal.c signal.h
 	$(CC) $(CCFLAGS) $< -c
 
 tun.o: tun.c tun.h
+	$(CC) $(CCFLAGS) $< -c
+
+udp.o: udp.c udp.h
 	$(CC) $(CCFLAGS) $< -c
 
 distclean: clean

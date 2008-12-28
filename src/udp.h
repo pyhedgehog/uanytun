@@ -32,56 +32,24 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "datatypes.h"
+#ifndef _UDP_H_
+#define _UDP_H_
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <sys/socket.h>
 
-#include "log.h"
-#include "signal.h"
-#include "tun.h"
-#include "udp.h"
+struct udp_socket_struct {
+  int fd_;
+  struct sockaddr_storage local_end_;
+  struct sockaddr_storage remote_end_;
+};
+typedef struct udp_socket_struct udp_socket_t;
 
-#include "daemon.h"
-#include "sysexec.h"
+void udp_init(udp_socket_t** sock, const char* local_addr, const char* port);
+void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port);
+void udp_close(udp_socket_t** sock);
+  
+int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, struct sockaddr_storage* remote_end_);
+int udp_write(udp_socket_t* sock, u_int8_t* buf, u_int32_t len);
 
-int main(int argc, char* argv[])
-{
-  log_init("uanytun", DAEMON);
-  signal_init();
 
-//  chrootAndDrop("/var/run/", "nobody");
-//  daemonize();
-//  log_printf(INFO, "running in background now");
-
-  tun_device_t* dev;
-  tun_init(&dev, NULL, "tun", "192.168.23.1", "192.168.23.2");
-  if(!dev) {
-    log_printf(ERR, "error on tun_init");
-    exit(-1);
-  }
-
-/*   int ret = exec_script("post-up.sh", dev->actual_name_); */
-/*   log_printf(NOTICE, "post-up script returned %d", ret); */
-
-  udp_socket_t* sock;
-  udp_init(&sock, NULL, "4444");
-  if(!sock) {
-    log_printf(ERR, "error on udp_init");
-    exit(-1);
-  }
-
-  log_printf(INFO, "entering main loop");
-  u_int8_t buf[1600];
-  int len = 0;
-  unsigned int cnt = 0;
-  while(cnt < 5) {
-    len = tun_read(dev, buf, 1600);
-    printf("read %d bytes from device\n", len);
-//    tun_write(dev, buf, len);
-    cnt++;
-  }
-  tun_close(&dev);
-
-  return 0;
-}
+#endif
