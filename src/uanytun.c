@@ -61,34 +61,50 @@ void main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   encrypted_packet_init(&encrypted_packet);
   u_int32_t len = 0;
   udp_endpoint_t remote;
+  seq_nr_t seq_nr = 0;
 
   while(1) {
     plain_packet_set_payload_length(&plain_packet, -1);
     encrypted_packet_set_length(&encrypted_packet, -1);
 
+// TODO: add select 
+
+// if dev->fd_ is ready:
+    len = tun_read(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
+    plain_packet_set_payload_length(&plain_packet, len);
+    
+   // TODO: cipher packet
+   // TODO: add auth-tag
+
+    encrypted_packet_set_seq_nr(&encrypted_packet, seq_nr);
+    encrypted_packet_set_sender_id(&encrypted_packet, opt->sender_id_);
+    encrypted_packet_set_mux(&encrypted_packet, opt->mux_);
+
+    udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet));
     
 
 
-/*     len = tun_read(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet)); */
-/*     plain_packet_set_payload_length(&plain_packet, len); */
+// if sock->fd_ is ready:
+    len = udp_read(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet), &remote);
+    encrypted_packet_set_length(&encrypted_packet, len);
 
-/*     udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet)); */
+   // TODO: check auth-tag
 
+    if(encrypted_packet_get_mux(&encrypted_packet) != opt->mux_)
+      continue;
 
+   // TODO: check seq nr for sender id
 
+    if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) {
+      memcpy(&(sock->remote_end_), &remote, sizeof(remote));
+      char* addrstring = udp_endpoint_to_string(remote);
+      log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
+      free(addrstring);
+    }
 
-/*     len = udp_read(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet), &remote); */
-/*     encrypted_packet_set_length(&encrypted_packet, len); */
+   // TODO: decipher packet
 
-/*     if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) { */
-/*       memcpy(&(sock->remote_end_), &remote, sizeof(remote)); */
-/*       char* addrstring = udp_endpoint_to_string(remote); */
-/*       log_printf(NOTICE, "autodetected remote host changed %s", addrstring); */
-/*       free(addrstring); */
-/*     } */
-
-/*     tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet)); */
-    sleep(1);
+    tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
   }
 }
 
