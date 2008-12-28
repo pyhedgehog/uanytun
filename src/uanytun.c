@@ -36,6 +36,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "log.h"
 #include "signal.h"
@@ -44,6 +45,32 @@
 
 #include "daemon.h"
 #include "sysexec.h"
+
+void main_loop(tun_device_t* dev, udp_socket_t* sock)
+{
+  log_printf(INFO, "entering main loop");
+
+  u_int8_t buf[1600];
+  int len = 0;
+  unsigned int cnt = 0;
+  while(cnt < 5) {
+    udp_endpoint_t remote;
+    len = udp_read(sock, buf, 1600, &remote);
+
+    if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) {
+      memcpy(&(sock->remote_end_), &remote, sizeof(remote));
+      char* addrstring = udp_endpoint_to_string(remote);
+      log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
+      free(addrstring);
+    }
+
+    printf("read %d bytes from socket\n", len);
+
+    udp_write(sock, buf, len);
+    cnt++;
+  }
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -70,23 +97,17 @@ int main(int argc, char* argv[])
     log_printf(ERR, "error on udp_init");
     exit(-1);
   }
+  char* local_string = udp_get_local_end_string(sock);
+  log_printf(INFO, "listening on: %s", local_string);
+  free(local_string);
 
   udp_set_remote(sock, "1.2.3.4", "4444");
   char* remote_string = udp_get_remote_end_string(sock);
   log_printf(INFO, "set remote end to: %s", remote_string);
   free(remote_string);
 
-  log_printf(INFO, "entering main loop");
-  u_int8_t buf[1600];
-  int len = 0;
-  unsigned int cnt = 0;
-  while(cnt < 5) {
-    struct sockaddr_storage remote;
-    len = udp_read(sock, buf, 1600, &remote);
-    printf("read %d bytes from socket\n", len);
-    udp_write(sock, buf, len);
-    cnt++;
-  }
+  main_loop(dev, sock);
+
   tun_close(&dev);
   udp_close(&sock);
 

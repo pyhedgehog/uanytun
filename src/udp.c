@@ -50,6 +50,8 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
   *sock = malloc(sizeof(udp_socket_t));
   if(!*sock)
     return;
+  memset(&((*sock)->local_end_), 0, sizeof((*sock)->local_end_));
+  memset(&((*sock)->remote_end_), 0, sizeof((*sock)->local_end_));
 
   struct addrinfo hints, *res;
 
@@ -66,7 +68,6 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
     return;
   }
 
-  memset(&((*sock)->remote_end_), 0, sizeof((*sock)->local_end_));
   memcpy(&((*sock)->local_end_), res->ai_addr, sizeof(*(res->ai_addr)));
   (*sock)->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
   if((*sock)->fd_ < 0) {
@@ -119,30 +120,30 @@ void udp_close(udp_socket_t** sock)
   *sock = NULL;
 }
 
-char* udp_endpoint_to_string(struct sockaddr_storage ss)
+char* udp_endpoint_to_string(udp_endpoint_t e)
 {
   void* ptr;
   u_int16_t port;
   size_t addrstr_len = 0;
   char* addrstr;
 
-  switch (((struct sockaddr *)&ss)->sa_family)
+  switch (((struct sockaddr *)&e)->sa_family)
   {
   case AF_INET:
-    ptr = &((struct sockaddr_in *)&ss)->sin_addr;
-    port = ntohs(((struct sockaddr_in *)&ss)->sin_port);
+    ptr = &((struct sockaddr_in *)&e)->sin_addr;
+    port = ntohs(((struct sockaddr_in *)&e)->sin_port);
     addrstr_len = INET_ADDRSTRLEN + 1;
     break;
   case AF_INET6:
-    ptr = &((struct sockaddr_in6 *)&ss)->sin6_addr;
-    port = ntohs(((struct sockaddr_in6 *)&ss)->sin6_port);
+    ptr = &((struct sockaddr_in6 *)&e)->sin6_addr;
+    port = ntohs(((struct sockaddr_in6 *)&e)->sin6_port);
     addrstr_len = INET6_ADDRSTRLEN + 1;
     break;
   default:
     return "";
   }
   addrstr = malloc(addrstr_len);
-  inet_ntop (((struct sockaddr *)&ss)->sa_family, ptr, addrstr, addrstr_len);
+  inet_ntop (((struct sockaddr *)&e)->sa_family, ptr, addrstr, addrstr_len);
   char* ret;
   asprintf(&ret, "%s:%d", addrstr, port);
   free(addrstr);
@@ -154,7 +155,7 @@ char* udp_get_local_end_string(udp_socket_t* sock)
   if(!sock)
     return "";
 
-  return udp_endpoint_to_string(sock->remote_end_);
+  return udp_endpoint_to_string(sock->local_end_);
 }
 
 char* udp_get_remote_end_string(udp_socket_t* sock)
@@ -165,7 +166,7 @@ char* udp_get_remote_end_string(udp_socket_t* sock)
   return udp_endpoint_to_string(sock->remote_end_);
 }
  
-int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, struct sockaddr_storage* remote_end)
+int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
 {
   if(!sock || !remote_end)
     return -1;
