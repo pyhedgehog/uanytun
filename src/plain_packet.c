@@ -65,7 +65,17 @@ u_int32_t plain_packet_get_length(plain_packet_t* packet)
 
 void plain_packet_set_length(plain_packet_t* packet, u_int32_t len)
 {
+  if(!packet)
+    return;
   
+  if(len > PLAIN_PACKET_SIZE_MAX)
+    len = PLAIN_PACKET_SIZE_MAX - sizeof(payload_type_t);
+  else if(len < sizeof(payload_type_t))
+    len = 0;
+  else
+    len -= sizeof(payload_type_t);
+
+  packet->payload_length_ = len;  
 }
 
 u_int8_t* plain_packet_get_payload(plain_packet_t* packet)
