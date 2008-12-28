@@ -115,8 +115,12 @@ buffer_t options_parse_hex_string(const char* hex)
     return buffer;
   }
 
+  const char* ptr = hex;
   int i;
-  for(i=0;i<buffer.length_;++i) buffer.buf_[i] = (u_int8_t)i; // TODO
+  for(i=0;i<buffer.length_;++i) {
+    sscanf(ptr, "%2X", &buffer.buf_[i]);
+    ptr += 2;
+  }
 
   return buffer;
 }
