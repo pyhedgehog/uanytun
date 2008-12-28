@@ -49,6 +49,7 @@ OBJS = log.o \
        signal.o \
        tun.o \
        udp.o \
+       plain_packet.o \
        uanytun.o
 
 EXECUTABLE = uanytun
@@ -71,6 +72,9 @@ tun.o: tun.c tun.h
 	$(CC) $(CCFLAGS) $< -c
 
 udp.o: udp.c udp.h
+	$(CC) $(CCFLAGS) $< -c
+
+plain_packet.o: plain_packet.c plain_packet.h
 	$(CC) $(CCFLAGS) $< -c
 
 distclean: clean
