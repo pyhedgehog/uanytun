@@ -55,6 +55,7 @@ void plain_packet_init(plain_packet_t* packet);
 
 u_int8_t* plain_packet_get_packet(plain_packet_t* packet);
 u_int32_t plain_packet_get_length(plain_packet_t* packet);
+void plain_packet_set_length(plain_packet_t* packet, u_int32_t len);
 
 u_int8_t* plain_packet_get_payload(plain_packet_t* packet);
 u_int32_t plain_packet_get_payload_length(plain_packet_t* packet);

@@ -94,6 +94,11 @@ u_int32_t encrypted_packet_get_payload_length(encrypted_packet_t* packet)
   return packet->payload_length_;
 }
 
+void encrypted_packet_set_payload_length(encrypted_packet_t* packet, u_int32_t len)
+{
+
+}
+
 seq_nr_t encrypted_packet_get_seq_nr(encrypted_packet_t* packet)
 {
   if(!packet)

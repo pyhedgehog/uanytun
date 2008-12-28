@@ -66,6 +66,7 @@ void encrypted_packet_set_length(encrypted_packet_t* packet, u_int32_t len);
 
 u_int8_t* encrypted_packet_get_payload(encrypted_packet_t* packet);
 u_int32_t encrypted_packet_get_payload_length(encrypted_packet_t* packet);
+void encrypted_packet_set_payload_length(encrypted_packet_t* packet, u_int32_t len);
 
 seq_nr_t encrypted_packet_get_seq_nr(encrypted_packet_t* packet);
 void encrypted_packet_set_seq_nr(encrypted_packet_t* packet, seq_nr_t seq_nr);

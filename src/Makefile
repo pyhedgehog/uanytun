@@ -52,6 +52,7 @@ OBJS = log.o \
        udp.o \
        plain_packet.o \
        encrypted_packet.o \
+       cipher.o \
        uanytun.o
 
 EXECUTABLE = uanytun
@@ -83,6 +84,9 @@ plain_packet.o: plain_packet.c plain_packet.h
 	$(CC) $(CCFLAGS) $< -c
 
 encrypted_packet.o: encrypted_packet.c encrypted_packet.h
+	$(CC) $(CCFLAGS) $< -c
+
+cipher.o: cipher.c cipher.h
 	$(CC) $(CCFLAGS) $< -c
 
 distclean: clean

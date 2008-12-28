@@ -32,81 +32,28 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "datatypes.h"
+#ifndef _CIPHER_H_
+#define _CIPHER_H_
 
-#include "plain_packet.h"
+enum cipher_type_enum { unknown, null, aes_ctr };
+typedef enum cipher_type_enum cipher_type_t;
 
-#include <stdlib.h>
-#include <string.h>
+struct cipher_struct {
+  cipher_type_t type_;
+  buffer_t key_;
+  buffer_t salt_;
+};
+typedef struct cipher_struct cipher_t;
 
-void plain_packet_init(plain_packet_t* packet)
-{
-  if(!packet)
-    return;
+void cipher_init(cipher_t** c, const char* type);
+void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len);
+void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len);
+void cipher_close(cipher_t** c);
 
-  memset (packet, 0, sizeof(*packet));
-}
+void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
+void cipher_decrypt(cipher_t* c, encrypted_packet_t* in, plain_packet_t* out);
 
-u_int8_t* plain_packet_get_packet(plain_packet_t* packet)
-{
-  if(!packet)
-    return NULL;
+u_int32_t cipher_null_encrypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen);
+u_int32_t cipher_null_decrypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen);
 
-  return packet->data_.buf_;
-}
-
-u_int32_t plain_packet_get_length(plain_packet_t* packet)
-{
-  if(!packet)
-    return 0;
-
-  return (packet->payload_length_ + sizeof(payload_type_t));
-}
-
-void plain_packet_set_length(plain_packet_t* packet, u_int32_t len)
-{
-  
-}
-
-u_int8_t* plain_packet_get_payload(plain_packet_t* packet)
-{
-  if(!packet)
-    return NULL;
-
-  return (packet->data_.buf_ + sizeof(payload_type_t));
-}
-
-u_int32_t plain_packet_get_payload_length(plain_packet_t* packet)
-{
-  if(!packet)
-    return 0;
-
-  return packet->payload_length_;
-}
-
-void plain_packet_set_payload_length(plain_packet_t* packet, u_int32_t len)
-{
-  if(!packet)
-    return;
-
-  if(len > PLAIN_PACKET_SIZE_MAX || (len + sizeof(payload_type_t)) > PLAIN_PACKET_SIZE_MAX)
-    len = PLAIN_PACKET_SIZE_MAX - sizeof(payload_type_t);
-
-  packet->payload_length_ = len;
-}
-
-payload_type_t plain_packet_get_type(plain_packet_t* packet)
-{
-  if(!packet)
-    return 0;
-
-  return PAYLOAD_TYPE_T_NTOH(packet->data_.payload_type_);
-}
-
-void plain_packet_set_type(plain_packet_t* packet, payload_type_t type)
-{
-  if(!packet)
-    return;
-
-  packet->data_.payload_type_ = PAYLOAD_TYPE_T_HTON(type);
-}
+#endif

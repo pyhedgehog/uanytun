@@ -48,6 +48,8 @@
 #include "plain_packet.h"
 #include "encrypted_packet.h"
 
+#include "cipher.h"
+
 #include "daemon.h"
 #include "sysexec.h"
 
