@@ -172,6 +172,19 @@ int options_parse(options_t** opt, int argc, char* argv[])
       return -1;
   }
 
+  if(!strcmp((*opt)->cipher_, "null") && !strcmp((*opt)->auth_algo_, "null")) {
+    if((*opt)->kd_prf_) free((*opt)->kd_prf_);
+    (*opt)->kd_prf_ = strdup("null");
+  }
+  if((strcmp((*opt)->cipher_, "null") || strcmp((*opt)->auth_algo_, "null")) && 
+     !strcmp((*opt)->kd_prf_, "null")) {
+    if((*opt)->kd_prf_) free((*opt)->kd_prf_);
+    (*opt)->kd_prf_ = strdup("aes-ctr");
+  }
+
+  if(!((*opt)->dev_name_) && !((*opt)->dev_type_))
+    (*opt)->dev_type_ = strdup("tun");
+
   return 0;
 }
 

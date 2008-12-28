@@ -64,9 +64,9 @@ void handle_signal(int sig)
 void handle_signal_exit(int sig)
 {
   switch(sig) {
-  case SIGINT: log_printf(NOTICE, "SIG-Int caught, exiting"); break;
-  case SIGQUIT: log_printf(NOTICE, "SIG-Quit caught, exiting"); break;
-  case SIGTERM: log_printf(NOTICE, "SIG-Term caught, exiting"); break;
+  case SIGINT: log_printf(NOTICE, "SIG-Int caught, exitting"); break;
+  case SIGQUIT: log_printf(NOTICE, "SIG-Quit caught, exitting"); break;
+  case SIGTERM: log_printf(NOTICE, "SIG-Term caught, exitting"); break;
   default: log_printf(NOTICE, "Signal %d caught, ignoring", sig); return;
   }
 

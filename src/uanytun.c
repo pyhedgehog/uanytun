@@ -51,7 +51,7 @@
 #include "daemon.h"
 #include "sysexec.h"
 
-void main_loop(tun_device_t* dev, udp_socket_t* sock)
+void main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 {
   log_printf(INFO, "entering main loop");
 
@@ -88,8 +88,7 @@ void main_loop(tun_device_t* dev, udp_socket_t* sock)
 /*     } */
 
 /*     tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet)); */
-
-
+    sleep(1);
   }
 }
 
@@ -117,45 +116,72 @@ int main(int argc, char* argv[])
   int ret = options_parse(&opt, argc, argv);
   if(ret) {
     options_print_usage();
+    log_printf(ERR, "error on options_parse, exitting");
     exit(ret);
   }
 
-  options_print(opt);
 
-//  chrootAndDrop("/var/run/", "nobody");
-//  daemonize();
-//  log_printf(INFO, "running in background now");
+  tun_device_t* dev;
+  tun_init(&dev, opt->dev_name_, opt->dev_type_, opt->ifconfig_param_local_, opt->ifconfig_param_remote_netmask_);
+  if(!dev) {
+    log_printf(ERR, "error on tun_init, exitting");
+    exit(-1);
+  }
+  log_printf(NOTICE, "dev of type '%s' opened, actual name is '%s'", tun_get_type_string(dev), dev->actual_name_);
 
-/*   tun_device_t* dev; */
-/*   tun_init(&dev, NULL, "tun", "192.168.23.1", "192.168.23.2"); */
-/*   if(!dev) { */
-/*     log_printf(ERR, "error on tun_init"); */
-/*     exit(-1); */
-/*   } */
+  if(opt->post_up_script_) {
+    int ret = exec_script(opt->post_up_script_, dev->actual_name_);
+    log_printf(NOTICE, "post-up script returned %d", ret);
+  }
 
-/*   int ret = exec_script("post-up.sh", dev->actual_name_); */
-/*   log_printf(NOTICE, "post-up script returned %d", ret); */
 
-/*   udp_socket_t* sock; */
-/*   udp_init(&sock, NULL, "4444"); */
-/*   if(!sock) { */
-/*     log_printf(ERR, "error on udp_init"); */
-/*     exit(-1); */
-/*   } */
-/*   char* local_string = udp_get_local_end_string(sock); */
-/*   log_printf(INFO, "listening on: %s", local_string); */
-/*   free(local_string); */
+  udp_socket_t* sock;
+  udp_init(&sock, opt->local_addr_, opt->local_port_);
+  if(!sock) {
+    log_printf(ERR, "error on udp_init, exitting");
+    exit(-1);
+  }
+  char* local_string = udp_get_local_end_string(sock);
+  log_printf(NOTICE, "listening on: %s", local_string);
+  free(local_string);
 
-/*   udp_set_remote(sock, "1.2.3.4", "4444"); */
-/*   char* remote_string = udp_get_remote_end_string(sock); */
-/*   log_printf(INFO, "set remote end to: %s", remote_string); */
-/*   free(remote_string); */
+  if(opt->remote_addr_) {
+    udp_set_remote(sock, opt->remote_addr_, opt->remote_port_);
+    char* remote_string = udp_get_remote_end_string(sock);
+    log_printf(NOTICE, "set remote end to: %s", remote_string);
+    free(remote_string);
+  }
 
-/*   main_loop(dev, sock); */
 
-/*   tun_close(&dev); */
-/*   udp_close(&sock); */
+  FILE* pid_file = NULL;
+  if(opt->pid_file_) {
+    pid_file = fopen(opt->pid_file_, "w");
+    if(!pid_file) {
+      log_printf(WARNING, "unable to open pid file: %m");
+    }
+  }
+
+  if(opt->chroot_)
+    chrootAndDrop("/var/run/", "nobody");
+  if(opt->daemonize_) {
+    pid_t oldpid = getpid();
+    daemonize();
+    log_printf(INFO, "running in background now (old pid: %d)", oldpid);
+  }
+
+  if(pid_file) {
+    pid_t pid = getpid();
+    fprintf(pid_file, "%d", pid);
+    fclose(pid_file);
+  }
+
+  main_loop(dev, sock, opt);
+
+  tun_close(&dev);
+  udp_close(&sock);
   options_clear(&opt);
+
+  log_printf(NOTICE, "normal shutdown");
 
   return 0;
 }
