@@ -53,25 +53,41 @@ void main_loop(tun_device_t* dev, udp_socket_t* sock)
 {
   log_printf(INFO, "entering main loop");
 
-  u_int8_t buf[1600];
-  int len = 0;
+  plain_packet_t plain_packet;
+  plain_packet_init(&plain_packet);
+  encrypted_packet_t encrypted_packet;
+  encrypted_packet_init(&encrypted_packet);
+  u_int32_t len = 0;
   udp_endpoint_t remote;
-  unsigned int cnt = 0;
 
-  while(cnt < 5) {
-    len = udp_read(sock, buf, 1600, &remote);
+  while(1) {
+    plain_packet_set_payload_length(&plain_packet, -1);
+    encrypted_packet_set_length(&encrypted_packet, -1);
 
-    if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) {
-      memcpy(&(sock->remote_end_), &remote, sizeof(remote));
-      char* addrstring = udp_endpoint_to_string(remote);
-      log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
-      free(addrstring);
-    }
+    
 
-    printf("read %d bytes from socket\n", len);
 
-    udp_write(sock, buf, len);
-    cnt++;
+/*     len = tun_read(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet)); */
+/*     plain_packet_set_payload_length(&plain_packet, len); */
+
+/*     udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet)); */
+
+
+
+
+/*     len = udp_read(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet), &remote); */
+/*     encrypted_packet_set_length(&encrypted_packet, len); */
+
+/*     if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) { */
+/*       memcpy(&(sock->remote_end_), &remote, sizeof(remote)); */
+/*       char* addrstring = udp_endpoint_to_string(remote); */
+/*       log_printf(NOTICE, "autodetected remote host changed %s", addrstring); */
+/*       free(addrstring); */
+/*     } */
+
+/*     tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet)); */
+
+
   }
 }
 
@@ -94,71 +110,6 @@ int main(int argc, char* argv[])
 {
   log_init("uanytun", DAEMON);
   signal_init();
-
-  encrypted_packet_t packet;
-  encrypted_packet_init(&packet);
-
-  printf("packet length: %d\n", encrypted_packet_get_length(&packet));
-  printf("packet: \n");
-  print_hex_dump(encrypted_packet_get_packet(&packet), encrypted_packet_get_length(&packet));
-  printf("\nseq nr: 0x%08X\n", encrypted_packet_get_seq_nr(&packet));
-  printf("sender id: 0x%04X\n", encrypted_packet_get_sender_id(&packet));
-  printf("mux: 0x%04X\n", encrypted_packet_get_mux(&packet));
-  printf("payload length: %d\n", encrypted_packet_get_payload_length(&packet));
-  printf("payload: \n");
-  print_hex_dump(encrypted_packet_get_payload(&packet), encrypted_packet_get_payload_length(&packet));
-  printf("\n\n");
-
-
-  encrypted_packet_set_payload_length(&packet, 20);
-
-  printf("packet length: %d\n", encrypted_packet_get_length(&packet));
-  printf("packet: \n");
-  print_hex_dump(encrypted_packet_get_packet(&packet), encrypted_packet_get_length(&packet));
-  printf("\nseq nr: 0x%08X\n", encrypted_packet_get_seq_nr(&packet));
-  printf("sender id: 0x%04X\n", encrypted_packet_get_sender_id(&packet));
-  printf("mux: 0x%04X\n", encrypted_packet_get_mux(&packet));
-  printf("payload length: %d\n", encrypted_packet_get_payload_length(&packet));
-  printf("payload: \n");
-  print_hex_dump(encrypted_packet_get_payload(&packet), encrypted_packet_get_payload_length(&packet));
-  printf("\n\n");
-
-
-  u_int32_t i;
-  
-  for(i=0; i<encrypted_packet_get_payload_length(&packet); i++)
-    encrypted_packet_get_payload(&packet)[i] = (u_int8_t)i;
-  encrypted_packet_set_seq_nr(&packet, 124);
-  encrypted_packet_set_sender_id(&packet, 2);
-  encrypted_packet_set_mux(&packet, 234);
-
-  printf("packet length: %d\n", encrypted_packet_get_length(&packet));
-  printf("packet: \n");
-  print_hex_dump(encrypted_packet_get_packet(&packet), encrypted_packet_get_length(&packet));
-  printf("\nseq nr: 0x%08X\n", encrypted_packet_get_seq_nr(&packet));
-  printf("sender id: 0x%04X\n", encrypted_packet_get_sender_id(&packet));
-  printf("mux: 0x%04X\n", encrypted_packet_get_mux(&packet));
-  printf("payload length: %d\n", encrypted_packet_get_payload_length(&packet));
-  printf("payload: \n");
-  print_hex_dump(encrypted_packet_get_payload(&packet), encrypted_packet_get_payload_length(&packet));
-  printf("\n\n");
-
-  encrypted_packet_set_payload_length(&packet, 18);
-  encrypted_packet_set_seq_nr(&packet, 124025310);
-  encrypted_packet_set_sender_id(&packet, 0);
-  encrypted_packet_set_mux(&packet, 23412);
-
-  printf("packet length: %d\n", encrypted_packet_get_length(&packet));
-  printf("packet: \n");
-  print_hex_dump(encrypted_packet_get_packet(&packet), encrypted_packet_get_length(&packet));
-  printf("\nseq nr: 0x%08X\n", encrypted_packet_get_seq_nr(&packet));
-  printf("sender id: 0x%04X\n", encrypted_packet_get_sender_id(&packet));
-  printf("mux: 0x%04X\n", encrypted_packet_get_mux(&packet));
-  printf("payload length: %d\n", encrypted_packet_get_payload_length(&packet));
-  printf("payload: \n");
-  print_hex_dump(encrypted_packet_get_payload(&packet), encrypted_packet_get_payload_length(&packet));
-  printf("\n\n");
-
 
 //  chrootAndDrop("/var/run/", "nobody");
 //  daemonize();

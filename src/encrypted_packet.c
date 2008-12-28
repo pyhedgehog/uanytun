@@ -63,6 +63,21 @@ u_int32_t encrypted_packet_get_length(encrypted_packet_t* packet)
   return (packet->payload_length_ + sizeof(encrypted_packet_header_t));
 }
 
+void encrypted_packet_set_length(encrypted_packet_t* packet, u_int32_t len)
+{
+  if(!packet)
+    return;
+
+  if(len > ENCRYPTED_PACKET_SIZE_MAX)
+    len = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t);
+  else if(len < sizeof(encrypted_packet_header_t))
+    len = 0;
+  else
+    len -= sizeof(encrypted_packet_header_t);
+
+  packet->payload_length_ = len;
+}
+
 u_int8_t* encrypted_packet_get_payload(encrypted_packet_t* packet)
 {
   if(!packet)
@@ -77,17 +92,6 @@ u_int32_t encrypted_packet_get_payload_length(encrypted_packet_t* packet)
     return 0;
 
   return packet->payload_length_;
-}
-
-void encrypted_packet_set_payload_length(encrypted_packet_t* packet, u_int32_t len)
-{
-  if(!packet)
-    return;
-
-  if(len > ENCRYPTED_PACKET_SIZE_MAX || (len + sizeof(encrypted_packet_header_t)) > ENCRYPTED_PACKET_SIZE_MAX)
-    len = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t);
-
-  packet->payload_length_ = len;
 }
 
 seq_nr_t encrypted_packet_get_seq_nr(encrypted_packet_t* packet)
