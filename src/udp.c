@@ -123,6 +123,7 @@ char* udp_endpoint_to_string(struct sockaddr_storage ss)
 {
   void* ptr;
   u_int16_t port;
+  size_t addrstr_len = 0;
   char* addrstr;
 
   switch (((struct sockaddr *)&ss)->sa_family)
@@ -130,17 +131,18 @@ char* udp_endpoint_to_string(struct sockaddr_storage ss)
   case AF_INET:
     ptr = &((struct sockaddr_in *)&ss)->sin_addr;
     port = ntohs(((struct sockaddr_in *)&ss)->sin_port);
-    addrstr = malloc(INET_ADDRSTRLEN+1);
+    addrstr_len = INET_ADDRSTRLEN + 1;
     break;
   case AF_INET6:
     ptr = &((struct sockaddr_in6 *)&ss)->sin6_addr;
     port = ntohs(((struct sockaddr_in6 *)&ss)->sin6_port);
-    addrstr = malloc(INET6_ADDRSTRLEN+1);
+    addrstr_len = INET6_ADDRSTRLEN + 1;
     break;
   default:
     return "";
   }
-  inet_ntop (((struct sockaddr *)&ss)->sa_family, ptr, addrstr, 100);
+  addrstr = malloc(addrstr_len);
+  inet_ntop (((struct sockaddr *)&ss)->sa_family, ptr, addrstr, addrstr_len);
   char* ret;
   asprintf(&ret, "%s:%d", addrstr, port);
   free(addrstr);
