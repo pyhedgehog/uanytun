@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
     exit(-1);
   }
 
-  udp_set_remote(sock, "anycast.anytun.org", "4444");
+  udp_set_remote(sock, "1.2.3.4", "4444");
   char* remote_string = udp_get_remote_end_string(sock);
   log_printf(INFO, "set remote end to: %s", remote_string);
   free(remote_string);
@@ -81,9 +81,10 @@ int main(int argc, char* argv[])
   int len = 0;
   unsigned int cnt = 0;
   while(cnt < 5) {
-    len = tun_read(dev, buf, 1600);
-    printf("read %d bytes from device\n", len);
-//    tun_write(dev, buf, len);
+    struct sockaddr_storage remote;
+    len = udp_read(sock, buf, 1600, &remote);
+    printf("read %d bytes from socket\n", len);
+    udp_write(sock, buf, len);
     cnt++;
   }
   tun_close(&dev);

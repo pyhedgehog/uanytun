@@ -66,6 +66,7 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
     return;
   }
 
+  memset(&((*sock)->remote_end_), 0, sizeof((*sock)->local_end_));
   memcpy(&((*sock)->local_end_), res->ai_addr, sizeof(*(res->ai_addr)));
   (*sock)->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
   if((*sock)->fd_ < 0) {
@@ -162,12 +163,13 @@ char* udp_get_remote_end_string(udp_socket_t* sock)
   return udp_endpoint_to_string(sock->remote_end_);
 }
  
-int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, struct sockaddr_storage* remote_end_)
+int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, struct sockaddr_storage* remote_end)
 {
-  if(!sock || !remote_end_)
+  if(!sock || !remote_end)
     return -1;
 
-  return 0;
+  int socklen = sizeof(*remote_end);
+  return recvfrom(sock->fd_, buf, len, 0, (struct sockaddr *)remote_end, &socklen);
 }
 
 int udp_write(udp_socket_t* sock, u_int8_t* buf, u_int32_t len)
@@ -175,6 +177,6 @@ int udp_write(udp_socket_t* sock, u_int8_t* buf, u_int32_t len)
   if(!sock)
     return -1;
 
-  return 0;
+  return sendto(sock->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_), sizeof(sock->remote_end_));;
 }
 
