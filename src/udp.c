@@ -50,6 +50,7 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
   *sock = malloc(sizeof(udp_socket_t));
   if(!*sock)
     return;
+
   memset(&((*sock)->local_end_), 0, sizeof((*sock)->local_end_));
   memset(&((*sock)->remote_end_), 0, sizeof((*sock)->local_end_));
 
@@ -143,6 +144,8 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
     return "";
   }
   addrstr = malloc(addrstr_len);
+  if(!addrstr)
+    return NULL;
   inet_ntop (((struct sockaddr *)&e)->sa_family, ptr, addrstr, addrstr_len);
   char* ret;
   asprintf(&ret, "%s:%d", addrstr, port);

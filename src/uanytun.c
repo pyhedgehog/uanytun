@@ -130,6 +130,8 @@ int main(int argc, char* argv[])
   log_init("uanytun", DAEMON);
   signal_init();
 
+  log_printf(NOTICE, "just started...");
+
   options_t* opt;
   int ret = options_parse(&opt, argc, argv);
   if(ret) {

@@ -54,10 +54,12 @@
 
 void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp)
 {
-  if(!dev) return;
+  if(!dev) 
+    return;
  
   *dev = malloc(sizeof(tun_device_t));
-  if(!*dev) return;
+  if(!*dev) 
+    return;
 
   tun_conf(*dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
 

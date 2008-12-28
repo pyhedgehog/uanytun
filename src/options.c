@@ -132,6 +132,9 @@ int options_parse(options_t** opt, int argc, char* argv[])
     return -1;
 
   *opt = malloc(sizeof(options_t));
+  if(!*opt)
+    return -1;
+
   options_default(*opt);
 
   if((*opt)->progname_)

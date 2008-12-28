@@ -79,8 +79,10 @@ void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len)
   if(c->key_.buf_)
     free(c->key_.buf_);
   c->key_.buf_ = malloc(len);
-  if(!c->key_.buf_)
+  if(!c->key_.buf_) {
+    c->key_.buf_.length_ = 0;
     return;
+  }
   memcpy(c->key_.buf_, key, len);
   c->key_.length_ = len;
 }
@@ -95,8 +97,10 @@ void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len)
   if(c->salt_.buf_)
     free(c->salt_.buf_);
   c->salt_.buf_ = malloc(len);
-  if(!c->salt_.buf_)
+  if(!c->salt_.buf_) {
+    c->salt_.length_ = 0;
     return;
+  }
   memcpy(c->salt_.buf_, salt, len);
   c->salt_.length_ = len;
 }
