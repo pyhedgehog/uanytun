@@ -71,6 +71,10 @@ int main(int argc, char* argv[])
     exit(-1);
   }
 
+  udp_set_remote(sock, "anycast.anytun.org", "4444");
+  char* remote_string = udp_get_remote_end_string(sock);
+  log_printf(INFO, "set remote end to: %s", remote_string);
+  free(remote_string);
 
   log_printf(INFO, "entering main loop");
   u_int8_t buf[1600];
