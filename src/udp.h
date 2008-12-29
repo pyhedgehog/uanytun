@@ -38,7 +38,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#ifdef NO_UDPV6
+#include <netinet/in.h>
+typedef struct sockaddr_in udp_endpoint_t;
+#else
 typedef struct sockaddr_storage udp_endpoint_t;
+#endif
+
 struct udp_socket_struct {
   int fd_;
   udp_endpoint_t local_end_;

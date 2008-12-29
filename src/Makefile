@@ -42,6 +42,7 @@ ifeq ($(TARGET),Linux)
   LDFLAGS += -ldl
 endif
 ifeq ($(TARGET),OpenBSD)
+  CCFLAGS += -DNO_UDPV6
   LDFLAGS += -L/usr/local/lib
 endif
 

@@ -58,9 +58,15 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
   struct addrinfo hints, *res;
 
   memset (&hints, 0, sizeof (hints));
-  hints.ai_family = PF_UNSPEC;
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_flags |= AI_PASSIVE;
+
+#ifdef NO_UDPV6
+  hints.ai_family = PF_INET;
+#else
+  hints.ai_family = PF_UNSPEC;
+#endif
+
 
   int errcode = getaddrinfo(local_addr, port, &hints, &res);
   if (errcode != 0) {
@@ -71,6 +77,7 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
   }
 
   memcpy(&((*sock)->local_end_), res->ai_addr, sizeof(*(res->ai_addr)));
+
   (*sock)->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
   if((*sock)->fd_ < 0) {
     log_printf(ERR, "Error on opening udp socket: %m");
@@ -98,8 +105,14 @@ void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* por
   struct addrinfo hints, *res;
 
   memset (&hints, 0, sizeof (hints));
-  hints.ai_family = PF_UNSPEC;
   hints.ai_socktype = SOCK_DGRAM;
+
+#ifdef NO_UDPV6
+  hints.ai_family = PF_INET;
+#else
+  hints.ai_family = PF_UNSPEC;
+#endif
+
 
   int errcode = getaddrinfo(remote_addr, port, &hints, &res);
   if (errcode != 0) {
@@ -136,11 +149,13 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
     port = ntohs(((struct sockaddr_in *)&e)->sin_port);
     addrstr_len = INET_ADDRSTRLEN + 1;
     break;
+#ifndef NO_UDPV6
   case AF_INET6:
     ptr = &((struct sockaddr_in6 *)&e)->sin6_addr;
     port = ntohs(((struct sockaddr_in6 *)&e)->sin6_port);
     addrstr_len = INET6_ADDRSTRLEN + 1;
     break;
+#endif
   default:
     return "";
   }
