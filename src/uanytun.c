@@ -62,7 +62,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   plain_packet_init(&plain_packet);
   encrypted_packet_t encrypted_packet;
   encrypted_packet_init(&encrypted_packet);
-  u_int32_t len = 0;
+  int len = 0;
   udp_endpoint_t remote;
   seq_nr_t seq_nr = 0;
   fd_set readfds;
@@ -99,6 +99,11 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 
     if(FD_ISSET(dev->fd_, &readfds)) {
       len = tun_read(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
+      if(len == -1) {
+        log_printf(ERR, "error on reading from device: %m");
+        continue;
+      }
+
       plain_packet_set_payload_length(&plain_packet, len);
       
       if(dev->type_ = TYPE_TUN)
@@ -113,11 +118,18 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       
           // TODO: add auth-tag
       
-      udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet));
+      len = udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet));
+      if(len == -1)
+        log_printf(ERR, "error on sending udp packet: %m");
     }
 
     if(FD_ISSET(sock->fd_, &readfds)) {
       len = udp_read(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet), &remote);
+      if(len == -1) {
+        log_printf(ERR, "error on receiving udp packet: %m");
+        continue;
+      }
+
       encrypted_packet_set_length(&encrypted_packet, len);
       
           // TODO: check auth-tag
@@ -136,7 +148,9 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       
       cipher_decrypt(c, &encrypted_packet, &plain_packet); 
       
-      tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
+      len = tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
+      if(len == -1)
+        log_printf(ERR, "error on writing to device: %m");
     }
   }
 

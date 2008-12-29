@@ -40,6 +40,21 @@
 
 #include "log.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <net/if_tun.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#define DEVICE_FILE_MAX 255
+
 void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp)
 {
   if(!dev) 
@@ -50,16 +65,149 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
     return;
 
   tun_conf(*dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
+  (*dev)->actual_name_ = NULL;
 
+  char* device_file = NULL;
+  char* actual_name_start = NULL;
+  int dynamic = 1;
+  if(dev_name) {
+    asprintf(&device_file, "/dev/%s", dev_name);
+    dynamic = 0;
+  }
+  else if((*dev)->type_ == TYPE_TUN) {
+    asprintf(&device_file, "/dev/tun");
+    actual_name_start = "tun";
+  }
+  else if((*dev)->type_ == TYPE_TAP) {
+    asprintf(&device_file, "/dev/tap");
+    actual_name_start = "tap";
+  }
+  else {
+    log_printf(ERR, "unable to recognize type of device (tun or tap)");
+    tun_close(dev);
+    return;
+  }
+  if(!device_file) {
+    log_printf(ERR, "can't open device file: memory error");
+    tun_close(dev);
+    return;
+  }
+
+  u_int32_t dev_id=0;
+  if(dynamic) {
+    for(; dev_id <= DEVICE_FILE_MAX; ++dev_id) {
+      char* device_file_tmp = NULL;
+      asprintf(&device_file_tmp, "%s%d", device_file, dev_id);
+
+      if(!device_file_tmp) {
+        log_printf(ERR, "can't open device file: memory error");
+        free(device_file);
+        tun_close(dev);
+        return;
+      }
+        
+      (*dev)->fd_ = open(device_file_tmp, O_RDWR);
+      free(device_file_tmp);
+      if((*dev)->fd_ >= 0)
+        break;
+    }
+  }
+  else
+    (*dev)->fd_ = open(device_file, O_RDWR);
+  free(device_file);
+
+  if((*dev)->fd_ < 0) {
+    if(dynamic)
+      log_printf(ERR, "can't open device file dynamically: no unused node left");
+    else
+      log_printf(ERR, "can't open device file (%s): %m", device_file);
+    
+    tun_close(dev);
+    return;
+  }
+
+  if(dynamic)
+    asprintf(&((*dev)->actual_name_), "%s%d", actual_name_start, dev_id);
+  else
+    (*dev)->actual_name_ = strdup(dev_name);
+
+  if(!(*dev)->actual_name_) {
+    log_printf(ERR, "can't open device file: memory error");
+    tun_close(dev);
+    return;
+  }
+
+  tun_init_post(*dev);
 
   if(ifcfg_lp && ifcfg_rnmp)
     tun_do_ifconfig(*dev);
 }
 
-void tun_init_post(tun_device_t* dev)
+
+#if defined(__GNUC__) && defined(__OpenBSD__)
+
+int tun_init_post(tun_device_t* dev)
 {
-// nothing yet
+  if(!dev)
+    return;
+
+  dev->with_pi_ = 1;
+  if(dev->type_ == TYPE_TAP)
+    dev->with_pi_ = 0;
+  
+  struct tuninfo ti;  
+
+  if (ioctl(dev->fd_, TUNGIFINFO, &ti) < 0) {
+    log_printf(ERR, "can't enable multicast for interface");
+    return -1;
+  }  
+
+  ti.flags |= IFF_MULTICAST;
+  
+  if (ioctl(dev->fd_, TUNSIFINFO, &ti) < 0) {
+    log_printf(ERR, "can't enable multicast for interface");
+    return -1;
+  }
+  return 0;
 }
+
+#elif defined(__GNUC__) && defined(__FreeBSD__)
+
+int tun_init_post(tun_device_t* dev)
+{
+  if(!dev)
+    return;
+
+  dev->with_pi_ = 1;
+  if(dev->type_ == TYPE_TAP)
+    dev->with_pi_ = 0;
+
+  int arg = 0;
+  ioctl(dev->fd_, TUNSLMODE, &arg);
+  arg = 1;
+  ioctl(dev->fd_, TUNSIFHEAD, &arg);
+}
+
+#elif defined(__GNUC__) && defined(__NetBSD__)
+
+int tun_init_post(tun_device_t* dev)
+{
+  if(!dev)
+    return;
+
+  dev->with_pi_ = 0;
+
+  int arg = IFF_POINTOPOINT|IFF_MULTICAST;
+  ioctl(dev->fd_, TUNSIFMODE, &arg);
+  arg = 0;
+  ioctl(dev->fd_, TUNSLMODE, &arg);
+}
+
+#else
+ #error This Device works just for OpenBSD, FreeBSD or NetBSD
+#endif
+
+
 
 void tun_close(tun_device_t** dev)
 {
@@ -84,74 +232,89 @@ void tun_close(tun_device_t** dev)
 
 int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
 {
-/*   if(!dev || dev->fd_ < 0) */
-/*     return -1; */
+  if(!dev || dev->fd_ < 0)
+    return -1;
 
-/*   if(dev->with_pi_) */
-/*   { */
-/*     struct iovec iov[2]; */
-/*     struct tun_pi tpi; */
+  if(dev->with_pi_)
+  {
+    struct iovec iov[2];
+    u_int32_t type;
     
-/*     iov[0].iov_base = &tpi; */
-/*     iov[0].iov_len = sizeof(tpi); */
-/*     iov[1].iov_base = buf; */
-/*     iov[1].iov_len = len; */
-/*     return(tun_fix_return(readv(dev->fd_, iov, 2), sizeof(tpi))); */
-/*   } */
-/*   else */
-/*     return(read(dev->fd_, buf, len)); */
-  return -1;
+    iov[0].iov_base = &type;
+    iov[0].iov_len = sizeof(type);
+    iov[1].iov_base = buf;
+    iov[1].iov_len = len;
+    return(tun_fix_return(readv(dev->fd_, iov, 2), sizeof(type)));
+  }
+  else
+    return(read(dev->fd_, buf, len));
 }
 
 int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
 {
-/*   if(!dev || dev->fd_ < 0) */
-/*     return -1; */
+  if(!dev || dev->fd_ < 0)
+    return -1;
 
-/*   if(dev->with_pi_) */
-/*   { */
-/*     struct iovec iov[2]; */
-/*     struct tun_pi tpi; */
-/*     struct iphdr *hdr = (struct iphdr *)buf; */
+  if(dev->with_pi_)
+  {
+    struct iovec iov[2];
+    u_int32_t type;
+    struct ip *hdr = (struct ip*)buf;
     
-/*     tpi.flags = 0; */
-/*     if(hdr->version == 4) */
-/*       tpi.proto = htons(ETH_P_IP); */
-/*     else */
-/*       tpi.proto = htons(ETH_P_IPV6); */
+    type = 0;
+    if(hdr->ip_v == 4)
+      type = htonl(AF_INET);
+    else
+      type = htonl(AF_INET6);
     
-/*     iov[0].iov_base = &tpi; */
-/*     iov[0].iov_len = sizeof(tpi); */
-/*     iov[1].iov_base = buf; */
-/*     iov[1].iov_len = len; */
-/*     return(tun_fix_return(writev(dev->fd_, iov, 2), sizeof(tpi))); */
-/*   } */
-/*   else */
-/*     return(write(dev->fd_, buf, len)); */
-  return -1;
+    iov[0].iov_base = &type;
+    iov[0].iov_len = sizeof(type);
+    iov[1].iov_base = buf;
+    iov[1].iov_len = len;
+    return(tun_fix_return(writev(dev->fd_, iov, 2), sizeof(type)));
+  }
+  else
+    return(write(dev->fd_, buf, len));
 }
 
 void tun_do_ifconfig(tun_device_t* dev)
 {
-/*   if(!dev || !dev->actual_name_ || !dev->local_ || !dev->remote_netmask_) */
-/*     return; */
+  if(!dev || !dev->actual_name_ || !dev->local_ || !dev->remote_netmask_)
+    return;
 
-/*   char* command = NULL; */
-/*   if(dev->type_ == TYPE_TUN) */
-/*     asprintf(&command, "/sbin/ifconfig %s %s pointopoint %s mtu %d", dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_); */
-/*   else */
-/*     asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d", dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_); */
 
-/*   if(!command) { */
-/*     log_printf(ERR, "Execution of ifconfig failed"); */
-/*     return; */
-/*   } */
+  char* command = NULL;
+  char* netmask;
+  char* end;
+  if(dev->type_ == TYPE_TAP) {
+    netmask = "netmask ";
+#if defined(__GNUC__) && defined(__OpenBSD__)
+    end = " link0";
+#elif defined(__GNUC__) && defined(__FreeBSD__)
+    end = " up";
+#elif defined(__GNUC__) && defined(__NetBSD__)
+    end = "";
+#else
+ #error This Device works just for OpenBSD, FreeBSD or NetBSD
+#endif
+  }
+  else {
+    netmask = "";
+    end = " netmask 255.255.255.255 up";
+  }
 
-/*   int result = system(command); */
-/*   if(result == -1) */
-/*     log_printf(ERR, "Execution of ifconfig failed"); */
-/*   else */
-/*     log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result)); */
+  asprintf(&command, "/sbin/ifconfig %s %s %s%s mtu %d%s", dev->actual_name_, dev->local_ , netmask, 
+                                                           dev->remote_netmask_, dev->mtu_, end);
+  if(!command) {
+    log_printf(ERR, "Execution of ifconfig failed");
+    return;
+  }
 
-/*   free(command); */
+  int result = system(command);
+  if(result == -1)
+    log_printf(ERR, "Execution of ifconfig failed");
+  else
+    log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
+
+  free(command);
 }

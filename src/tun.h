@@ -52,7 +52,7 @@ struct tun_device_struct {
 typedef struct tun_device_struct tun_device_t;
 
 void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp);
-void tun_init_post(tun_device_t* dev);
+int tun_init_post(tun_device_t* dev);
 void tun_do_ifconfig(tun_device_t* dev);
 void tun_close(tun_device_t** dev);
   

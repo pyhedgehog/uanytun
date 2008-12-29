@@ -115,7 +115,7 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
     tun_do_ifconfig(*dev);
 }
 
-void tun_init_post(tun_device_t* dev)
+int tun_init_post(tun_device_t* dev)
 {
 // nothing yet
 }
