@@ -35,6 +35,7 @@
 #ifndef _UDP_H_
 #define _UDP_H_
 
+#include <sys/types.h>
 #include <sys/socket.h>
 
 typedef struct sockaddr_storage udp_endpoint_t;

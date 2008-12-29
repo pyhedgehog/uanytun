@@ -36,7 +36,7 @@ TARGET=$(shell uname -s)
 CC = gcc
 CCFLAGS = -g -O2
 LD = gcc
-LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error
+LDFLAGS = -g -Wall -O2 #-lgcrypt -lgpg-error
 
 ifeq ($(TARGET),Linux)
   LDFLAGS += -ldl

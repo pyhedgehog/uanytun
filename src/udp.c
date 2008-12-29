@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <netinet/in.h>
 
 void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
 {

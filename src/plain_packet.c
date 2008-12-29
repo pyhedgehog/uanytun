@@ -38,6 +38,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
 #include <netinet/ip.h>
 
 void plain_packet_init(plain_packet_t* packet)
