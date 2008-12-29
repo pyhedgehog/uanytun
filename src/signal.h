@@ -35,8 +35,11 @@
 #ifndef _SIGNAL_H_
 #define _SIGNAL_H_
 
+#include <signal.h>
+
+extern volatile sig_atomic_t signal_exit;
+
 void signal_init();
 void handle_signal(int sig);
-void handle_signal_exit(int sig);
 
 #endif

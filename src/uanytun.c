@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "log.h"
 #include "signal.h"
@@ -83,12 +84,18 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     int nfds = dev->fd_ > sock->fd_ ? dev->fd_+1 : sock->fd_+1;
 
     int ret = select(nfds, &readfds, NULL, NULL, NULL);
-    if(ret == -1) {
+    if(ret == -1 && errno != EINTR) {
       log_printf(ERR, "select returned with error: %m");
+      cipher_close(&c);      
       return -1;
     }
     if(!ret)
       continue;
+
+    if(signal_exit) {
+      cipher_close(&c);
+      return 1;
+    }
 
     if(FD_ISSET(dev->fd_, &readfds)) {
       len = tun_read(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
@@ -231,6 +238,11 @@ int main(int argc, char* argv[])
 
   if(!ret)
     log_printf(NOTICE, "normal shutdown");
+  else if(ret < 0)
+    log_printf(NOTICE, "shutdown after error");
+  else
+    log_printf(NOTICE, "shutdown after signal");
+
 
   return ret;
 }

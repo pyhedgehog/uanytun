@@ -42,10 +42,9 @@ volatile sig_atomic_t signal_exit = 0;
 
 void signal_init()
 {
-  signal(SIGINT, handle_signal_exit);
-  signal(SIGQUIT, handle_signal_exit);
-  signal(SIGTERM, handle_signal_exit);
-
+  signal(SIGINT, handle_signal);
+  signal(SIGQUIT, handle_signal);
+  signal(SIGTERM, handle_signal);
   signal(SIGHUP, handle_signal);
   signal(SIGUSR1, handle_signal);
   signal(SIGUSR2, handle_signal);
@@ -54,29 +53,12 @@ void signal_init()
 void handle_signal(int sig)
 {
   switch(sig) {
+  case SIGINT: log_printf(NOTICE, "SIG-Int caught, exitting"); signal_exit = 1; break;
+  case SIGQUIT: log_printf(NOTICE, "SIG-Quit caught, exitting"); signal_exit = 1; break;
+  case SIGTERM: log_printf(NOTICE, "SIG-Term caught, exitting"); signal_exit = 1; break;
   case SIGHUP: log_printf(NOTICE, "SIG-Hup caught"); break;
   case SIGUSR1: log_printf(NOTICE, "SIG-Usr1 caught"); break;
   case SIGUSR2: log_printf(NOTICE, "SIG-Usr2 caught"); break;
   default: log_printf(NOTICE, "Signal %d caught, ignoring", sig); break;
   }
 }
-
-void handle_signal_exit(int sig)
-{
-  switch(sig) {
-  case SIGINT: log_printf(NOTICE, "SIG-Int caught, exitting"); break;
-  case SIGQUIT: log_printf(NOTICE, "SIG-Quit caught, exitting"); break;
-  case SIGTERM: log_printf(NOTICE, "SIG-Term caught, exitting"); break;
-  default: log_printf(NOTICE, "Signal %d caught, ignoring", sig); return;
-  }
-
-  if (signal_exit)
-    raise (sig);
-  signal_exit = 1;
- 
-  // do cleanup here
-
-  signal (sig, SIG_DFL);
-  raise (sig);
-}
-
