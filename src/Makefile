@@ -34,7 +34,7 @@
 
 TARGET=$(shell uname -s)
 CC = gcc
-CCFLAGS = -g
+CCFLAGS = -g -O2
 LD = gcc
 LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error
 
