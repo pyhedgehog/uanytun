@@ -62,16 +62,12 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
     return;
 
   tun_conf(*dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
+  (*dev)->actual_name_ = NULL;
 
 	(*dev)->fd_ = open(DEFAULT_DEVICE, O_RDWR);
 	if((*dev)->fd_ < 0) {
     log_printf(ERR, "can't open device file (%s): %m", DEFAULT_DEVICE);
-    if((*dev)->local_)
-      free((*dev)->local_);
-    if((*dev)->remote_netmask_)
-      free((*dev)->remote_netmask_);
-    free(*dev);
-    *dev = NULL;
+    tun_close(dev);
     return;
   }
 
@@ -88,12 +84,7 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
   } 
   else {
     log_printf(ERR, "unable to recognize type of device (tun or tap)");
-    if((*dev)->local_)
-      free((*dev)->local_);
-    if((*dev)->remote_netmask_)
-      free((*dev)->remote_netmask_);
-    free(*dev);
-    *dev = NULL;
+    tun_close(dev);
     return;
   }
 
@@ -106,8 +97,13 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
 		(*dev)->actual_name_ = strdup(ifr.ifr_name);
 	} else {
     log_printf(ERR, "tun/tap device ioctl failed: %m");
-    free(*dev);
-    *dev = NULL;
+    tun_close(dev);
+    return;
+  }
+
+  if(!(*dev)->actual_name_) {
+    log_printf(ERR, "can't open device file: memory error");
+    tun_close(dev);
     return;
   }
 

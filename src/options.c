@@ -52,7 +52,7 @@
     else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
     {                                                    \
       if(argc < 1 || argv[i+1][0] == '-')                \
-        return -1;                                       \
+        return i;                                        \
       VALUE = atoi(argv[i+1]);                           \
       argc--;                                            \
       i++;                                               \
@@ -62,9 +62,11 @@
     else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
     {                                                    \
       if(argc < 1 || argv[i+1][0] == '-')                \
-        return -1;                                       \
+        return i;                                        \
       if(VALUE) free(VALUE);                             \
       VALUE = strdup(argv[i+1]);                         \
+      if(!VALUE)                                         \
+        return -2;                                       \
       argc--;                                            \
       i++;                                               \
     }
@@ -74,11 +76,15 @@
     {                                                    \
       if(argc < 2 ||                                     \
          argv[i+1][0] == '-' || argv[i+2][0] == '-')     \
-        return -1;                                       \
+        return i;                                        \
       if(VALUE1) free(VALUE1);                           \
       VALUE1 = strdup(argv[i+1]);                        \
+      if(!VALUE1)                                        \
+        return -2;                                       \
       if(VALUE2) free(VALUE2);                           \
       VALUE2 = strdup(argv[i+2]);                        \
+      if(!VALUE2)                                        \
+        return -2;                                       \
       argc-=2;                                           \
       i+=2;                                              \
     }
@@ -87,10 +93,11 @@
     else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
     {                                                    \
       if(argc < 1 || argv[i+1][0] == '-')                \
-        return -1;                                       \
+        return i;                                        \
       if(VALUE.buf_) free(VALUE.buf_);                   \
       VALUE = options_parse_hex_string(argv[i+1]);       \
-      if(!VALUE.buf_) return -1;                         \
+      if(!VALUE.buf_)                                    \
+        return -2;                                       \
       size_t j;                                          \
       for(j=0; j < strlen(argv[i+1]); ++j)               \
         argv[i+1][j] = '#';                              \
@@ -106,7 +113,8 @@ buffer_t options_parse_hex_string(const char* hex)
   buffer.length_ = 0;
   buffer.buf_ = NULL;
 
-  if(hex_len%2) return buffer;
+  if(hex_len%2) 
+    return buffer;
   
   buffer.length_ = hex_len/2;
   buffer.buf_ = malloc(buffer.length_);
@@ -133,13 +141,16 @@ int options_parse(options_t** opt, int argc, char* argv[])
 
   *opt = malloc(sizeof(options_t));
   if(!*opt)
-    return -1;
+    return -2;
 
   options_default(*opt);
 
   if((*opt)->progname_)
     free((*opt)->progname_);
   (*opt)->progname_ = strdup(argv[0]);
+  if(!(*opt)->progname_)
+    return -2;
+
   argc--;
 
   int i;
@@ -149,7 +160,7 @@ int options_parse(options_t** opt, int argc, char* argv[])
     argc--;
 
     if(!strcmp(str,"-h") || !strcmp(str,"--help"))
-      return 1;
+      return -1;
     PARSE_INVERSE_BOOL_PARAM("-D","--nodaemonize", (*opt)->daemonize_)
     PARSE_BOOL_PARAM("-C","--chroot", (*opt)->chroot_)
     PARSE_STRING_PARAM("-u","--username", (*opt)->username_)
@@ -172,7 +183,7 @@ int options_parse(options_t** opt, int argc, char* argv[])
     PARSE_HEXSTRING_PARAM_SEC("-K","--key", (*opt)->key_)
     PARSE_HEXSTRING_PARAM_SEC("-A","--salt", (*opt)->salt_)
     else 
-      return -1;
+      return i;
   }
 
   if(!strcmp((*opt)->cipher_, "null") && !strcmp((*opt)->auth_algo_, "null")) {

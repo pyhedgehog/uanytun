@@ -179,16 +179,22 @@ int main(int argc, char* argv[])
   log_init("uanytun", DAEMON);
   signal_init();
 
-  log_printf(NOTICE, "just started...");
-
   options_t* opt;
   int ret = options_parse(&opt, argc, argv);
   if(ret) {
-    options_print_usage();
-    log_printf(ERR, "error on options_parse, exitting");
+    options_clear(&opt);
+    if(ret > 0)
+      fprintf(stderr, "syntax error near: %s\n\n", argv[ret]);
+    if(ret == -2)
+      fprintf(stderr, "memory error on options_parse, exitting\n");
+
+    if(ret == -1 || ret > 0) 
+      options_print_usage();
+
     exit(ret);
   }
 
+  log_printf(NOTICE, "just started...");
 
   tun_device_t* dev;
   tun_init(&dev, opt->dev_name_, opt->dev_type_, opt->ifconfig_param_local_, opt->ifconfig_param_remote_netmask_);

@@ -7,6 +7,15 @@ Linux
 build-essential
 libgcrypt11-dev
 
+
+OpenBSD
+-------
+
+libgcrypt
+libgpg-error
+gmake
+
+
 Installation
 ============
 
@@ -21,21 +30,9 @@ Building from source
 # ./configure
 # make
 
+Notes: 
+  - on OpenBSD you have to use gmake instead of make
+  - currently there is no support for using IPv6 as
+    outer Protocol because OpenBSD does not support
+    V4-Mapped adresses
 
-
-Errors:
--------
-
-Note: Cannot open TUN/TAP dev /dev/net/tun: No such file or directory (errno=2)
-Cannot open TUN/TAP dev /dev/anytun0: No such file or directory (errno=2)
-
-Solution: Enabling tun/tap device
-------------------------------------
-
-modprobe tun
-cd /dev
-./MAKEDEV tun
-
-edit /etc/modules and add the line
-tun
-to load the module automatically
