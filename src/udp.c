@@ -81,6 +81,7 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
   (*sock)->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
   if((*sock)->fd_ < 0) {
     log_printf(ERR, "Error on opening udp socket: %m");
+    freeaddrinfo(res);
     free(*sock);
     *sock = NULL;
     return;
@@ -89,6 +90,7 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
   errcode = bind((*sock)->fd_, res->ai_addr, res->ai_addrlen);
   if(errcode) {
     log_printf(ERR, "Error on binding udp socket: %m");
+    freeaddrinfo(res);
     free(*sock);
     *sock = NULL;
     return;

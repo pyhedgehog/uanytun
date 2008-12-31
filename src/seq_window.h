@@ -32,43 +32,29 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _DATATYPES_H_
-#define _DATATYPES_H_
+#ifndef _SEQ_WINDOW_H_
+#define _SEQ_WINDOW_H_
 
-#include <stdint.h>
-
-typedef uint8_t u_int8_t;
-typedef uint16_t u_int16_t;
-typedef uint32_t u_int32_t;
-typedef uint64_t u_int64_t;
-// typedef int8_t int8_t;
-// typedef int16_t int16_t;
-// typedef int32_t int32_t;
-// typedef int64_t int64_t;
-
-typedef u_int32_t window_size_t;
-
-typedef u_int32_t seq_nr_t;
-#define SEQ_NR_T_NTOH(a) ntohl(a)
-#define SEQ_NR_T_HTON(a) htonl(a)
-#define SEQ_NR_MAX UINT32_MAX
-
-typedef u_int16_t sender_id_t;
-#define SENDER_ID_T_NTOH(a) ntohs(a)
-#define SENDER_ID_T_HTON(a) htons(a)
-
-typedef u_int16_t payload_type_t;
-#define PAYLOAD_TYPE_T_NTOH(a) ntohs(a)
-#define PAYLOAD_TYPE_T_HTON(a) htons(a)
-
-typedef u_int16_t mux_t;
-#define MUX_T_NTOH(a) ntohs(a)
-#define MUX_T_HTON(a) htons(a)
-
-struct buffer_struct {
-  u_int32_t length_;
-  u_int8_t* buf_;
+struct seq_win_element_struct {
+  sender_id_t sender_id_;
+  seq_nr_t max_;
+  window_size_t pos_;
+  u_int8_t* window_;
+  struct seq_win_element_struct* next_;
 };
-typedef struct buffer_struct buffer_t;
+typedef struct seq_win_element_struct seq_win_element_t;
+
+struct seq_win_struct {
+  window_size_t size_;
+  seq_win_element_t* first_;
+};
+typedef struct seq_win_struct seq_win_t;
+
+void seq_win_init(seq_win_t** win, window_size_t size);
+void seq_win_clear(seq_win_t** win);
+seq_win_element_t* seq_win_new_element(sender_id_t sender_id, seq_nr_t max, window_size_t size);
+int seq_win_check_and_add(seq_win_t* win, sender_id_t sender_id, seq_nr_t seq_nr);
+
+void seq_win_print(seq_win_t* win);
 
 #endif

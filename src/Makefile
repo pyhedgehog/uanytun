@@ -53,6 +53,7 @@ OBJS = log.o \
        udp.o \
        plain_packet.o \
        encrypted_packet.o \
+       seq_window.o \
        cipher.o \
        uanytun.o
 
@@ -85,6 +86,9 @@ plain_packet.o: plain_packet.c plain_packet.h
 	$(CC) $(CCFLAGS) $< -c
 
 encrypted_packet.o: encrypted_packet.c encrypted_packet.h
+	$(CC) $(CCFLAGS) $< -c
+
+seq_window.o: seq_window.c seq_window.h
 	$(CC) $(CCFLAGS) $< -c
 
 cipher.o: cipher.c cipher.h

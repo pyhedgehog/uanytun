@@ -49,6 +49,7 @@
 #include "plain_packet.h"
 #include "encrypted_packet.h"
 
+#include "seq_window.h"
 #include "cipher.h"
 
 #include "daemon.h"
@@ -56,6 +57,7 @@
 
 int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 {
+  int return_value = 0;
   log_printf(INFO, "entering main loop");
 
   plain_packet_t plain_packet;
@@ -71,10 +73,17 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   cipher_init(&c, opt->cipher_);
   if(!c) {
     log_printf(ERR, "could not initialize cipher of type %s", opt->cipher_);
-    return -1;
+    return_value -1;
   }
 
-  while(1) {
+  seq_win_t* seq_win;
+  seq_win_init(&seq_win, opt->seq_window_size_);
+  if(!seq_win) {
+    printf("could not initialize sequence window");
+    return_value = -1;
+  }
+
+  while(!return_value) {
     plain_packet_set_payload_length(&plain_packet, -1);
     encrypted_packet_set_length(&encrypted_packet, -1);
 
@@ -86,15 +95,15 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     int ret = select(nfds, &readfds, NULL, NULL, NULL);
     if(ret == -1 && errno != EINTR) {
       log_printf(ERR, "select returned with error: %m");
-      cipher_close(&c);      
-      return -1;
+      return_value = -1;
+      break;
     }
     if(!ret)
       continue;
 
     if(signal_exit) {
-      cipher_close(&c);
-      return 1;
+      return_value = 1;
+      break;
     }
 
     if(FD_ISSET(dev->fd_, &readfds)) {
@@ -137,8 +146,18 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       if(encrypted_packet_get_mux(&encrypted_packet) != opt->mux_)
         continue;
       
-          // TODO: check seq nr for sender id
+      int result = seq_win_check_and_add(seq_win, encrypted_packet_get_sender_id(&encrypted_packet), encrypted_packet_get_seq_nr(&encrypted_packet));
+      if(result > 0) {
+        log_printf(WARNING, "detected replay attack, discarding packet");
+        continue;
+      }
+      else if(result < 0) {
+        log_printf(ERR, "memory error at sequence window");
+        return_value -1;
+        break;
+      }
       
+
       if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) {
         memcpy(&(sock->remote_end_), &remote, sizeof(remote));
         char* addrstring = udp_endpoint_to_string(remote);
@@ -155,8 +174,9 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   }
 
   cipher_close(&c);
+  seq_win_clear(&seq_win);
 
-  return 0;
+  return return_value;
 }
 
 void print_hex_dump(const u_int8_t* buf, u_int32_t len)
@@ -200,6 +220,7 @@ int main(int argc, char* argv[])
   tun_init(&dev, opt->dev_name_, opt->dev_type_, opt->ifconfig_param_local_, opt->ifconfig_param_remote_netmask_);
   if(!dev) {
     log_printf(ERR, "error on tun_init, exitting");
+    options_clear(&opt);
     exit(-1);
   }
   log_printf(NOTICE, "dev of type '%s' opened, actual name is '%s'", tun_get_type_string(dev), dev->actual_name_);
@@ -214,6 +235,8 @@ int main(int argc, char* argv[])
   udp_init(&sock, opt->local_addr_, opt->local_port_);
   if(!sock) {
     log_printf(ERR, "error on udp_init, exitting");
+    options_clear(&opt);
+    tun_close(&dev);
     exit(-1);
   }
   char* local_string = udp_get_local_end_string(sock);
