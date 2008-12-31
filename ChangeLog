@@ -1,5 +1,5 @@
-2009.??.?? -- Version 0.1svn???
+2008.12.31 -- Version 0.1svn34
 
 * Initial release.
-* IPv4 tunnel over UDP, with AES-CTR cipher and SHA1 HMAC signature.
-
+* IPv4, IPv6 and Ethernet tunnel over UDP, without crypto.
+* tested on Linux and OpenBSD

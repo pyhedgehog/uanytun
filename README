@@ -21,7 +21,7 @@ Installation
 
 Getting the source via subversion:
 ----------------------------------
-svn co ...
+svn co https://svn.chaos-at-home.org/uanytun
 
 Building from source
 --------------------
