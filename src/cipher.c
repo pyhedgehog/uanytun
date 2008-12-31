@@ -44,29 +44,27 @@
 #include <stdlib.h>
 #include <string.h>
 
-void cipher_init(cipher_t** c, const char* type)
+int cipher_init(cipher_t* c, const char* type)
 {
   if(!c) 
-    return;
+    return -1;
 
-  *c = malloc(sizeof(cipher_t));
-  if(!*c)
-    return;
-
-  (*c)->type_ = unknown;
+  c->type_ = unknown;
   if(!strcmp(type, "null"))
-    (*c)->type_ = null;
+    c->type_ = null;
 /*   else if(!strcmp(type, "aes-ctr")) */
-/*     (*c)->type_ = aes_ctr; */
+/*     c->type_ = aes_ctr; */
   else {
     log_printf(ERR, "unknown cipher type");
   }
 
-  (*c)->key_.buf_ = NULL;
-  (*c)->key_.length_ = 0;
+  c->key_.buf_ = NULL;
+  c->key_.length_ = 0;
 
-  (*c)->salt_.buf_ = NULL;
-  (*c)->salt_.length_ = 0;
+  c->salt_.buf_ = NULL;
+  c->salt_.length_ = 0;
+
+  return 0;
 }
 
 void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len)
@@ -105,18 +103,15 @@ void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len)
   c->salt_.length_ = len;
 }
 
-void cipher_close(cipher_t** c)
+void cipher_close(cipher_t* c)
 {
-  if(!c || !(*c))
+  if(!c)
     return;
 
-  if((*c)->key_.buf_)
-    free((*c)->key_.buf_);
-  if((*c)->salt_.buf_)
-    free((*c)->salt_.buf_);
-
-  free(*c);
-  *c = NULL;
+  if(c->key_.buf_)
+    free(c->key_.buf_);
+  if(c->salt_.buf_)
+    free(c->salt_.buf_);
 }
 
 void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)

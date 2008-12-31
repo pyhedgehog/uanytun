@@ -69,11 +69,11 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   seq_nr_t seq_nr = 0;
   fd_set readfds;
 
-  cipher_t* c;
-  cipher_init(&c, opt->cipher_);
-  if(!c) {
+  cipher_t c;
+  int ret = cipher_init(&c, opt->cipher_);
+  if(ret) {
     log_printf(ERR, "could not initialize cipher of type %s", opt->cipher_);
-    return_value -1;
+    return_value = ret;
   }
 
   seq_win_t* seq_win;
@@ -122,7 +122,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       else
         plain_packet_set_type(&plain_packet, PAYLOAD_TYPE_UNKNOWN);
       
-      cipher_encrypt(c, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
+      cipher_encrypt(&c, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
       seq_nr++;
       
           // TODO: add auth-tag
@@ -165,7 +165,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
         free(addrstring);
       }
       
-      cipher_decrypt(c, &encrypted_packet, &plain_packet); 
+      cipher_decrypt(&c, &encrypted_packet, &plain_packet); 
       
       len = tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
       if(len == -1)

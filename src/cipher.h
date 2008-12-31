@@ -45,10 +45,10 @@ struct cipher_struct {
 };
 typedef struct cipher_struct cipher_t;
 
-void cipher_init(cipher_t** c, const char* type);
+int cipher_init(cipher_t* c, const char* type);
 void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len);
 void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len);
-void cipher_close(cipher_t** c);
+void cipher_close(cipher_t* c);
 
 void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
 void cipher_decrypt(cipher_t* c, encrypted_packet_t* in, plain_packet_t* out);
