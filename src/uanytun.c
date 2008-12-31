@@ -231,21 +231,21 @@ int main(int argc, char* argv[])
   }
 
 
-  udp_socket_t* sock;
-  udp_init(&sock, opt.local_addr_, opt.local_port_);
-  if(!sock) {
+  udp_socket_t sock;
+  ret = udp_init(&sock, opt.local_addr_, opt.local_port_);
+  if(ret) {
     log_printf(ERR, "error on udp_init, exitting");
     options_clear(&opt);
     tun_close(&dev);
-    exit(-1);
+    exit(ret);
   }
-  char* local_string = udp_get_local_end_string(sock);
+  char* local_string = udp_get_local_end_string(&sock);
   log_printf(NOTICE, "listening on: %s", local_string);
   free(local_string);
 
   if(opt.remote_addr_) {
-    udp_set_remote(sock, opt.remote_addr_, opt.remote_port_);
-    char* remote_string = udp_get_remote_end_string(sock);
+    udp_set_remote(&sock, opt.remote_addr_, opt.remote_port_);
+    char* remote_string = udp_get_remote_end_string(&sock);
     log_printf(NOTICE, "set remote end to: %s", remote_string);
     free(remote_string);
   }
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
     fclose(pid_file);
   }
 
-  ret = main_loop(&dev, sock, &opt);
+  ret = main_loop(&dev, &sock, &opt);
 
   tun_close(&dev);
   udp_close(&sock);

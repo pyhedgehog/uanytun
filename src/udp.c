@@ -43,17 +43,14 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
+int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
 {
   if(!sock || !port) 
     return;
  
-  *sock = malloc(sizeof(udp_socket_t));
-  if(!*sock)
-    return;
-
-  memset(&((*sock)->local_end_), 0, sizeof((*sock)->local_end_));
-  memset(&((*sock)->remote_end_), 0, sizeof((*sock)->local_end_));
+  sock->fd_ = 0;
+  memset(&(sock->local_end_), 0, sizeof(sock->local_end_));
+  memset(&(sock->remote_end_), 0, sizeof(sock->local_end_));
 
   struct addrinfo hints, *res;
 
@@ -67,36 +64,34 @@ void udp_init(udp_socket_t** sock, const char* local_addr, const char* port)
   hints.ai_family = PF_UNSPEC;
 #endif
 
-
   int errcode = getaddrinfo(local_addr, port, &hints, &res);
   if (errcode != 0) {
     log_printf(ERR, "Error resolving local address: %s", gai_strerror(errcode));
-    free(*sock);
-    *sock = NULL;
-    return;
+    udp_close(sock);
+    return -1;
   }
 
-  memcpy(&((*sock)->local_end_), res->ai_addr, sizeof(*(res->ai_addr)));
+  memcpy(&(sock->local_end_), res->ai_addr, sizeof(*(res->ai_addr)));
 
-  (*sock)->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
-  if((*sock)->fd_ < 0) {
+  sock->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
+  if(sock->fd_ < 0) {
     log_printf(ERR, "Error on opening udp socket: %m");
     freeaddrinfo(res);
-    free(*sock);
-    *sock = NULL;
-    return;
+    udp_close(sock);
+    return -1;
   }
 
-  errcode = bind((*sock)->fd_, res->ai_addr, res->ai_addrlen);
+  errcode = bind(sock->fd_, res->ai_addr, res->ai_addrlen);
   if(errcode) {
     log_printf(ERR, "Error on binding udp socket: %m");
     freeaddrinfo(res);
-    free(*sock);
-    *sock = NULL;
-    return;
+    udp_close(sock);
+    return -1;
   }
   
   freeaddrinfo(res);
+
+  return 0;
 }
 
 void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port)
@@ -115,7 +110,6 @@ void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* por
   hints.ai_family = PF_UNSPEC;
 #endif
 
-
   int errcode = getaddrinfo(remote_addr, port, &hints, &res);
   if (errcode != 0) {
     log_printf(ERR, "Error resolving remote address: %s", gai_strerror(errcode));
@@ -125,16 +119,13 @@ void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* por
   freeaddrinfo(res);
 }
 
-void udp_close(udp_socket_t** sock)
+void udp_close(udp_socket_t* sock)
 {
-  if(!sock || !(*sock))
+  if(!sock)
     return;
 
-  if((*sock)->fd_ > 0)
-    close((*sock)->fd_);
-
-  free(*sock);
-  *sock = NULL;
+  if(sock->fd_ > 0)
+    close(sock->fd_);
 }
 
 char* udp_endpoint_to_string(udp_endpoint_t e)
