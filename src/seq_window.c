@@ -41,25 +41,23 @@
 
 #include <stdio.h>
 
-void seq_win_init(seq_win_t** win, window_size_t size)
+int seq_win_init(seq_win_t* win, window_size_t size)
+{
+  if(!win)
+    return -1;
+
+  win->size_ = size;
+  win->first_ = NULL;
+
+  return 0;
+}
+
+void seq_win_clear(seq_win_t* win)
 {
   if(!win)
     return;
 
-  *win = malloc(sizeof(seq_win_t));
-  if(!*win)
-    return;
-
-  (*win)->size_ = size;
-  (*win)->first_ = NULL;
-}
-
-void seq_win_clear(seq_win_t** win)
-{
-  if(!win || !(*win))
-    return;
-
-  seq_win_element_t* ptr = (*win)->first_;
+  seq_win_element_t* ptr = win->first_;
   while(ptr) {
     seq_win_element_t* to_free = ptr;
     ptr = ptr->next_;
@@ -68,9 +66,6 @@ void seq_win_clear(seq_win_t** win)
 
     free(to_free);
   }
-
-  free(*win);
-  *win = NULL;
 }
 
 seq_win_element_t* seq_win_new_element(sender_id_t sender_id, seq_nr_t max, window_size_t size)

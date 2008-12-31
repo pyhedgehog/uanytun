@@ -50,8 +50,8 @@ struct seq_win_struct {
 };
 typedef struct seq_win_struct seq_win_t;
 
-void seq_win_init(seq_win_t** win, window_size_t size);
-void seq_win_clear(seq_win_t** win);
+int seq_win_init(seq_win_t* win, window_size_t size);
+void seq_win_clear(seq_win_t* win);
 seq_win_element_t* seq_win_new_element(sender_id_t sender_id, seq_nr_t max, window_size_t size);
 int seq_win_check_and_add(seq_win_t* win, sender_id_t sender_id, seq_nr_t seq_nr);
 

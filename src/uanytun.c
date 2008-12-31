@@ -76,11 +76,11 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     return_value = ret;
   }
 
-  seq_win_t* seq_win;
-  seq_win_init(&seq_win, opt->seq_window_size_);
-  if(!seq_win) {
+  seq_win_t seq_win;
+  ret = seq_win_init(&seq_win, opt->seq_window_size_);
+  if(ret) {
     printf("could not initialize sequence window");
-    return_value = -1;
+    return_value = ret;
   }
 
   while(!return_value) {
@@ -146,7 +146,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       if(encrypted_packet_get_mux(&encrypted_packet) != opt->mux_)
         continue;
       
-      int result = seq_win_check_and_add(seq_win, encrypted_packet_get_sender_id(&encrypted_packet), encrypted_packet_get_seq_nr(&encrypted_packet));
+      int result = seq_win_check_and_add(&seq_win, encrypted_packet_get_sender_id(&encrypted_packet), encrypted_packet_get_seq_nr(&encrypted_packet));
       if(result > 0) {
         log_printf(WARNING, "detected replay attack, discarding packet");
         continue;
