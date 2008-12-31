@@ -1,4 +1,4 @@
-2008.12.31 -- Version 0.1svn34
+2008.12.31 -- Version 0.1svn37
 
 * Initial release.
 * IPv4, IPv6 and Ethernet tunnel over UDP, without crypto.

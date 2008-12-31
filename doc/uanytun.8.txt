@@ -199,7 +199,6 @@ Encryption algorithm used for encrypting the payload
 Possible values:
 
 * *null* - no encryption
-* *aes-ctr* - AES in counter mode, default value
 
 -a|--auth-algo <algo type>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,7 +210,6 @@ This option sets the message authentication algorithm.
 Possible values:
 
 * *null* - no message authentication
-* *sha1* - HMAC-SHA1, default value
 
 
 If HMAC-SHA1 is used, the packet length is increased by
