@@ -55,17 +55,13 @@
 #include <netinet/ip.h>
 #define DEVICE_FILE_MAX 255
 
-void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp)
+int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp)
 {
   if(!dev) 
     return;
  
-  *dev = malloc(sizeof(tun_device_t));
-  if(!*dev) 
-    return;
-
-  tun_conf(*dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
-  (*dev)->actual_name_ = NULL;
+  tun_conf(dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
+  dev->actual_name_ = NULL;
 
   char* device_file = NULL;
   char* actual_name_start = NULL;
@@ -74,23 +70,23 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
     asprintf(&device_file, "/dev/%s", dev_name);
     dynamic = 0;
   }
-  else if((*dev)->type_ == TYPE_TUN) {
+  else if(dev->type_ == TYPE_TUN) {
     asprintf(&device_file, "/dev/tun");
     actual_name_start = "tun";
   }
-  else if((*dev)->type_ == TYPE_TAP) {
+  else if(dev->type_ == TYPE_TAP) {
     asprintf(&device_file, "/dev/tap");
     actual_name_start = "tap";
   }
   else {
     log_printf(ERR, "unable to recognize type of device (tun or tap)");
     tun_close(dev);
-    return;
+    return -1;
   }
   if(!device_file) {
     log_printf(ERR, "can't open device file: memory error");
     tun_close(dev);
-    return;
+    return -2;
   }
 
   u_int32_t dev_id=0;
@@ -103,44 +99,48 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
         log_printf(ERR, "can't open device file: memory error");
         free(device_file);
         tun_close(dev);
-        return;
+        return -2;
       }
         
-      (*dev)->fd_ = open(device_file_tmp, O_RDWR);
+      dev->fd_ = open(device_file_tmp, O_RDWR);
       free(device_file_tmp);
-      if((*dev)->fd_ >= 0)
-        break;
+      if(dev->fd_ >= 0)
+        break -1;
     }
   }
   else
-    (*dev)->fd_ = open(device_file, O_RDWR);
+    dev->fd_ = open(device_file, O_RDWR);
   free(device_file);
 
-  if((*dev)->fd_ < 0) {
+  if(dev->fd_ < 0) {
     if(dynamic)
       log_printf(ERR, "can't open device file dynamically: no unused node left");
     else
       log_printf(ERR, "can't open device file (%s): %m", device_file);
     
     tun_close(dev);
-    return;
+    return -1;
   }
 
   if(dynamic)
-    asprintf(&((*dev)->actual_name_), "%s%d", actual_name_start, dev_id);
+    asprintf(&(dev->actual_name_), "%s%d", actual_name_start, dev_id);
   else
-    (*dev)->actual_name_ = strdup(dev_name);
+    dev->actual_name_ = strdup(dev_name);
 
-  if(!(*dev)->actual_name_) {
+  if(!dev->actual_name_) {
     log_printf(ERR, "can't open device file: memory error");
     tun_close(dev);
-    return;
+    return -2;
   }
 
-  tun_init_post(*dev);
+  int ret = tun_init_post(dev);
+  if(ret) 
+    return ret;
 
   if(ifcfg_lp && ifcfg_rnmp)
-    tun_do_ifconfig(*dev);
+    tun_do_ifconfig(dev);
+
+  return 0;
 }
 
 
@@ -149,7 +149,7 @@ void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, co
 int tun_init_post(tun_device_t* dev)
 {
   if(!dev)
-    return;
+    return -1;
 
   dev->with_pi_ = 1;
   if(dev->type_ == TYPE_TAP)
@@ -176,7 +176,7 @@ int tun_init_post(tun_device_t* dev)
 int tun_init_post(tun_device_t* dev)
 {
   if(!dev)
-    return;
+    return -1;
 
   dev->with_pi_ = 1;
   if(dev->type_ == TYPE_TAP)
@@ -186,6 +186,8 @@ int tun_init_post(tun_device_t* dev)
   ioctl(dev->fd_, TUNSLMODE, &arg);
   arg = 1;
   ioctl(dev->fd_, TUNSIFHEAD, &arg);
+
+  return 0;
 }
 
 #elif defined(__GNUC__) && defined(__NetBSD__)
@@ -193,7 +195,7 @@ int tun_init_post(tun_device_t* dev)
 int tun_init_post(tun_device_t* dev)
 {
   if(!dev)
-    return;
+    return -1;
 
   dev->with_pi_ = 0;
 
@@ -201,6 +203,8 @@ int tun_init_post(tun_device_t* dev)
   ioctl(dev->fd_, TUNSIFMODE, &arg);
   arg = 0;
   ioctl(dev->fd_, TUNSLMODE, &arg);
+
+  return 0;
 }
 
 #else
@@ -209,25 +213,22 @@ int tun_init_post(tun_device_t* dev)
 
 
 
-void tun_close(tun_device_t** dev)
+void tun_close(tun_device_t* dev)
 {
-  if(!dev || !(*dev))
+  if(!dev)
     return;
 
-  if((*dev)->fd_ > 0)
-    close((*dev)->fd_);
+  if(dev->fd_ > 0)
+    close(dev->fd_);
 
-  if((*dev)->actual_name_)
-    free((*dev)->actual_name_);
+  if(dev->actual_name_)
+    free(dev->actual_name_);
 
-  if((*dev)->local_)
-    free((*dev)->local_);
+  if(dev->local_)
+    free(dev->local_);
 
-  if((*dev)->remote_netmask_)
-    free((*dev)->remote_netmask_);
-
-  free(*dev);
-  *dev = NULL;
+  if(dev->remote_netmask_)
+    free(dev->remote_netmask_);
 }
 
 int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)

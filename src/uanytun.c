@@ -216,17 +216,17 @@ int main(int argc, char* argv[])
 
   log_printf(NOTICE, "just started...");
 
-  tun_device_t* dev;
-  tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_local_, opt.ifconfig_param_remote_netmask_);
-  if(!dev) {
+  tun_device_t dev;
+  ret = tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_local_, opt.ifconfig_param_remote_netmask_);
+  if(ret) {
     log_printf(ERR, "error on tun_init, exitting");
     options_clear(&opt);
-    exit(-1);
+    exit(ret);
   }
-  log_printf(NOTICE, "dev of type '%s' opened, actual name is '%s'", tun_get_type_string(dev), dev->actual_name_);
+  log_printf(NOTICE, "dev of type '%s' opened, actual name is '%s'", tun_get_type_string(&dev), dev.actual_name_);
 
   if(opt.post_up_script_) {
-    int ret = exec_script(opt.post_up_script_, dev->actual_name_);
+    int ret = exec_script(opt.post_up_script_, dev.actual_name_);
     log_printf(NOTICE, "post-up script returned %d", ret);
   }
 
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
     fclose(pid_file);
   }
 
-  ret = main_loop(dev, sock, &opt);
+  ret = main_loop(&dev, sock, &opt);
 
   tun_close(&dev);
   udp_close(&sock);

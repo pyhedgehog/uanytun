@@ -52,63 +52,61 @@
 
 #include "log.h"
 
-void tun_init(tun_device_t** dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp)
+int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp)
 {
   if(!dev) 
     return;
  
-  *dev = malloc(sizeof(tun_device_t));
-  if(!*dev) 
-    return;
+  tun_conf(dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
+  dev->actual_name_ = NULL;
 
-  tun_conf(*dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
-  (*dev)->actual_name_ = NULL;
-
-	(*dev)->fd_ = open(DEFAULT_DEVICE, O_RDWR);
-	if((*dev)->fd_ < 0) {
+	dev->fd_ = open(DEFAULT_DEVICE, O_RDWR);
+	if(dev->fd_ < 0) {
     log_printf(ERR, "can't open device file (%s): %m", DEFAULT_DEVICE);
     tun_close(dev);
-    return;
+    return -1;
   }
 
 	struct ifreq ifr;
 	memset(&ifr, 0, sizeof(ifr));
 
-  if((*dev)->type_ == TYPE_TUN) {
+  if(dev->type_ == TYPE_TUN) {
     ifr.ifr_flags = IFF_TUN;
-    (*dev)->with_pi_ = 1;
+    dev->with_pi_ = 1;
   } 
-  else if((*dev)->type_ == TYPE_TAP) {
+  else if(dev->type_ == TYPE_TAP) {
     ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-    (*dev)->with_pi_ = 0;
+    dev->with_pi_ = 0;
   } 
   else {
     log_printf(ERR, "unable to recognize type of device (tun or tap)");
     tun_close(dev);
-    return;
+    return -1;
   }
 
 	if(dev_name)
 		strncpy(ifr.ifr_name, dev_name, IFNAMSIZ);
 
-	if(!ioctl((*dev)->fd_, TUNSETIFF, &ifr)) {
-		(*dev)->actual_name_ = strdup(ifr.ifr_name);
-	} else if(!ioctl((*dev)->fd_, (('T' << 8) | 202), &ifr)) {
-		(*dev)->actual_name_ = strdup(ifr.ifr_name);
+	if(!ioctl(dev->fd_, TUNSETIFF, &ifr)) {
+		dev->actual_name_ = strdup(ifr.ifr_name);
+	} else if(!ioctl(dev->fd_, (('T' << 8) | 202), &ifr)) {
+		dev->actual_name_ = strdup(ifr.ifr_name);
 	} else {
     log_printf(ERR, "tun/tap device ioctl failed: %m");
     tun_close(dev);
-    return;
+    return -1;
   }
 
-  if(!(*dev)->actual_name_) {
+  if(!dev->actual_name_) {
     log_printf(ERR, "can't open device file: memory error");
     tun_close(dev);
-    return;
+    return -2;
   }
 
   if(ifcfg_lp && ifcfg_rnmp)
-    tun_do_ifconfig(*dev);
+    tun_do_ifconfig(dev);
+
+  return 0;
 }
 
 int tun_init_post(tun_device_t* dev)
@@ -116,25 +114,22 @@ int tun_init_post(tun_device_t* dev)
 // nothing yet
 }
 
-void tun_close(tun_device_t** dev)
+void tun_close(tun_device_t* dev)
 {
-  if(!dev || !(*dev))
+  if(!dev)
     return;
 
-  if((*dev)->fd_ > 0)
-    close((*dev)->fd_);
+  if(dev->fd_ > 0)
+    close(dev->fd_);
 
-  if((*dev)->actual_name_)
-    free((*dev)->actual_name_);
+  if(dev->actual_name_)
+    free(dev->actual_name_);
 
-  if((*dev)->local_)
-    free((*dev)->local_);
+  if(dev->local_)
+    free(dev->local_);
 
-  if((*dev)->remote_netmask_)
-    free((*dev)->remote_netmask_);
-
-  free(*dev);
-  *dev = NULL;
+  if(dev->remote_netmask_)
+    free(dev->remote_netmask_);
 }
 
 int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
