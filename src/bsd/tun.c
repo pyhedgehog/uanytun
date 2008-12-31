@@ -105,7 +105,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
       dev->fd_ = open(device_file_tmp, O_RDWR);
       free(device_file_tmp);
       if(dev->fd_ >= 0)
-        break -1;
+        break;
     }
   }
   else
