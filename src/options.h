@@ -64,9 +64,9 @@ typedef struct options_struct options_t;
 
 buffer_t options_parse_hex_string(const char* hex);
 
-int options_parse(options_t** opt, int argc, char* argv[]);
+int options_parse(options_t* opt, int argc, char* argv[]);
 void options_default(options_t* opt);
-void options_clear(options_t** opt);
+void options_clear(options_t* opt);
 void options_print_usage();
 void options_print(options_t* opt);
 

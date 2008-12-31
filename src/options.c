@@ -133,22 +133,17 @@ buffer_t options_parse_hex_string(const char* hex)
   return buffer;
 }
 
-
-int options_parse(options_t** opt, int argc, char* argv[])
+int options_parse(options_t* opt, int argc, char* argv[])
 {
   if(!opt)
     return -1;
 
-  *opt = malloc(sizeof(options_t));
-  if(!*opt)
-    return -2;
+  options_default(opt);
 
-  options_default(*opt);
-
-  if((*opt)->progname_)
-    free((*opt)->progname_);
-  (*opt)->progname_ = strdup(argv[0]);
-  if(!(*opt)->progname_)
+  if(opt->progname_)
+    free(opt->progname_);
+  opt->progname_ = strdup(argv[0]);
+  if(!opt->progname_)
     return -2;
 
   argc--;
@@ -161,43 +156,43 @@ int options_parse(options_t** opt, int argc, char* argv[])
 
     if(!strcmp(str,"-h") || !strcmp(str,"--help"))
       return -1;
-    PARSE_INVERSE_BOOL_PARAM("-D","--nodaemonize", (*opt)->daemonize_)
-    PARSE_BOOL_PARAM("-C","--chroot", (*opt)->chroot_)
-    PARSE_STRING_PARAM("-u","--username", (*opt)->username_)
-    PARSE_STRING_PARAM("-H","--chroot-dir", (*opt)->chroot_dir_)
-    PARSE_STRING_PARAM("-P","--write-pid", (*opt)->pid_file_)
-    PARSE_STRING_PARAM("-i","--interface", (*opt)->local_addr_)
-    PARSE_STRING_PARAM("-p","--port", (*opt)->local_port_)
-    PARSE_STRING_PARAM("-r","--remote-host", (*opt)->remote_addr_)
-    PARSE_STRING_PARAM("-o","--remote-port", (*opt)->remote_port_)
-    PARSE_STRING_PARAM("-d","--dev", (*opt)->dev_name_)
-    PARSE_STRING_PARAM("-t","--type", (*opt)->dev_type_)
-    PARSE_STRING_PARAM2("-n","--ifconfig", (*opt)->ifconfig_param_local_, (*opt)->ifconfig_param_remote_netmask_)
-    PARSE_STRING_PARAM("-x","--post-up-script", (*opt)->post_up_script_)
-    PARSE_INT_PARAM("-s","--sender-id", (*opt)->sender_id_)
-    PARSE_INT_PARAM("-m","--mux", (*opt)->mux_)
-    PARSE_INT_PARAM("-w","--window-size", (*opt)->seq_window_size_)
-    PARSE_STRING_PARAM("-c","--cipher", (*opt)->cipher_)
-    PARSE_STRING_PARAM("-k","--kd-prf", (*opt)->kd_prf_)
-    PARSE_STRING_PARAM("-a","--auth-algo", (*opt)->auth_algo_)
-    PARSE_HEXSTRING_PARAM_SEC("-K","--key", (*opt)->key_)
-    PARSE_HEXSTRING_PARAM_SEC("-A","--salt", (*opt)->salt_)
+    PARSE_INVERSE_BOOL_PARAM("-D","--nodaemonize", opt->daemonize_)
+    PARSE_BOOL_PARAM("-C","--chroot", opt->chroot_)
+    PARSE_STRING_PARAM("-u","--username", opt->username_)
+    PARSE_STRING_PARAM("-H","--chroot-dir", opt->chroot_dir_)
+    PARSE_STRING_PARAM("-P","--write-pid", opt->pid_file_)
+    PARSE_STRING_PARAM("-i","--interface", opt->local_addr_)
+    PARSE_STRING_PARAM("-p","--port", opt->local_port_)
+    PARSE_STRING_PARAM("-r","--remote-host", opt->remote_addr_)
+    PARSE_STRING_PARAM("-o","--remote-port", opt->remote_port_)
+    PARSE_STRING_PARAM("-d","--dev", opt->dev_name_)
+    PARSE_STRING_PARAM("-t","--type", opt->dev_type_)
+    PARSE_STRING_PARAM2("-n","--ifconfig", opt->ifconfig_param_local_, opt->ifconfig_param_remote_netmask_)
+    PARSE_STRING_PARAM("-x","--post-up-script", opt->post_up_script_)
+    PARSE_INT_PARAM("-s","--sender-id", opt->sender_id_)
+    PARSE_INT_PARAM("-m","--mux", opt->mux_)
+    PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
+    PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
+    PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
+    PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
+    PARSE_HEXSTRING_PARAM_SEC("-K","--key", opt->key_)
+    PARSE_HEXSTRING_PARAM_SEC("-A","--salt", opt->salt_)
     else 
       return i;
   }
 
-  if(!strcmp((*opt)->cipher_, "null") && !strcmp((*opt)->auth_algo_, "null")) {
-    if((*opt)->kd_prf_) free((*opt)->kd_prf_);
-    (*opt)->kd_prf_ = strdup("null");
+  if(!strcmp(opt->cipher_, "null") && !strcmp(opt->auth_algo_, "null")) {
+    if(opt->kd_prf_) free(opt->kd_prf_);
+    opt->kd_prf_ = strdup("null");
   }
-  if((strcmp((*opt)->cipher_, "null") || strcmp((*opt)->auth_algo_, "null")) && 
-     !strcmp((*opt)->kd_prf_, "null")) {
-    if((*opt)->kd_prf_) free((*opt)->kd_prf_);
-    (*opt)->kd_prf_ = strdup("aes-ctr");
+  if((strcmp(opt->cipher_, "null") || strcmp(opt->auth_algo_, "null")) && 
+     !strcmp(opt->kd_prf_, "null")) {
+    if(opt->kd_prf_) free(opt->kd_prf_);
+    opt->kd_prf_ = strdup("aes-ctr");
   }
 
-  if(!((*opt)->dev_name_) && !((*opt)->dev_type_))
-    (*opt)->dev_type_ = strdup("tun");
+  if(!(opt->dev_name_) && !(opt->dev_type_))
+    opt->dev_type_ = strdup("tun");
 
   return 0;
 }
@@ -234,50 +229,47 @@ void options_default(options_t* opt)
   opt->salt_.length_ = 0;
 }
 
-void options_clear(options_t** opt)
+void options_clear(options_t* opt)
 {
-  if(!opt || !(*opt))
+  if(!opt)
     return;
 
-  if((*opt)->progname_)
-    free((*opt)->progname_);
-  if((*opt)->username_)
-    free((*opt)->username_);
-  if((*opt)->chroot_dir_)
-    free((*opt)->chroot_dir_);
-  if((*opt)->pid_file_)
-    free((*opt)->pid_file_);
-  if((*opt)->local_addr_)
-    free((*opt)->local_addr_);
-  if((*opt)->local_port_)
-    free((*opt)->local_port_);
-  if((*opt)->remote_addr_)
-    free((*opt)->remote_addr_);
-  if((*opt)->remote_port_)
-    free((*opt)->remote_port_);
-  if((*opt)->dev_name_)
-    free((*opt)->dev_name_);
-  if((*opt)->dev_type_)
-    free((*opt)->dev_type_);
-  if((*opt)->ifconfig_param_local_)
-    free((*opt)->ifconfig_param_local_);
-  if((*opt)->ifconfig_param_remote_netmask_)
-    free((*opt)->ifconfig_param_remote_netmask_);
-  if((*opt)->post_up_script_)
-    free((*opt)->post_up_script_);
-  if((*opt)->cipher_)
-    free((*opt)->cipher_);
-  if((*opt)->kd_prf_)
-    free((*opt)->kd_prf_);
-  if((*opt)->auth_algo_)
-    free((*opt)->auth_algo_);
-  if((*opt)->key_.buf_)
-    free((*opt)->key_.buf_);
-  if((*opt)->salt_.buf_)
-    free((*opt)->salt_.buf_);
-
-  free(*opt);
-  *opt = NULL;
+  if(opt->progname_)
+    free(opt->progname_);
+  if(opt->username_)
+    free(opt->username_);
+  if(opt->chroot_dir_)
+    free(opt->chroot_dir_);
+  if(opt->pid_file_)
+    free(opt->pid_file_);
+  if(opt->local_addr_)
+    free(opt->local_addr_);
+  if(opt->local_port_)
+    free(opt->local_port_);
+  if(opt->remote_addr_)
+    free(opt->remote_addr_);
+  if(opt->remote_port_)
+    free(opt->remote_port_);
+  if(opt->dev_name_)
+    free(opt->dev_name_);
+  if(opt->dev_type_)
+    free(opt->dev_type_);
+  if(opt->ifconfig_param_local_)
+    free(opt->ifconfig_param_local_);
+  if(opt->ifconfig_param_remote_netmask_)
+    free(opt->ifconfig_param_remote_netmask_);
+  if(opt->post_up_script_)
+    free(opt->post_up_script_);
+  if(opt->cipher_)
+    free(opt->cipher_);
+  if(opt->kd_prf_)
+    free(opt->kd_prf_);
+  if(opt->auth_algo_)
+    free(opt->auth_algo_);
+  if(opt->key_.buf_)
+    free(opt->key_.buf_);
+  if(opt->salt_.buf_)
+    free(opt->salt_.buf_);
 }
 
 void options_print_usage()

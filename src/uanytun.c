@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
   log_init("uanytun", DAEMON);
   signal_init();
 
-  options_t* opt;
+  options_t opt;
   int ret = options_parse(&opt, argc, argv);
   if(ret) {
     options_clear(&opt);
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
   log_printf(NOTICE, "just started...");
 
   tun_device_t* dev;
-  tun_init(&dev, opt->dev_name_, opt->dev_type_, opt->ifconfig_param_local_, opt->ifconfig_param_remote_netmask_);
+  tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_local_, opt.ifconfig_param_remote_netmask_);
   if(!dev) {
     log_printf(ERR, "error on tun_init, exitting");
     options_clear(&opt);
@@ -225,14 +225,14 @@ int main(int argc, char* argv[])
   }
   log_printf(NOTICE, "dev of type '%s' opened, actual name is '%s'", tun_get_type_string(dev), dev->actual_name_);
 
-  if(opt->post_up_script_) {
-    int ret = exec_script(opt->post_up_script_, dev->actual_name_);
+  if(opt.post_up_script_) {
+    int ret = exec_script(opt.post_up_script_, dev->actual_name_);
     log_printf(NOTICE, "post-up script returned %d", ret);
   }
 
 
   udp_socket_t* sock;
-  udp_init(&sock, opt->local_addr_, opt->local_port_);
+  udp_init(&sock, opt.local_addr_, opt.local_port_);
   if(!sock) {
     log_printf(ERR, "error on udp_init, exitting");
     options_clear(&opt);
@@ -243,8 +243,8 @@ int main(int argc, char* argv[])
   log_printf(NOTICE, "listening on: %s", local_string);
   free(local_string);
 
-  if(opt->remote_addr_) {
-    udp_set_remote(sock, opt->remote_addr_, opt->remote_port_);
+  if(opt.remote_addr_) {
+    udp_set_remote(sock, opt.remote_addr_, opt.remote_port_);
     char* remote_string = udp_get_remote_end_string(sock);
     log_printf(NOTICE, "set remote end to: %s", remote_string);
     free(remote_string);
@@ -252,16 +252,16 @@ int main(int argc, char* argv[])
 
 
   FILE* pid_file = NULL;
-  if(opt->pid_file_) {
-    pid_file = fopen(opt->pid_file_, "w");
+  if(opt.pid_file_) {
+    pid_file = fopen(opt.pid_file_, "w");
     if(!pid_file) {
       log_printf(WARNING, "unable to open pid file: %m");
     }
   }
 
-  if(opt->chroot_)
+  if(opt.chroot_)
     chrootAndDrop("/var/run/", "nobody");
-  if(opt->daemonize_) {
+  if(opt.daemonize_) {
     pid_t oldpid = getpid();
     daemonize();
     log_printf(INFO, "running in background now (old pid: %d)", oldpid);
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
     fclose(pid_file);
   }
 
-  ret = main_loop(dev, sock, opt);
+  ret = main_loop(dev, sock, &opt);
 
   tun_close(&dev);
   udp_close(&sock);
@@ -285,7 +285,6 @@ int main(int argc, char* argv[])
     log_printf(NOTICE, "shutdown after error");
   else
     log_printf(NOTICE, "shutdown after signal");
-
 
   return ret;
 }
