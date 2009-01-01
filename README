@@ -6,13 +6,14 @@ Linux
 
 build-essential
 libgcrypt11-dev
-
+libgmp3-dev
 
 OpenBSD
 -------
 
 libgcrypt
 libgpg-error
+gmp
 gmake
 
 

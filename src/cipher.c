@@ -79,7 +79,7 @@ int cipher_init(cipher_t* c, const char* type)
 
 void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len)
 {
-  if(!c) 
+  if(!c || !key) 
     return;
   if(c->type_ == null)
     return;
@@ -97,7 +97,7 @@ void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len)
 
 void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len)
 {
-  if(!c) 
+  if(!c || !salt) 
     return;
   if(c->type_ == null)
     return;
@@ -257,8 +257,10 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, seq_nr_t seq_nr, sender_id_t sender
 
 u_int32_t cipher_aesctr_crypt(cipher_t* c, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
-  if(!c)
-    return;
+  if(!c || !c->key_.buf_ || !c->salt_.buf_) {
+    log_printf(ERR, "cipher not initialized or no key or salt set");
+    return 0;
+  }
 
   gcry_error_t err = gcry_cipher_setkey(c->handle_, c->key_.buf_, c->key_.length_);
   if(err) {
