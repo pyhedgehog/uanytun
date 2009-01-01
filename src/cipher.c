@@ -111,8 +111,6 @@ void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len)
   }
   memcpy(c->salt_.buf_, salt, len);
   c->salt_.length_ = len;
-  if(!c->salt_.buf_[0])
-    c->salt_.buf_[0] = 1; // TODO: this is a outstandingly ugly workaround
 }
 
 void cipher_close(cipher_t* c)
@@ -226,6 +224,10 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, seq_nr_t seq_nr, sender_id_t sender
   mpz_init2(sid_mux, 96);
   mpz_init2(seq, 48);
   
+  int faked_msb = 0;
+  if(!c->salt_.buf_[0])
+    c->salt_.buf_[0] = 1;
+
   mpz_import(ctr, c->salt_.length_, 1, 1, 0, 0, c->salt_.buf_);
   mpz_mul_2exp(ctr, ctr, 16);
 
@@ -241,6 +243,10 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, seq_nr_t seq_nr, sender_id_t sender
   mpz_xor(ctr, ctr, seq);
 
   result.buf_ = mpz_export(NULL, (size_t*)&result.length_, 1, 1, 0, 0, ctr);
+  if(faked_msb) {
+    c->salt_.buf_[0] = 0;
+    result.buf_[0] = 0;
+  }
 
   mpz_clear(ctr);
   mpz_clear(sid_mux);
