@@ -186,6 +186,9 @@ u_int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32
 
 int cipher_aesctr_init(cipher_t* c, int key_length)
 {
+  if(!c)
+    return -1;
+
   c->key_length_ = key_length;
   
   int algo;
@@ -202,6 +205,8 @@ int cipher_aesctr_init(cipher_t* c, int key_length)
     log_printf(ERR, "failed to open cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
     return -1;
   } 
+
+  return 0;
 }
 
 void cipher_aesctr_close(cipher_t* c)
@@ -218,6 +223,9 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, seq_nr_t seq_nr, sender_id_t sender
   buffer_t result;
   result.buf_ = NULL;
   result.length_ = 0;
+
+  if(!c)
+    return result;
 
   mpz_t ctr, sid_mux, seq;
   mpz_init2(ctr, 128);

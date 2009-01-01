@@ -55,6 +55,7 @@ OBJS = log.o \
        encrypted_packet.o \
        seq_window.o \
        cipher.o \
+       key_derivation.o \
        uanytun.o
 
 EXECUTABLE = uanytun
@@ -92,6 +93,9 @@ seq_window.o: seq_window.c seq_window.h
 	$(CC) $(CCFLAGS) $< -c
 
 cipher.o: cipher.c cipher.h
+	$(CC) $(CCFLAGS) $< -c
+
+key_derivation.o: key_derivation.c key_derivation.h
 	$(CC) $(CCFLAGS) $< -c
 
 distclean: clean
