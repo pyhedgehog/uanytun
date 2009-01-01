@@ -44,6 +44,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <gmp.h>
+
 int cipher_init(cipher_t* c, const char* type)
 {
   if(!c) 
@@ -52,11 +54,15 @@ int cipher_init(cipher_t* c, const char* type)
   c->type_ = unknown;
   if(!strcmp(type, "null"))
     c->type_ = null;
-/*   else if(!strcmp(type, "aes-ctr")) */
-/*     c->type_ = aes_ctr; */
+  else if(!strcmp(type, "aes-ctr"))
+    c->type_ = aes_ctr;
   else {
     log_printf(ERR, "unknown cipher type");
+    return -1;
   }
+
+  c->key_length_ = 0;
+  c->handle_ = 0;
 
   c->key_.buf_ = NULL;
   c->key_.length_ = 0;
@@ -64,7 +70,11 @@ int cipher_init(cipher_t* c, const char* type)
   c->salt_.buf_ = NULL;
   c->salt_.length_ = 0;
 
-  return 0;
+  int ret = 0;
+  if(c->type_ == aes_ctr)
+    ret = cipher_aesctr_init(c, 128);
+
+  return ret;
 }
 
 void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len)
@@ -101,12 +111,17 @@ void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len)
   }
   memcpy(c->salt_.buf_, salt, len);
   c->salt_.length_ = len;
+  if(!c->salt_.buf_[0])
+    c->salt_.buf_[0] = 1; // TODO: this is a outstandingly ugly workaround
 }
 
 void cipher_close(cipher_t* c)
 {
   if(!c)
     return;
+
+  if(c->type_ == aes_ctr)
+    cipher_aesctr_close(c);
 
   if(c->key_.buf_)
     free(c->key_.buf_);
@@ -120,13 +135,13 @@ void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, se
     return;
 
 	u_int32_t len;
-  if(c->type_ = null)
-    len = cipher_null_encrypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
-                              encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
-/*   else if(c->type_ = aes_ctr) */
-/*     len = cipher_aesctr_encrypt(plain_packet_get_packet(in), plain_packet_get_length(in),  */
-/*                                 encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out), */
-/*                                 seq_nr, sender_id, mux); */
+  if(c->type_ == null)
+    len = cipher_null_crypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
+                            encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
+  else if(c->type_ == aes_ctr)
+    len = cipher_aesctr_crypt(c, plain_packet_get_packet(in), plain_packet_get_length(in),
+                              encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out),
+                              seq_nr, sender_id, mux);
   else {
     log_printf(ERR, "unknown cipher type");
     return;
@@ -145,14 +160,14 @@ void cipher_decrypt(cipher_t* c, encrypted_packet_t* in, plain_packet_t* out)
     return;
 
 	u_int32_t len;
-  if(c->type_ = null)
-    len = cipher_null_decrypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
-                              plain_packet_get_packet(out), plain_packet_get_length(out));
-/*   else if(c->type_ = aes_ctr) */
-/*     len = cipher_aesctr_decrypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in), */
-/*                                 plain_packet_get_packet(out), plain_packet_get_length(out),  */
-/*                                 encrypted_packet_get_seq_nr(in), encrypted_packet_get_sender_id(in),  */
-/*                                 encrypted_packet_get_mux(in)); */
+  if(c->type_ == null)
+    len = cipher_null_crypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
+                            plain_packet_get_packet(out), plain_packet_get_length(out));
+  else if(c->type_ == aes_ctr)
+    len = cipher_aesctr_crypt(c, encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
+                              plain_packet_get_packet(out), plain_packet_get_length(out),
+                              encrypted_packet_get_seq_nr(in), encrypted_packet_get_sender_id(in),
+                              encrypted_packet_get_mux(in));
   else {
     log_printf(ERR, "unknown cipher type");
     return;
@@ -161,14 +176,108 @@ void cipher_decrypt(cipher_t* c, encrypted_packet_t* in, plain_packet_t* out)
 	plain_packet_set_length(out, len);
 }
 
-u_int32_t cipher_null_encrypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen)
+/* ---------------- NULL Cipher ---------------- */
+
+u_int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen)
 {
 	memcpy(out, in, (ilen < olen) ? ilen : olen);
   return (ilen < olen) ? ilen : olen;
 }
 
-u_int32_t cipher_null_decrypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen)
+/* ---------------- AES-Ctr Cipher ---------------- */
+
+int cipher_aesctr_init(cipher_t* c, int key_length)
 {
-	memcpy(out, in, (ilen < olen) ? ilen : olen);
-  return (ilen < olen) ? ilen : olen;
+  c->key_length_ = key_length;
+  
+  int algo;
+  switch(key_length) {
+  case 128: algo = GCRY_CIPHER_AES128; break;
+  default: {
+    log_printf(ERR, "key length of %d Bits is not supported", key_length);
+    return -1;
+  }
+  }
+
+  gcry_error_t err = gcry_cipher_open( &c->handle_, algo, GCRY_CIPHER_MODE_CTR, 0 );
+  if(err) {
+    log_printf(ERR, "failed to open cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    return -1;
+  } 
+}
+
+void cipher_aesctr_close(cipher_t* c)
+{
+  if(!c)
+    return;
+
+  if(c->handle_)
+    gcry_cipher_close(c->handle_);
+}
+
+buffer_t cipher_aesctr_calc_ctr(cipher_t* c, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+{
+  buffer_t result;
+  result.buf_ = NULL;
+  result.length_ = 0;
+
+  mpz_t ctr, sid_mux, seq;
+  mpz_init2(ctr, 128);
+  mpz_init2(sid_mux, 96);
+  mpz_init2(seq, 48);
+  
+  mpz_import(ctr, c->salt_.length_, 1, 1, 0, 0, c->salt_.buf_);
+  mpz_mul_2exp(ctr, ctr, 16);
+
+  mpz_set_ui(sid_mux, mux);
+  mpz_mul_2exp(sid_mux, sid_mux, 16);
+  mpz_add_ui(sid_mux, sid_mux, sender_id);
+  mpz_mul_2exp(sid_mux, sid_mux, 64);
+
+  mpz_set_ui(seq, seq_nr);
+  mpz_mul_2exp(seq, seq, 16);
+
+  mpz_xor(ctr, ctr, sid_mux);
+  mpz_xor(ctr, ctr, seq);
+
+  result.buf_ = mpz_export(NULL, (size_t*)&result.length_, 1, 1, 0, 0, ctr);
+
+  mpz_clear(ctr);
+  mpz_clear(sid_mux);
+  mpz_clear(seq);
+
+  return result;
+}
+
+u_int32_t cipher_aesctr_crypt(cipher_t* c, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+{
+  if(!c)
+    return;
+
+  gcry_error_t err = gcry_cipher_setkey(c->handle_, c->key_.buf_, c->key_.length_);
+  if(err) {
+    log_printf(ERR, "failed to set cipher key: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    return 0;
+  }
+
+  buffer_t ctr = cipher_aesctr_calc_ctr(c, seq_nr, sender_id, mux);
+  if(!ctr.buf_) {
+    log_printf(ERR, "failed to calculate cipher CTR");
+    return 0;
+  }
+  err = gcry_cipher_setctr(c->handle_, ctr.buf_, ctr.length_);
+  free(ctr.buf_);
+
+  if(err) {
+    log_printf(ERR, "failed to set cipher CTR: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    return 0;
+  }
+
+  err = gcry_cipher_encrypt(c->handle_, out, olen, in, ilen);
+  if(err) {
+    log_printf(ERR, "failed to generate cipher bitstream: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    return 0;
+  }
+
+  return (ilen < olen) ? ilen : olen;  
 }

@@ -55,6 +55,34 @@
 #include "daemon.h"
 #include "sysexec.h"
 
+#include <gcrypt.h>
+
+
+#define MIN_GCRYPT_VERSION "1.2.0"
+
+int init_libgcrypt()
+{
+  if(!gcry_check_version(MIN_GCRYPT_VERSION)) {
+    log_printf(NOTICE, "invalid Version of libgcrypt, should be >= %s", MIN_GCRYPT_VERSION);
+    return -1;
+  }
+
+  gcry_error_t err = gcry_control(GCRYCTL_INIT_SECMEM, 16384, 0);
+  if(err) {
+    log_printf(ERR, "failed initialize secure memory: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    return -1;
+  }
+      // Tell Libgcrypt that initialization has completed.
+  err = gcry_control(GCRYCTL_INITIALIZATION_FINISHED);
+  if(err) {
+    log_printf(ERR, "failed to finish libgcrypt initialization: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    return -1;
+  }
+
+  log_printf(NOTICE, "libgcrypt init finished");
+  return 0;
+}
+
 int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 {
   int return_value = 0;
@@ -215,6 +243,14 @@ int main(int argc, char* argv[])
   }
 
   log_printf(NOTICE, "just started...");
+
+  ret = init_libgcrypt();
+  if(ret) {
+    log_printf(ERR, "error on libgcrpyt initialization, exitting");
+    options_clear(&opt);
+    exit(ret);
+  }
+
 
   tun_device_t dev;
   ret = tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_local_, opt.ifconfig_param_remote_netmask_);
