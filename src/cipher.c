@@ -51,17 +51,28 @@ int cipher_init(cipher_t* c, const char* type)
   if(!c) 
     return -1;
 
+  c->key_length_ = 0;
+
   c->type_ = unknown;
   if(!strcmp(type, "null"))
     c->type_ = null;
-  else if(!strcmp(type, "aes-ctr"))
+  else if(!strncmp(type, "aes-ctr", 7)) {
     c->type_ = aes_ctr;
+    if(type[7] == 0) {
+      c->key_length_ = 128;
+    }
+    else if(type[7] != '-') 
+      return -1;
+    else {
+      const char* tmp = &type[8];
+      c->key_length_ = atoi(tmp);
+    }
+  }
   else {
     log_printf(ERR, "unknown cipher type");
     return -1;
   }
 
-  c->key_length_ = 0;
   c->handle_ = 0;
 
   c->key_.buf_ = NULL;
@@ -72,45 +83,9 @@ int cipher_init(cipher_t* c, const char* type)
 
   int ret = 0;
   if(c->type_ == aes_ctr)
-    ret = cipher_aesctr_init(c, 128);
+    ret = cipher_aesctr_init(c);
 
   return ret;
-}
-
-void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len)
-{
-  if(!c || !key) 
-    return;
-  if(c->type_ == null)
-    return;
-
-  if(c->key_.buf_)
-    free(c->key_.buf_);
-  c->key_.buf_ = malloc(len);
-  if(!c->key_.buf_) {
-    c->key_.length_ = 0;
-    return;
-  }
-  memcpy(c->key_.buf_, key, len);
-  c->key_.length_ = len;
-}
-
-void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len)
-{
-  if(!c || !salt) 
-    return;
-  if(c->type_ == null)
-    return;
-
-  if(c->salt_.buf_)
-    free(c->salt_.buf_);
-  c->salt_.buf_ = malloc(len);
-  if(!c->salt_.buf_) {
-    c->salt_.length_ = 0;
-    return;
-  }
-  memcpy(c->salt_.buf_, salt, len);
-  c->salt_.length_ = len;
 }
 
 void cipher_close(cipher_t* c)
@@ -127,7 +102,8 @@ void cipher_close(cipher_t* c)
     free(c->salt_.buf_);
 }
 
-void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+
+void cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
   if(!c) 
     return;
@@ -137,7 +113,7 @@ void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, se
     len = cipher_null_crypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
                             encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
   else if(c->type_ == aes_ctr)
-    len = cipher_aesctr_crypt(c, plain_packet_get_packet(in), plain_packet_get_length(in),
+    len = cipher_aesctr_crypt(c, kd, plain_packet_get_packet(in), plain_packet_get_length(in),
                               encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out),
                               seq_nr, sender_id, mux);
   else {
@@ -152,7 +128,7 @@ void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, se
   encrypted_packet_set_payload_length(out, len);
 }
 
-void cipher_decrypt(cipher_t* c, encrypted_packet_t* in, plain_packet_t* out)
+void cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, plain_packet_t* out)
 {
   if(!c) 
     return;
@@ -162,7 +138,7 @@ void cipher_decrypt(cipher_t* c, encrypted_packet_t* in, plain_packet_t* out)
     len = cipher_null_crypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                             plain_packet_get_packet(out), plain_packet_get_length(out));
   else if(c->type_ == aes_ctr)
-    len = cipher_aesctr_crypt(c, encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
+    len = cipher_aesctr_crypt(c, kd, encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                               plain_packet_get_packet(out), plain_packet_get_length(out),
                               encrypted_packet_get_seq_nr(in), encrypted_packet_get_sender_id(in),
                               encrypted_packet_get_mux(in));
@@ -184,18 +160,18 @@ u_int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32
 
 /* ---------------- AES-Ctr Cipher ---------------- */
 
-int cipher_aesctr_init(cipher_t* c, int key_length)
+int cipher_aesctr_init(cipher_t* c)
 {
   if(!c)
     return -1;
 
-  c->key_length_ = key_length;
-  
   int algo;
-  switch(key_length) {
+  switch(c->key_length_) {
   case 128: algo = GCRY_CIPHER_AES128; break;
+  case 192: algo = GCRY_CIPHER_AES192; break;
+  case 256: algo = GCRY_CIPHER_AES256; break;
   default: {
-    log_printf(ERR, "key length of %d Bits is not supported", key_length);
+    log_printf(ERR, "cipher key length of %d Bits is not supported", c->key_length_);
     return -1;
   }
   }
@@ -218,13 +194,23 @@ void cipher_aesctr_close(cipher_t* c)
     gcry_cipher_close(c->handle_);
 }
 
-buffer_t cipher_aesctr_calc_ctr(cipher_t* c, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
   buffer_t result;
   result.buf_ = NULL;
   result.length_ = 0;
 
   if(!c)
+    return result;
+  
+  if(!c->salt_.buf_) {
+    c->salt_.length_ = 14;
+    c->salt_.buf_ = malloc(c->salt_.length_);
+    if(c->salt_.buf_)
+      return result;
+  }
+  int ret = key_derivation_generate(kd, LABEL_SATP_SALT, seq_nr, c->salt_.buf_, c->salt_.length_);
+  if(ret)
     return result;
 
   mpz_t ctr, sid_mux, seq;
@@ -263,20 +249,36 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, seq_nr_t seq_nr, sender_id_t sender
   return result;
 }
 
-u_int32_t cipher_aesctr_crypt(cipher_t* c, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+u_int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
   if(!c || !c->key_.buf_ || !c->salt_.buf_) {
     log_printf(ERR, "cipher not initialized or no key or salt set");
     return 0;
   }
+  if(!kd) {
+    log_printf(ERR, "no key derivation supplied");
+    return 0;
+  }
 
+
+  if(!c->key_.buf_) {
+    c->key_.length_ = c->key_length_/8;
+    c->key_.buf_ = malloc(c->key_.length_);
+    if(c->key_.buf_)
+      return 0;
+  }
+
+  int ret = key_derivation_generate(kd, LABEL_SATP_ENCRYPTION, seq_nr, c->key_.buf_, c->key_.length_);
+  if(ret)
+    return 0;
+  
   gcry_error_t err = gcry_cipher_setkey(c->handle_, c->key_.buf_, c->key_.length_);
   if(err) {
     log_printf(ERR, "failed to set cipher key: %s/%s", gcry_strerror(err), gcry_strsource(err));
     return 0;
   }
 
-  buffer_t ctr = cipher_aesctr_calc_ctr(c, seq_nr, sender_id, mux);
+  buffer_t ctr = cipher_aesctr_calc_ctr(c, kd, seq_nr, sender_id, mux);
   if(!ctr.buf_) {
     log_printf(ERR, "failed to calculate cipher CTR");
     return 0;

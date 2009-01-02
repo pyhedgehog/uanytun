@@ -110,7 +110,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   if(ret) {
     log_printf(ERR, "could not initialize key derivation of type %s", opt->kd_prf_);
     return_value = ret;
-  }  
+  }
 
   seq_win_t seq_win;
   ret = seq_win_init(&seq_win, opt->seq_window_size_);
@@ -158,7 +158,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       else
         plain_packet_set_type(&plain_packet, PAYLOAD_TYPE_UNKNOWN);
       
-      cipher_encrypt(&c, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
+      cipher_encrypt(&c, &kd, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
       seq_nr++;
       
           // TODO: add auth-tag
@@ -201,7 +201,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
         free(addrstring);
       }
       
-      cipher_decrypt(&c, &encrypted_packet, &plain_packet); 
+      cipher_decrypt(&c, &kd, &encrypted_packet, &plain_packet); 
       
       len = tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
       if(len == -1)
@@ -210,6 +210,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   }
 
   cipher_close(&c);
+  key_derivation_close(&kd);
   seq_win_clear(&seq_win);
 
   return return_value;

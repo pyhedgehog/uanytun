@@ -36,6 +36,7 @@
 #define _CIPHER_H_
 
 #include <gcrypt.h>
+#include "key_derivation.h"
 
 enum cipher_type_enum { unknown, null, aes_ctr };
 typedef enum cipher_type_enum cipher_type_t;
@@ -50,18 +51,16 @@ struct cipher_struct {
 typedef struct cipher_struct cipher_t;
 
 int cipher_init(cipher_t* c, const char* type);
-void cipher_set_key(cipher_t* c, u_int8_t* key, u_int32_t len);
-void cipher_set_salt(cipher_t* c, u_int8_t* salt, u_int32_t len);
 void cipher_close(cipher_t* c);
 
-void cipher_encrypt(cipher_t* c, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
-void cipher_decrypt(cipher_t* c, encrypted_packet_t* in, plain_packet_t* out);
+void cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
+void cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, plain_packet_t* out);
 
 u_int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen);
 
-int cipher_aesctr_init(cipher_t* c, int key_length);
+int cipher_aesctr_init(cipher_t* c);
 void cipher_aesctr_close(cipher_t* c);
-buffer_t cipher_aesctr_calc_ctr(cipher_t* c, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
-u_int32_t cipher_aesctr_crypt(cipher_t* c, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
+buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
+u_int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
 
 #endif

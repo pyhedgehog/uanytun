@@ -171,7 +171,7 @@ int key_derivation_aesctr_init(key_derivation_t* kd, u_int16_t key_length)
   case 192: algo = GCRY_CIPHER_AES192; break;
   case 256: algo = GCRY_CIPHER_AES256; break;
   default: {
-    log_printf(ERR, "key length of %d Bits is not supported", key_length);
+    log_printf(ERR, "key derivation key length of %d Bits is not supported", key_length);
     return -1;
   }
   }
@@ -225,7 +225,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, buffer_t* result, satp_
   else
     mpz_fdiv_q_2exp(r, seq, kd->ld_kdr_);
 
-  if(kd->key_store_[label].buf_ && seq_nr) {
+  if(kd->key_store_[label].buf_) {
     if(!mpz_cmp_ui(r, 0)) {
       mpz_clear(seq);
       mpz_clear(ctr);
@@ -235,7 +235,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, buffer_t* result, satp_
     }
     
     mpz_t mod;
-    mpz_init2(mod, (sizeof(seq_nr) * 8));
+    mpz_init2(mod, (sizeof(seq_nr_t) * 8));
     mpz_fdiv_r(mod, seq, r);
     if(mpz_cmp_ui(mod, 0)) {
       mpz_clear(seq);
@@ -249,7 +249,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, buffer_t* result, satp_
   }
 
   mpz_set_ui(key_id, label);
-  mpz_mul_2exp(key_id, key_id, 48);
+  mpz_mul_2exp(key_id, key_id, (sizeof(seq_nr_t) * 8));
   mpz_add(key_id, key_id, r);
 
   mpz_import(ctr, kd->master_salt_.length_, 1, 1, 0, 0, kd->master_salt_.buf_);
@@ -280,12 +280,6 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
     return -1;
   }
 
-  gcry_error_t err = gcry_cipher_reset(kd->handle_);
-  if(err) {
-    log_printf(ERR, "failed to reset key derivation cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
-    return -1;
-  }
-
   buffer_t ctr;
   ctr.buf_ = NULL;
   ctr.length_ = 0;
@@ -302,6 +296,12 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
     }
     memcpy(key, kd->key_store_[label].buf_, len);
     return 0;
+  }
+
+  gcry_error_t err = gcry_cipher_reset(kd->handle_);
+  if(err) {
+    log_printf(ERR, "failed to reset key derivation cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    return -1;
   }
 
   err = gcry_cipher_setctr(kd->handle_, ctr.buf_, ctr.length_);
