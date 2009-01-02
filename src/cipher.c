@@ -206,35 +206,37 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
   if(!c->salt_.buf_) {
     c->salt_.length_ = 14;
     c->salt_.buf_ = malloc(c->salt_.length_);
-    if(c->salt_.buf_)
+    if(!c->salt_.buf_)
       return result;
   }
   int ret = key_derivation_generate(kd, LABEL_SATP_SALT, seq_nr, c->salt_.buf_, c->salt_.length_);
-  if(ret)
+  if(ret < 0)
     return result;
 
   mpz_t ctr, sid_mux, seq;
   mpz_init2(ctr, 128);
-  mpz_init2(sid_mux, 96);
-  mpz_init2(seq, 48);
+  mpz_init2(sid_mux, 128);
+  mpz_init2(seq, 128);
   
   int faked_msb = 0;
-  if(!c->salt_.buf_[0])
+  if(!c->salt_.buf_[0]) {
     c->salt_.buf_[0] = 1;
+    faked_msb = 1;
+  }
 
   mpz_import(ctr, c->salt_.length_, 1, 1, 0, 0, c->salt_.buf_);
-  mpz_mul_2exp(ctr, ctr, 16);
 
   mpz_set_ui(sid_mux, mux);
-  mpz_mul_2exp(sid_mux, sid_mux, 16);
+  mpz_mul_2exp(sid_mux, sid_mux, (sizeof(sender_id) * 8));
   mpz_add_ui(sid_mux, sid_mux, sender_id);
-  mpz_mul_2exp(sid_mux, sid_mux, 64);
+  mpz_mul_2exp(sid_mux, sid_mux, 48);
 
   mpz_set_ui(seq, seq_nr);
-  mpz_mul_2exp(seq, seq, 16);
 
   mpz_xor(ctr, ctr, sid_mux);
   mpz_xor(ctr, ctr, seq);
+
+  mpz_mul_2exp(ctr, ctr, 16);
 
   result.buf_ = mpz_export(NULL, (size_t*)&result.length_, 1, 1, 0, 0, ctr);
   if(faked_msb) {
@@ -251,8 +253,8 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
 
 u_int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
-  if(!c || !c->key_.buf_ || !c->salt_.buf_) {
-    log_printf(ERR, "cipher not initialized or no key or salt set");
+  if(!c) {
+    log_printf(ERR, "cipher not initialized");
     return 0;
   }
   if(!kd) {
@@ -269,7 +271,7 @@ u_int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u
   }
 
   int ret = key_derivation_generate(kd, LABEL_SATP_ENCRYPTION, seq_nr, c->key_.buf_, c->key_.length_);
-  if(ret)
+  if(ret < 0)
     return 0;
   
   gcry_error_t err = gcry_cipher_setkey(c->handle_, c->key_.buf_, c->key_.length_);

@@ -60,15 +60,17 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, u
   }
 
   kd->ld_kdr_ = ld_kdr;
-  if(ld_kdr > (sizeof(seq_nr_t) * 8))
+  if(ld_kdr > (int8_t)(sizeof(seq_nr_t) * 8))
     kd->ld_kdr_ = sizeof(seq_nr_t) * 8;
+
   kd->key_length_ = key_len * sizeof(key[0]) * 8;
   kd->handle_ = 0;
 
   int i;
   for(i = 0; i<KD_LABEL_COUNT; ++i) {
-    kd->key_store_[i].buf_ = NULL;
-    kd->key_store_[i].length_ = 0;
+    kd->key_store_[i].key_.buf_ = NULL;
+    kd->key_store_[i].key_.length_ = 0;
+    kd->key_store_[i].r_ = 0;
   }
 
   if(!key) {
@@ -123,8 +125,8 @@ void key_derivation_close(key_derivation_t* kd)
 
   int i;
   for(i = 0; i<KD_LABEL_COUNT; ++i) {
-    if(kd->key_store_[i].buf_)
-      free(kd->key_store_[i].buf_);
+    if(kd->key_store_[i].key_.buf_)
+      free(kd->key_store_[i].key_.buf_);
   }
 }
 
@@ -200,75 +202,50 @@ void key_derivation_aesctr_close(key_derivation_t* kd)
     gcry_cipher_close(kd->handle_);
 }
 
-int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, buffer_t* result, satp_prf_label_t label, seq_nr_t seq_nr)
+int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, satp_prf_label_t label, seq_nr_t seq_nr)
 {
   if(!kd || !result)
     return -1;
 
-  result->buf_ = NULL;
-  result->length_ = 0;
+  seq_nr_t r = 0;
+  if(kd->ld_kdr_ >= 0)
+    r = seq_nr >> kd->ld_kdr_;
 
-  mpz_t ctr, key_id, r, seq;
+  if(kd->key_store_[label].key_.buf_ && kd->key_store_[label].r_ == r) {
+    if(!r || (seq_nr % r))
+      return 0;
+  }
+  result->r_ = r;
+
+  mpz_t ctr, key_id;
   mpz_init2(ctr, 128);
   mpz_init2(key_id, 128);
-  mpz_init2(r, 128);
-  mpz_init2(seq, (sizeof(seq_nr_t) * 8));
-
-  mpz_set_ui(seq, seq_nr);
 
   int faked_msb = 0;
-  if(!kd->master_salt_.buf_[0])
+  if(!kd->master_salt_.buf_[0]) {
     kd->master_salt_.buf_[0] = 1;
-
-  if(kd->ld_kdr_ == -1)
-    mpz_set_ui(r, 0);
-  else
-    mpz_fdiv_q_2exp(r, seq, kd->ld_kdr_);
-
-  if(kd->key_store_[label].buf_) {
-    if(!mpz_cmp_ui(r, 0)) {
-      mpz_clear(seq);
-      mpz_clear(ctr);
-      mpz_clear(key_id);
-      mpz_clear(r);
-      return 0;
-    }
-    
-    mpz_t mod;
-    mpz_init2(mod, (sizeof(seq_nr_t) * 8));
-    mpz_fdiv_r(mod, seq, r);
-    if(mpz_cmp_ui(mod, 0)) {
-      mpz_clear(seq);
-      mpz_clear(mod);
-      mpz_clear(ctr);
-      mpz_clear(key_id);
-      mpz_clear(r);
-      return 0;
-    }
-    mpz_clear(mod);
+    faked_msb = 1;
   }
+  mpz_import(ctr, kd->master_salt_.length_, 1, 1, 0, 0, kd->master_salt_.buf_);
 
   mpz_set_ui(key_id, label);
-  mpz_mul_2exp(key_id, key_id, (sizeof(seq_nr_t) * 8));
-  mpz_add(key_id, key_id, r);
-
-  mpz_import(ctr, kd->master_salt_.length_, 1, 1, 0, 0, kd->master_salt_.buf_);
+  mpz_mul_2exp(key_id, key_id, (sizeof(r) * 8));
+  mpz_add_ui(key_id, key_id, r);
 
   mpz_xor(ctr, ctr, key_id);
   mpz_mul_2exp(ctr, ctr, 16);
 
-  if(result->buf_)
-    free(result->buf_);
-  result->buf_ = mpz_export(NULL, (size_t*)&(result->length_), 1, 1, 0, 0, ctr);
+  if(result->key_.buf_)
+    free(result->key_.buf_);
+  result->key_.buf_ = mpz_export(NULL, (size_t*)&(result->key_.length_), 1, 1, 0, 0, ctr);
+
   if(faked_msb) {
     kd->master_salt_.buf_[0] = 0;
-    result->buf_[0] = 0;
+    result->key_.buf_[0] = 0;
   }
 
-  mpz_clear(seq);
   mpz_clear(ctr);
   mpz_clear(key_id);
-  mpz_clear(r);
 
   return 1;
 }
@@ -280,21 +257,22 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
     return -1;
   }
 
-  buffer_t ctr;
-  ctr.buf_ = NULL;
-  ctr.length_ = 0;
+  key_store_t ctr;
+  ctr.key_.buf_ = NULL;
+  ctr.key_.length_ = 0;
+  ctr.r_ = 0;
   int ret = key_derivation_aesctr_calc_ctr(kd, &ctr, label, seq_nr);
   if(ret < 0) {
     log_printf(ERR, "failed to calculate key derivation CTR");
     return -1;
   }
   else if(!ret) {
-    if(len > kd->key_store_[label].length_) {
+    if(len > kd->key_store_[label].key_.length_) {
       log_printf(WARNING, "stored (old) key for label 0x%02X is too short, filling with zeros", label);
       memset(key, 0, len);
-      len = kd->key_store_[label].length_;
+      len = kd->key_store_[label].key_.length_;
     }
-    memcpy(key, kd->key_store_[label].buf_, len);
+    memcpy(key, kd->key_store_[label].key_.buf_, len);
     return 0;
   }
 
@@ -304,8 +282,8 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
     return -1;
   }
 
-  err = gcry_cipher_setctr(kd->handle_, ctr.buf_, ctr.length_);
-  free(ctr.buf_);
+  err = gcry_cipher_setctr(kd->handle_, ctr.key_.buf_, ctr.key_.length_);
+  free(ctr.key_.buf_);
 
   if(err) {
     log_printf(ERR, "failed to set key derivation CTR: %s/%s", gcry_strerror(err), gcry_strsource(err));
@@ -319,26 +297,30 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
     return -1;
   }
   
-  if(!kd->key_store_[label].buf_) {
-    kd->key_store_[label].length_ = 0;
-    kd->key_store_[label].buf_ = malloc(len);
-    if(!kd->key_store_[label].buf_) {
+  if(!kd->ld_kdr_)
+    return 1;
+
+  if(!kd->key_store_[label].key_.buf_) {
+    kd->key_store_[label].key_.length_ = 0;
+    kd->key_store_[label].key_.buf_ = malloc(len);
+    if(!kd->key_store_[label].key_.buf_) {
       log_printf(ERR, "memory error at key derivation");
       return -2;
     }
-    kd->key_store_[label].length_ = len;
+    kd->key_store_[label].key_.length_ = len;
   }
-  else if(kd->key_store_[label].length_ < len) {
-    u_int8_t* tmp = realloc(kd->key_store_[label].buf_, len);
+  else if(kd->key_store_[label].key_.length_ < len) {
+    u_int8_t* tmp = realloc(kd->key_store_[label].key_.buf_, len);
     if(!tmp) {
       log_printf(ERR, "memory error at key derivation");
       return -2;
     }
-    kd->key_store_[label].buf_ = tmp;
-    kd->key_store_[label].length_ = len;
+    kd->key_store_[label].key_.buf_ = tmp;
+    kd->key_store_[label].key_.length_ = len;
   }
 
-  memcpy(kd->key_store_[label].buf_, key, len);
+  memcpy(kd->key_store_[label].key_.buf_, key, len);
+  kd->key_store_[label].r_ = ctr.r_;
 
-  return 0;
+  return 1;
 }

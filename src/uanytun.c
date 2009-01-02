@@ -105,10 +105,17 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     return_value = ret;
   }
 
-  key_derivation_t kd;
-  ret = key_derivation_init(&kd, opt->kd_prf_, opt->ld_kdr_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
+  key_derivation_t kd_in;
+  ret = key_derivation_init(&kd_in, opt->kd_prf_, opt->ld_kdr_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
-    log_printf(ERR, "could not initialize key derivation of type %s", opt->kd_prf_);
+    log_printf(ERR, "could not initialize inbound key derivation of type %s", opt->kd_prf_);
+    return_value = ret;
+  }
+
+  key_derivation_t kd_out;
+  ret = key_derivation_init(&kd_out, opt->kd_prf_, opt->ld_kdr_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
+  if(ret) {
+    log_printf(ERR, "could not initialize outbound key derivation of type %s", opt->kd_prf_);
     return_value = ret;
   }
 
@@ -158,7 +165,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       else
         plain_packet_set_type(&plain_packet, PAYLOAD_TYPE_UNKNOWN);
       
-      cipher_encrypt(&c, &kd, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
+      cipher_encrypt(&c, &kd_out, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
       seq_nr++;
       
           // TODO: add auth-tag
@@ -201,7 +208,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
         free(addrstring);
       }
       
-      cipher_decrypt(&c, &kd, &encrypted_packet, &plain_packet); 
+      cipher_decrypt(&c, &kd_in, &encrypted_packet, &plain_packet); 
       
       len = tun_write(dev, plain_packet_get_payload(&plain_packet), plain_packet_get_payload_length(&plain_packet));
       if(len == -1)
@@ -210,7 +217,8 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   }
 
   cipher_close(&c);
-  key_derivation_close(&kd);
+  key_derivation_close(&kd_out);
+  key_derivation_close(&kd_in);
   seq_win_clear(&seq_win);
 
   return return_value;
