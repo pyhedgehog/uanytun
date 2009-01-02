@@ -34,7 +34,7 @@
 
 TARGET=$(shell uname -s)
 CC = gcc
-CCFLAGS = -g -O2
+CCFLAGS = -g -O2 # -DANYTUN_02_COMPAT 
 LD = gcc
 LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error -lgmp
 

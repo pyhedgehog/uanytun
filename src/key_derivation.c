@@ -229,8 +229,11 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, sa
   mpz_import(ctr, kd->master_salt_.length_, 1, 1, 0, 0, kd->master_salt_.buf_);
 
   mpz_set_ui(key_id, label);
-/*  mpz_mul_2exp(key_id, key_id, (sizeof(r) * 8)); */ 
+#ifndef ANYTUN_02_COMPAT
+  mpz_mul_2exp(key_id, key_id, (sizeof(r) * 8));
+#else
   mpz_mul_2exp(key_id, key_id, 48);
+#endif
   mpz_add_ui(key_id, key_id, r);
 
   mpz_xor(ctr, ctr, key_id);
@@ -240,10 +243,12 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, sa
     free(result->key_.buf_);
   result->key_.buf_ = mpz_export(NULL, (size_t*)&(result->key_.length_), 1, 1, 0, 0, ctr);
 
-/*   if(faked_msb) { */
-/*     kd->master_salt_.buf_[0] = 0; */
-/*     result->key_.buf_[0] = 0; */
-/*   } */
+#ifndef ANYTUN_02_COMPAT
+  if(faked_msb) {
+    kd->master_salt_.buf_[0] = 0;
+    result->key_.buf_[0] = 0;
+  }
+#endif
 
   mpz_clear(ctr);
   mpz_clear(key_id);
