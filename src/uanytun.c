@@ -51,6 +51,7 @@
 
 #include "seq_window.h"
 #include "cipher.h"
+#include "key_derivation.h"
 
 #include "daemon.h"
 #include "sysexec.h"
@@ -67,19 +68,11 @@ int init_libgcrypt()
     return -1;
   }
 
-#ifndef NO_SEC_MEM
-  gcry_error_t err = gcry_control(GCRYCTL_INIT_SECMEM, 16384, 0);
-  if(err) {
-    log_printf(ERR, "failed to initialize secure memory: %s/%s", gcry_strerror(err), gcry_strsource(err));
-    return -1;
-  }
-#else
   gcry_error_t err = gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
   if(err) {
     log_printf(ERR, "failed to disable secure memory: %s/%s", gcry_strerror(err), gcry_strsource(err));
     return -1;
   }
-#endif
 
   err = gcry_control(GCRYCTL_INITIALIZATION_FINISHED);
   if(err) {
@@ -111,6 +104,13 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     log_printf(ERR, "could not initialize cipher of type %s", opt->cipher_);
     return_value = ret;
   }
+
+  key_derivation_t kd;
+  ret = key_derivation_init(&kd, opt->kd_prf_, 0, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
+  if(ret) {
+    log_printf(ERR, "could not initialize cipher of type %s", opt->kd_prf_);
+    return_value = ret;
+  }  
 
   seq_win_t seq_win;
   ret = seq_win_init(&seq_win, opt->seq_window_size_);
@@ -217,8 +217,11 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 
 void print_hex_dump(const u_int8_t* buf, u_int32_t len)
 {
-  u_int32_t i;
+  if(!buf) {
+    printf("(NULL)");
+  }
 
+  u_int32_t i;
   for(i=0; i < len; i++) {
     printf("%02X ", buf[i]);
     if(!((i+1)%8))
@@ -228,7 +231,6 @@ void print_hex_dump(const u_int8_t* buf, u_int32_t len)
   }
   printf("\n");
 }
-
 
 int main(int argc, char* argv[])
 {

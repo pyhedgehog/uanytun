@@ -37,6 +37,7 @@
 
 #include <gcrypt.h>
 
+#define KD_LABEL_COUNT 3
 enum satp_prf_label_enum {
   LABEL_SATP_ENCRYPTION  = 0x00,
   LABEL_SATP_MSG_AUTH    = 0x01,
@@ -44,27 +45,29 @@ enum satp_prf_label_enum {
 };
 typedef enum satp_prf_label_enum satp_prf_label_t;
 
-enum key_derivation_type_enum { unknown, null, aes_ctr };
+enum key_derivation_type_enum { kd_unknown, kd_null, kd_aes_ctr };
 typedef enum key_derivation_type_enum key_derivation_type_t;
 
 struct key_derivation_struct {
   key_derivation_type_t type_;
   int8_t ld_kdr_;
+  u_int16_t key_length_;
   buffer_t master_key_;
   buffer_t master_salt_;
   gcry_cipher_hd_t handle_;
+  buffer_t key_store_[KD_LABEL_COUNT];
 };
 typedef struct key_derivation_struct key_derivation_t;
 
-int key_derivation_init(key_derivation_t* kd, const char* type, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len);
+int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len);
 void key_derivation_close(key_derivation_t* kd);
-void key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
+int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
 
-void key_derivation_null_generate(u_int8_t* key, u_int32_t len);
+int key_derivation_null_generate(u_int8_t* key, u_int32_t len);
 
-int key_derivation_aesctr_init(key_derivation_t* kd, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len);
+int key_derivation_aesctr_init(key_derivation_t* kd, u_int16_t key_length);
 void key_derivation_aesctr_close(key_derivation_t* kd);
-buffer_t key_derivation_aesctr_calc_ctr(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr);
-void key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
+int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, buffer_t* result, satp_prf_label_t label, seq_nr_t seq_nr);
+int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
 
 #endif
