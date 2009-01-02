@@ -239,10 +239,10 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
   mpz_mul_2exp(ctr, ctr, 16);
 
   result.buf_ = mpz_export(NULL, (size_t*)&result.length_, 1, 1, 0, 0, ctr);
-  if(faked_msb) {
-    c->salt_.buf_[0] = 0;
-    result.buf_[0] = 0;
-  }
+/*   if(faked_msb) { */
+/*     c->salt_.buf_[0] = 0; */
+/*     result.buf_[0] = 0; */
+/*   } */
 
   mpz_clear(ctr);
   mpz_clear(sid_mux);
