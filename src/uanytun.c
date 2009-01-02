@@ -106,7 +106,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   }
 
   key_derivation_t kd;
-  ret = key_derivation_init(&kd, opt->kd_prf_, 0, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
+  ret = key_derivation_init(&kd, opt->kd_prf_, opt->ld_kdr_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
     log_printf(ERR, "could not initialize key derivation of type %s", opt->kd_prf_);
     return_value = ret;

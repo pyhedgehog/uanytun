@@ -296,7 +296,7 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
   }
   else if(!ret) {
     if(len > kd->key_store_[label].length_) {
-      log_printf(WARNING, "stored (old) key for label 0x%02X is to short, filling with zeros", label);
+      log_printf(WARNING, "stored (old) key for label 0x%02X is too short, filling with zeros", label);
       memset(key, 0, len);
       len = kd->key_store_[label].length_;
     }

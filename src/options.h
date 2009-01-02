@@ -55,6 +55,7 @@ struct options_struct {
   window_size_t seq_window_size_;
   char* cipher_;
   char* kd_prf_;
+  int ld_kdr_;
   char* auth_algo_;
   mux_t mux_;
   buffer_t key_;

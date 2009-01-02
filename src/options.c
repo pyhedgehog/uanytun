@@ -51,7 +51,7 @@
 #define PARSE_INT_PARAM(SHORT, LONG, VALUE)              \
     else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
     {                                                    \
-      if(argc < 1 || argv[i+1][0] == '-')                \
+      if(argc < 1)                                       \
         return i;                                        \
       VALUE = atoi(argv[i+1]);                           \
       argc--;                                            \
@@ -176,6 +176,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
     PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
     PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
+    PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
     PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
     PARSE_HEXSTRING_PARAM_SEC("-K","--key", opt->key_)
     PARSE_HEXSTRING_PARAM_SEC("-A","--salt", opt->salt_)
@@ -223,6 +224,7 @@ void options_default(options_t* opt)
   opt->seq_window_size_ = 100;
   opt->cipher_ = strdup("null");
   opt->kd_prf_ = strdup("null");
+  opt->ld_kdr_ = 0;
   opt->auth_algo_ = strdup("null");
   opt->mux_ = 0;
   opt->key_.buf_ = NULL;
@@ -299,6 +301,7 @@ void options_print_usage()
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
 //  printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
+  printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
   printf("        [-K|--key] <master key>             master key to use for encryption\n");
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
 }
@@ -326,6 +329,7 @@ void options_print(options_t* opt)
   printf("cipher: '%s'\n", opt->cipher_);
   printf("auth_algo: '%s'\n", opt->auth_algo_);
   printf("kd_prf: '%s'\n", opt->kd_prf_);
+  printf("ld_kdr: %d\n", opt->ld_kdr_);
 
   u_int32_t i;
   printf("key_[%d]: '", opt->key_.length_);

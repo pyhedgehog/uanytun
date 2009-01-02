@@ -28,6 +28,7 @@ SYNOPSIS
 [ *-m|--mux* <mux-id> ]
 [ *-c|--cipher* <cipher type> ]
 [ *-a|--auth-algo* <algo type> ]
+[ *-l|--ld-kdr* <ld-kdr> ]
 [ *-K|--key* <master key> ]
 [ *-A|--salt* <master salt> ]
 
@@ -215,6 +216,17 @@ Possible values:
 If HMAC-SHA1 is used, the packet length is increased by
 10 bytes. These 10 bytes contain the authentication data.
 
+-l|--ld-kdr <ld-kdr>
+~~~~~~~~~~~~~~~~~~~~
+
+The log2 of the key derivation rate. This is used by the key
+derivation to determine how ofen a new session key has to be
+generated. A value of -1 means to generate only one key and use
+it forever. The default is 0 which means to calculate a new key
+for every packet. A value of 1 would tell the key derivation
+to generate a new key after 2 packets, for 2 its 4 packets and 
+so on.
+
 -K|--key <master key>
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -222,7 +234,7 @@ master key to use for encryption
 
 Master key in hexadecimal notation, eg
 01a2b3c4d5e6f708a9b0cadbecfd0fa1, with a mandatory length
-of 32 characters (16 bytes).
+of 32, 48 or 64 characters (128, 196 or 256 bits).
 
 -A|--salt <master salt>
 ~~~~~~~~~~~~~~~~~~~~~~~
