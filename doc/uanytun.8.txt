@@ -200,6 +200,10 @@ Encryption algorithm used for encrypting the payload
 Possible values:
 
 * *null* - no encryption
+* *aes-ctr* - AES in counter mode with 128 Bits, default value
+* *aes-ctr-128* - AES in counter mode with 128 Bits
+* *aes-ctr-192* - AES in counter mode with 192 Bits
+* *aes-ctr-256* - AES in counter mode with 256 Bits
 
 -a|--auth-algo <algo type>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,7 +215,7 @@ This option sets the message authentication algorithm.
 Possible values:
 
 * *null* - no message authentication
-
+* *sha1* - HMAC-SHA1, default value
 
 If HMAC-SHA1 is used, the packet length is increased by
 10 bytes. These 10 bytes contain the authentication data.
@@ -230,16 +234,16 @@ so on.
 -K|--key <master key>
 ~~~~~~~~~~~~~~~~~~~~~
 
-master key to use for encryption
+master key to use for key derivation
 
 Master key in hexadecimal notation, eg
 01a2b3c4d5e6f708a9b0cadbecfd0fa1, with a mandatory length
-of 32, 48 or 64 characters (128, 196 or 256 bits).
+of 32, 48 or 64 characters (128, 192 or 256 bits).
 
 -A|--salt <master salt>
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-master salt to use for encryption
+master salt to use for key derivation
 
 Master salt in hexadecimal notation, eg
 01a2b3c4d5e6f708a9b0cadbecfd, with a mandatory length
