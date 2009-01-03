@@ -71,7 +71,7 @@ int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr
 
 int key_derivation_null_generate(u_int8_t* key, u_int32_t len);
 
-int key_derivation_aesctr_init(key_derivation_t* kd, u_int16_t key_length);
+int key_derivation_aesctr_init(key_derivation_t* kd);
 void key_derivation_aesctr_close(key_derivation_t* kd);
 int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, satp_prf_label_t label, seq_nr_t seq_nr);
 int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);

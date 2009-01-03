@@ -106,12 +106,12 @@ void cipher_close(cipher_t* c)
 }
 
 
-void cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+int cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
   if(!c) 
-    return;
+    return -1;
 
-	u_int32_t len;
+	int32_t len;
   if(c->type_ == c_null)
     len = cipher_null_crypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
                             encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
@@ -121,22 +121,27 @@ void cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encry
                               seq_nr, sender_id, mux);
   else {
     log_printf(ERR, "unknown cipher type");
-    return;
+    return -1;
   }
+
+  if(len < 0)
+    return 0;
 
 	encrypted_packet_set_sender_id(out, sender_id);
   encrypted_packet_set_seq_nr(out, seq_nr);
   encrypted_packet_set_mux(out, mux);
 
   encrypted_packet_set_payload_length(out, len);
+
+  return 0;
 }
 
-void cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, plain_packet_t* out)
+int cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, plain_packet_t* out)
 {
   if(!c) 
-    return;
+    return -1;
 
-	u_int32_t len;
+	int32_t len;
   if(c->type_ == c_null)
     len = cipher_null_crypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                             plain_packet_get_packet(out), plain_packet_get_length(out));
@@ -147,15 +152,20 @@ void cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, p
                               encrypted_packet_get_mux(in));
   else {
     log_printf(ERR, "unknown cipher type");
-    return;
+    return -1;
   }
   
+  if(len < 0)
+    return 0;
+
 	plain_packet_set_length(out, len);
+
+  return 0;
 }
 
 /* ---------------- NULL Cipher ---------------- */
 
-u_int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen)
+int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen)
 {
 	memcpy(out, in, (ilen < olen) ? ilen : olen);
   return (ilen < olen) ? ilen : olen;
@@ -168,6 +178,22 @@ int cipher_aesctr_init(cipher_t* c)
   if(!c)
     return -1;
 
+  if(c->key_.buf_)
+    free(c->key_.buf_);
+
+  c->key_.length_ = c->key_length_/8;
+  c->key_.buf_ = malloc(c->key_.length_);
+  if(!c->key_.buf_)
+    return -2;
+
+  if(c->salt_.buf_)
+    free(c->salt_.buf_);
+
+  c->salt_.length_ = 14;
+  c->salt_.buf_ = malloc(c->salt_.length_);
+  if(!c->salt_.buf_)
+    return -2;
+
   int algo;
   switch(c->key_length_) {
   case 128: algo = GCRY_CIPHER_AES128; break;
@@ -179,7 +205,7 @@ int cipher_aesctr_init(cipher_t* c)
   }
   }
 
-  gcry_error_t err = gcry_cipher_open( &c->handle_, algo, GCRY_CIPHER_MODE_CTR, 0 );
+  gcry_error_t err = gcry_cipher_open(&c->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
     log_printf(ERR, "failed to open cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
     return -1;
@@ -206,14 +232,6 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
   if(!c)
     return result;
   
-  if(!c->salt_.buf_) {
-    c->salt_.length_ = 14;
-    c->salt_.buf_ = malloc(c->salt_.length_);
-    if(!c->salt_.buf_) {
-      log_printf(ERR, "memory error aes-ctr calc ctr");
-      return result;
-    }
-  }
   int ret = key_derivation_generate(kd, LABEL_SATP_SALT, seq_nr, c->salt_.buf_, c->salt_.length_);
   if(ret < 0)
     return result;
@@ -259,54 +277,53 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
   return result;
 }
 
-u_int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
-  if(!c) {
-    log_printf(ERR, "cipher not initialized");
-    return 0;
-  }
+  if(!c)
+    return -1;
+
   if(!kd) {
     log_printf(ERR, "no key derivation supplied");
-    return 0;
-  }
-
-
-  if(!c->key_.buf_) {
-    c->key_.length_ = c->key_length_/8;
-    c->key_.buf_ = malloc(c->key_.length_);
-    if(!c->key_.buf_) {
-      log_printf(ERR, "memory error aes-ctr crypt");
-      return 0;
-    }
+    return -1;
   }
 
   int ret = key_derivation_generate(kd, LABEL_SATP_ENCRYPTION, seq_nr, c->key_.buf_, c->key_.length_);
   if(ret < 0)
-    return 0;
+    return ret;
   
-  gcry_error_t err = gcry_cipher_setkey(c->handle_, c->key_.buf_, c->key_.length_);
-  if(err) {
-    log_printf(ERR, "failed to set cipher key: %s/%s", gcry_strerror(err), gcry_strsource(err));
-    return 0;
+  gcry_error_t err;
+  if(ret) { // a new key got generated
+    err = gcry_cipher_setkey(c->handle_, c->key_.buf_, c->key_.length_);
+    if(err) {
+      log_printf(ERR, "failed to set cipher key: %s/%s", gcry_strerror(err), gcry_strsource(err));
+      return -1;
+    }
+  } // no new key got generated
+  else {
+    err = gcry_cipher_reset(c->handle_);
+    if(err) {
+      log_printf(ERR, "failed to reset cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
+      return -1;
+    }
   }
 
   buffer_t ctr = cipher_aesctr_calc_ctr(c, kd, seq_nr, sender_id, mux);
   if(!ctr.buf_) {
     log_printf(ERR, "failed to calculate cipher CTR");
-    return 0;
+    return -1;
   }
   err = gcry_cipher_setctr(c->handle_, ctr.buf_, ctr.length_);
   free(ctr.buf_);
 
   if(err) {
     log_printf(ERR, "failed to set cipher CTR: %s/%s", gcry_strerror(err), gcry_strsource(err));
-    return 0;
+    return -1;
   }
 
   err = gcry_cipher_encrypt(c->handle_, out, olen, in, ilen);
   if(err) {
-    log_printf(ERR, "failed to generate cipher bitstream: %s/%s", gcry_strerror(err), gcry_strsource(err));
-    return 0;
+    log_printf(ERR, "failed to de/encrypt packet: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    return -1;
   }
 
   return (ilen < olen) ? ilen : olen;  

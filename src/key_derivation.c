@@ -102,7 +102,7 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, u
 
   int ret = 0;
   if(kd->type_ == kd_aes_ctr)
-    ret = key_derivation_aesctr_init(kd, kd->key_length_);
+    ret = key_derivation_aesctr_init(kd);
 
   if(ret)
     key_derivation_close(kd);
@@ -157,23 +157,23 @@ int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr
 int key_derivation_null_generate(u_int8_t* key, u_int32_t len)
 {
   memset(key, 0, len);
-  return 0;
+  return 1;
 }
 
 /* ---------------- AES-Ctr Key Derivation ---------------- */
 
-int key_derivation_aesctr_init(key_derivation_t* kd, u_int16_t key_length)
+int key_derivation_aesctr_init(key_derivation_t* kd)
 {
   if(!kd)
     return -1;
 
   int algo;
-  switch(key_length) {
+  switch(kd->key_length_) {
   case 128: algo = GCRY_CIPHER_AES128; break;
   case 192: algo = GCRY_CIPHER_AES192; break;
   case 256: algo = GCRY_CIPHER_AES256; break;
   default: {
-    log_printf(ERR, "key derivation key length of %d Bits is not supported", key_length);
+    log_printf(ERR, "key derivation key length of %d Bits is not supported", kd->key_length_);
     return -1;
   }
   }
@@ -309,18 +309,16 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
   if(!kd->key_store_[label].key_.buf_) {
     kd->key_store_[label].key_.length_ = 0;
     kd->key_store_[label].key_.buf_ = malloc(len);
-    if(!kd->key_store_[label].key_.buf_) {
-      log_printf(ERR, "memory error at key derivation");
+    if(!kd->key_store_[label].key_.buf_)
       return -2;
-    }
+
     kd->key_store_[label].key_.length_ = len;
   }
   else if(kd->key_store_[label].key_.length_ < len) {
     u_int8_t* tmp = realloc(kd->key_store_[label].key_.buf_, len);
-    if(!tmp) {
-      log_printf(ERR, "memory error at key derivation");
+    if(!tmp)
       return -2;
-    }
+
     kd->key_store_[label].key_.buf_ = tmp;
     kd->key_store_[label].key_.length_ = len;
   }

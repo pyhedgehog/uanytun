@@ -124,6 +124,14 @@ int auth_algo_sha1_init(auth_algo_t* aa)
   if(!aa)
     return -1;
 
+  if(aa->key_.buf_)
+    free(aa->key_.buf_);
+
+  aa->key_.length_ = SHA1_LENGTH;
+  aa->key_.buf_ = malloc(aa->key_.length_);
+  if(!aa->key_.buf_)
+    return -2;
+
   gcry_error_t err = gcry_md_open(&aa->handle_, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
   if(err) {
     log_printf(ERR, "failed to open message digest algo: %s/%s", gcry_strerror(err), gcry_strsource(err));
@@ -154,29 +162,20 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
     return;
   }
 
-
-  if(!aa->key_.buf_) {
-    aa->key_.length_ = SHA1_LENGTH;
-    aa->key_.buf_ = malloc(aa->key_.length_);
-    if(!aa->key_.buf_) {
-      log_printf(ERR, "memory error at auth algo generate");
-      return;
-    }
-  }
-
   int ret = key_derivation_generate(kd, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
   if(ret < 0)
     return;
-  gcry_error_t err = gcry_md_setkey(aa->handle_, aa->key_.buf_, aa->key_.length_);
-  if(err) {
-    log_printf(ERR, "failed to set hmac key: %s/%s", gcry_strerror(err), gcry_strsource(err));
-    return;
-  } 
+  if(ret) { // a new key got generated
+    gcry_error_t err = gcry_md_setkey(aa->handle_, aa->key_.buf_, aa->key_.length_);
+    if(err) {
+      log_printf(ERR, "failed to set hmac key: %s/%s", gcry_strerror(err), gcry_strsource(err));
+      return;
+    } 
+  }
 
   encrypted_packet_add_auth_tag(packet);
 
   gcry_md_reset(aa->handle_);
-
   gcry_md_write(aa->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   gcry_md_final(aa->handle_);
 
@@ -202,26 +201,18 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
     return 0;
   }
 
-  if(!aa->key_.buf_) {
-    aa->key_.length_ = SHA1_LENGTH;
-    aa->key_.buf_ = malloc(aa->key_.length_);
-    if(!aa->key_.buf_) {
-      log_printf(ERR, "memory error at auth algo check tag");
+  int ret = key_derivation_generate(kd, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
+  if(ret < 0)
+    return 0;
+  if(ret) { // a new key got generated
+    gcry_error_t err = gcry_md_setkey(aa->handle_, aa->key_.buf_, aa->key_.length_);
+    if(err) {
+      log_printf(ERR, "failed to set hmac key: %s/%s", gcry_strerror(err), gcry_strsource(err));
       return;
     }
   }
 
-  int ret = key_derivation_generate(kd, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
-  if(ret < 0)
-    return 0;
-  gcry_error_t err = gcry_md_setkey(aa->handle_, aa->key_.buf_, aa->key_.length_);
-  if(err) {
-    log_printf(ERR, "failed to set hmac key: %s/%s", gcry_strerror(err), gcry_strsource(err));
-    return;
-  } 
-
   gcry_md_reset(aa->handle_);
-
   gcry_md_write(aa->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   gcry_md_final(aa->handle_);
 
