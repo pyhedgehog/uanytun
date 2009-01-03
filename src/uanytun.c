@@ -50,14 +50,14 @@
 #include "encrypted_packet.h"
 
 #include "seq_window.h"
-#include "cipher.h"
 #include "key_derivation.h"
+#include "cipher.h"
+#include "auth_algo.h"
 
 #include "daemon.h"
 #include "sysexec.h"
 
 #include <gcrypt.h>
-
 
 #define MIN_GCRYPT_VERSION "1.2.0"
 
@@ -102,6 +102,13 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   int ret = cipher_init(&c, opt->cipher_);
   if(ret) {
     log_printf(ERR, "could not initialize cipher of type %s", opt->cipher_);
+    return_value = ret;
+  }
+  
+  auth_algo_t aa;
+  ret = auth_algo_init(&aa, opt->auth_algo_);
+  if(ret) {
+    log_printf(ERR, "could not initialize auth algo of type %s", opt->auth_algo_);
     return_value = ret;
   }
 
@@ -168,7 +175,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       cipher_encrypt(&c, &kd_out, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
       seq_nr++;
       
-          // TODO: add auth-tag
+      auth_algo_generate(&aa, &kd_out, &encrypted_packet);
       
       len = udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet));
       if(len == -1)
@@ -184,7 +191,10 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 
       encrypted_packet_set_length(&encrypted_packet, len);
       
-          // TODO: check auth-tag
+      if(!auth_algo_check_tag(&aa, &kd_out, &encrypted_packet)) {
+        log_printf(WARNING, "wrong authentication tag, discarding packet");
+        continue;
+      }
       
       if(encrypted_packet_get_mux(&encrypted_packet) != opt->mux_)
         continue;
@@ -217,6 +227,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   }
 
   cipher_close(&c);
+  auth_algo_close(&aa);
   key_derivation_close(&kd_out);
   key_derivation_close(&kd_in);
   seq_win_clear(&seq_win);

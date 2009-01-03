@@ -222,10 +222,10 @@ void options_default(options_t* opt)
   opt->ifconfig_param_remote_netmask_ = NULL;
   opt->post_up_script_ = NULL;
   opt->seq_window_size_ = 100;
-  opt->cipher_ = strdup("null");
-  opt->kd_prf_ = strdup("null");
+  opt->cipher_ = strdup("aes-ctr");
+  opt->kd_prf_ = strdup("aes-ctr");
   opt->ld_kdr_ = 0;
-  opt->auth_algo_ = strdup("null");
+  opt->auth_algo_ = strdup("sha1");
   opt->mux_ = 0;
   opt->key_.buf_ = NULL;
   opt->key_.length_ = 0;

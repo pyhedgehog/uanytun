@@ -32,35 +32,32 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CIPHER_H_
-#define _CIPHER_H_
+#ifndef _AUTH_ALGO_H_
+#define _AUTH_ALGO_H_
 
 #include <gcrypt.h>
 #include "key_derivation.h"
 
-enum cipher_type_enum { c_unknown, c_null, c_aes_ctr };
-typedef enum cipher_type_enum cipher_type_t;
+enum auth_algo_type_enum { aa_unknown, aa_null, aa_sha1 };
+typedef enum auth_algo_type_enum auth_algo_type_t;
 
-struct cipher_struct {
-  cipher_type_t type_;
-  u_int16_t key_length_;
+struct auth_algo_struct {
+  auth_algo_type_t type_;
   buffer_t key_;
-  buffer_t salt_;
-  gcry_cipher_hd_t handle_;
+  gcry_md_hd_t handle_;
 };
-typedef struct cipher_struct cipher_t;
+typedef struct auth_algo_struct auth_algo_t;
 
-int cipher_init(cipher_t* c, const char* type);
-void cipher_close(cipher_t* c);
+int auth_algo_init(auth_algo_t* aa, const char* type);
+void auth_algo_close(auth_algo_t* aa);
 
-void cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
-void cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, plain_packet_t* out);
+void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet);
+int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet);
 
-u_int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen);
-
-int cipher_aesctr_init(cipher_t* c);
-void cipher_aesctr_close(cipher_t* c);
-buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
-u_int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
+#define SHA1_LENGTH 20
+int auth_algo_sha1_init(auth_algo_t* aa);
+void auth_algo_sha1_close(auth_algo_t* aa);
+void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet);
+int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet);
 
 #endif

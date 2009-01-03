@@ -83,7 +83,7 @@ void plain_packet_set_length(plain_packet_t* packet, u_int32_t len)
 
 u_int8_t* plain_packet_get_payload(plain_packet_t* packet)
 {
-  if(!packet)
+  if(!packet || !packet->payload_length_)
     return NULL;
 
   return (packet->data_.buf_ + sizeof(payload_type_t));

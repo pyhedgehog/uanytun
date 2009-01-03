@@ -34,7 +34,7 @@
 
 TARGET=$(shell uname -s)
 CC = gcc
-CCFLAGS = -g -O2 # -DANYTUN_02_COMPAT 
+CCFLAGS = -g -O2 #-DANYTUN_02_COMPAT 
 LD = gcc
 LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error -lgmp
 
@@ -54,8 +54,9 @@ OBJS = log.o \
        plain_packet.o \
        encrypted_packet.o \
        seq_window.o \
-       cipher.o \
        key_derivation.o \
+       cipher.o \
+       auth_algo.o \
        uanytun.o
 
 EXECUTABLE = uanytun
@@ -92,10 +93,13 @@ encrypted_packet.o: encrypted_packet.c encrypted_packet.h
 seq_window.o: seq_window.c seq_window.h
 	$(CC) $(CCFLAGS) $< -c
 
+key_derivation.o: key_derivation.c key_derivation.h
+	$(CC) $(CCFLAGS) $< -c
+
 cipher.o: cipher.c cipher.h
 	$(CC) $(CCFLAGS) $< -c
 
-key_derivation.o: key_derivation.c key_derivation.h
+auth_algo.o: auth_algo.c auth_algo.h
 	$(CC) $(CCFLAGS) $< -c
 
 distclean: clean

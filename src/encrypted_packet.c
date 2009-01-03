@@ -76,11 +76,18 @@ void encrypted_packet_set_length(encrypted_packet_t* packet, u_int32_t len)
     len -= sizeof(encrypted_packet_header_t);
 
   packet->payload_length_ = len;
+
+  if(len >= ENCRYPTED_PACKET_AUTHTAG_SIZE) {
+    packet->auth_tag_ = packet->data_.buf_ + sizeof(encrypted_packet_header_t);
+    packet->auth_tag_ += packet->payload_length_ - ENCRYPTED_PACKET_AUTHTAG_SIZE;
+  }
+  else
+    packet->auth_tag_ = NULL;
 }
 
 u_int8_t* encrypted_packet_get_payload(encrypted_packet_t* packet)
 {
-  if(!packet)
+  if(!packet || !packet->payload_length_)
     return NULL;
 
   return (packet->data_.buf_ + sizeof(encrypted_packet_header_t));
@@ -103,7 +110,70 @@ void encrypted_packet_set_payload_length(encrypted_packet_t* packet, u_int32_t l
     len = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t);
 
   packet->payload_length_ = len;
+
+  if(len >= ENCRYPTED_PACKET_AUTHTAG_SIZE) {
+    packet->auth_tag_ = packet->data_.buf_ + sizeof(encrypted_packet_header_t);
+    packet->auth_tag_ += packet->payload_length_ - ENCRYPTED_PACKET_AUTHTAG_SIZE;
+  }
+  else
+    packet->auth_tag_ = NULL;
 }
+
+u_int8_t* encrypted_packet_get_auth_portion(encrypted_packet_t* packet)
+{
+  if(!packet)
+    return NULL;
+
+  return packet->data_.buf_;
+}
+
+u_int32_t encrypted_packet_get_auth_portion_length(encrypted_packet_t* packet)
+{
+  if(!packet)
+    return 0;
+
+  u_int32_t len = packet->payload_length_ + sizeof(encrypted_packet_header_t);
+
+  if(!packet->auth_tag_)
+    return len;
+  
+  return (len > ENCRYPTED_PACKET_AUTHTAG_SIZE) ? (len - ENCRYPTED_PACKET_AUTHTAG_SIZE) : 0;
+}
+
+
+u_int8_t* encrypted_packet_get_auth_tag(encrypted_packet_t* packet)
+{
+  if(!packet)
+    return NULL;
+
+  return packet->auth_tag_;
+}
+
+u_int32_t encrypted_packet_get_auth_tag_length(encrypted_packet_t* packet)
+{
+  if(!packet || !packet->auth_tag_)
+    return 0;
+
+  return ENCRYPTED_PACKET_AUTHTAG_SIZE;
+}
+
+void encrypted_packet_add_auth_tag(encrypted_packet_t* packet)
+{
+  if(!packet)
+    return;
+
+  encrypted_packet_set_payload_length(packet, packet->payload_length_ + ENCRYPTED_PACKET_AUTHTAG_SIZE);
+}
+
+void encrypted_packet_remove_auth_tag(encrypted_packet_t* packet)
+{
+  if(!packet || !packet->auth_tag_)
+    return;
+
+  packet->auth_tag_ = NULL;
+  packet->payload_length_ = (packet->payload_length_ > ENCRYPTED_PACKET_AUTHTAG_SIZE) ? packet->payload_length_ - ENCRYPTED_PACKET_AUTHTAG_SIZE: 0;  
+}
+
 
 seq_nr_t encrypted_packet_get_seq_nr(encrypted_packet_t* packet)
 {

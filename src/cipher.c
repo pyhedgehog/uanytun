@@ -53,11 +53,11 @@ int cipher_init(cipher_t* c, const char* type)
 
   c->key_length_ = 0;
 
-  c->type_ = unknown;
+  c->type_ = c_unknown;
   if(!strcmp(type, "null"))
-    c->type_ = null;
+    c->type_ = c_null;
   else if(!strncmp(type, "aes-ctr", 7)) {
-    c->type_ = aes_ctr;
+    c->type_ = c_aes_ctr;
     if(type[7] == 0) {
       c->key_length_ = 128;
     }
@@ -82,8 +82,11 @@ int cipher_init(cipher_t* c, const char* type)
   c->salt_.length_ = 0;
 
   int ret = 0;
-  if(c->type_ == aes_ctr)
+  if(c->type_ == c_aes_ctr)
     ret = cipher_aesctr_init(c);
+
+  if(ret)
+    cipher_close(c);
 
   return ret;
 }
@@ -93,7 +96,7 @@ void cipher_close(cipher_t* c)
   if(!c)
     return;
 
-  if(c->type_ == aes_ctr)
+  if(c->type_ == c_aes_ctr)
     cipher_aesctr_close(c);
 
   if(c->key_.buf_)
@@ -109,10 +112,10 @@ void cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encry
     return;
 
 	u_int32_t len;
-  if(c->type_ == null)
+  if(c->type_ == c_null)
     len = cipher_null_crypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
                             encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
-  else if(c->type_ == aes_ctr)
+  else if(c->type_ == c_aes_ctr)
     len = cipher_aesctr_crypt(c, kd, plain_packet_get_packet(in), plain_packet_get_length(in),
                               encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out),
                               seq_nr, sender_id, mux);
@@ -134,10 +137,10 @@ void cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, p
     return;
 
 	u_int32_t len;
-  if(c->type_ == null)
+  if(c->type_ == c_null)
     len = cipher_null_crypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                             plain_packet_get_packet(out), plain_packet_get_length(out));
-  else if(c->type_ == aes_ctr)
+  else if(c->type_ == c_aes_ctr)
     len = cipher_aesctr_crypt(c, kd, encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                               plain_packet_get_packet(out), plain_packet_get_length(out),
                               encrypted_packet_get_seq_nr(in), encrypted_packet_get_sender_id(in),
@@ -206,8 +209,10 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
   if(!c->salt_.buf_) {
     c->salt_.length_ = 14;
     c->salt_.buf_ = malloc(c->salt_.length_);
-    if(!c->salt_.buf_)
+    if(!c->salt_.buf_) {
+      log_printf(ERR, "memory error aes-ctr calc ctr");
       return result;
+    }
   }
   int ret = key_derivation_generate(kd, LABEL_SATP_SALT, seq_nr, c->salt_.buf_, c->salt_.length_);
   if(ret < 0)
@@ -269,8 +274,10 @@ u_int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u
   if(!c->key_.buf_) {
     c->key_.length_ = c->key_length_/8;
     c->key_.buf_ = malloc(c->key_.length_);
-    if(c->key_.buf_)
+    if(!c->key_.buf_) {
+      log_printf(ERR, "memory error aes-ctr crypt");
       return 0;
+    }
   }
 
   int ret = key_derivation_generate(kd, LABEL_SATP_ENCRYPTION, seq_nr, c->key_.buf_, c->key_.length_);

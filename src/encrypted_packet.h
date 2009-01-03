@@ -36,6 +36,7 @@
 #define _ENCRYPTED_PACKET_H_
 
 #define ENCRYPTED_PACKET_SIZE_MAX 1600
+#define ENCRYPTED_PACKET_AUTHTAG_SIZE 10
 
 #define PAYLOAD_TYPE_TAP 0x6558
 #define PAYLOAD_TYPE_TUN 0x0000
@@ -51,6 +52,7 @@ typedef struct encrypted_packet_header_struct encrypted_packet_header_t;
 
 struct encrypted_packet_struct {
   u_int32_t payload_length_;
+  u_int8_t* auth_tag_;
   union __attribute__ ((__packed__)) {
     u_int8_t buf_[ENCRYPTED_PACKET_SIZE_MAX];
     encrypted_packet_header_t header_;
@@ -67,6 +69,15 @@ void encrypted_packet_set_length(encrypted_packet_t* packet, u_int32_t len);
 u_int8_t* encrypted_packet_get_payload(encrypted_packet_t* packet);
 u_int32_t encrypted_packet_get_payload_length(encrypted_packet_t* packet);
 void encrypted_packet_set_payload_length(encrypted_packet_t* packet, u_int32_t len);
+
+u_int8_t* encrypted_packet_get_auth_portion(encrypted_packet_t* packet);
+u_int32_t encrypted_packet_get_auth_portion_length(encrypted_packet_t* packet);
+
+u_int8_t* encrypted_packet_get_auth_tag(encrypted_packet_t* packet);
+u_int32_t encrypted_packet_get_auth_tag_length(encrypted_packet_t* packet);
+
+void encrypted_packet_add_auth_tag(encrypted_packet_t* packet);
+void encrypted_packet_remove_auth_tag(encrypted_packet_t* packet);
 
 seq_nr_t encrypted_packet_get_seq_nr(encrypted_packet_t* packet);
 void encrypted_packet_set_seq_nr(encrypted_packet_t* packet, seq_nr_t seq_nr);
