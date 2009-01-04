@@ -58,7 +58,7 @@ int auth_algo_init(auth_algo_t* aa, const char* type)
     return -1;
   }
 
-  aa->handle_ = 0;
+  aa->params_ = NULL;
 
   aa->key_.buf_ = NULL;
   aa->key_.length_ = 0;
@@ -132,7 +132,15 @@ int auth_algo_sha1_init(auth_algo_t* aa)
   if(!aa->key_.buf_)
     return -2;
 
-  gcry_error_t err = gcry_md_open(&aa->handle_, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
+  if(aa->params_)
+    free(aa->params_);
+  aa->params_ = malloc(sizeof(auth_algo_sha1_param_t));
+  if(!aa->params_)
+    return -2;
+
+  auth_algo_sha1_param_t* params = aa->params_;
+
+  gcry_error_t err = gcry_md_open(&params->handle_, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
   if(err) {
     log_printf(ERR, "failed to open message digest algo: %s", gcry_strerror(err));
     return -1;
@@ -146,14 +154,20 @@ void auth_algo_sha1_close(auth_algo_t* aa)
   if(!aa)
     return;
 
-  if(aa->handle_)
-    gcry_md_close(aa->handle_);
-}
+  if(aa->params_) {
+    auth_algo_sha1_param_t* params = aa->params_;
 
+    if(params->handle_)
+      gcry_md_close(params->handle_);
+
+    free(aa->params_);
+  }
+
+}
 
 void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
 {
-  if(!aa) {
+  if(!aa || !aa->params_) {
     log_printf(ERR, "auth algo not initialized");
     return;
   }
@@ -161,12 +175,13 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
     log_printf(ERR, "no key derivation supplied");
     return;
   }
+  auth_algo_sha1_param_t* params = aa->params_;
 
   int ret = key_derivation_generate(kd, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
   if(ret < 0)
     return;
   if(ret) { // a new key got generated
-    gcry_error_t err = gcry_md_setkey(aa->handle_, aa->key_.buf_, aa->key_.length_);
+    gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
     if(err) {
       log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
       return;
@@ -175,12 +190,12 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
 
   encrypted_packet_add_auth_tag(packet);
 
-  gcry_md_reset(aa->handle_);
-  gcry_md_write(aa->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
-  gcry_md_final(aa->handle_);
+  gcry_md_reset(params->handle_);
+  gcry_md_write(params->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
+  gcry_md_final(params->handle_);
 
   u_int8_t* tag = encrypted_packet_get_auth_tag(packet);
-  u_int8_t* hmac = gcry_md_read(aa->handle_, 0);
+  u_int8_t* hmac = gcry_md_read(params->handle_, 0);
   u_int32_t length = (encrypted_packet_get_auth_tag_length(packet) < SHA1_LENGTH) ? encrypted_packet_get_auth_tag_length(packet) : SHA1_LENGTH;
 
   if(length > SHA1_LENGTH)
@@ -192,7 +207,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
 
 int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
 {
-  if(!aa) {
+  if(!aa || !aa->params_) {
     log_printf(ERR, "auth algo not initialized");
     return 0;
   }
@@ -200,24 +215,25 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
     log_printf(ERR, "no key derivation supplied");
     return 0;
   }
+  auth_algo_sha1_param_t* params = aa->params_;
 
   int ret = key_derivation_generate(kd, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
   if(ret < 0)
     return 0;
   if(ret) { // a new key got generated
-    gcry_error_t err = gcry_md_setkey(aa->handle_, aa->key_.buf_, aa->key_.length_);
+    gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
     if(err) {
       log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
       return;
     }
   }
 
-  gcry_md_reset(aa->handle_);
-  gcry_md_write(aa->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
-  gcry_md_final(aa->handle_);
+  gcry_md_reset(params->handle_);
+  gcry_md_write(params->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
+  gcry_md_final(params->handle_);
 
   u_int8_t* tag = encrypted_packet_get_auth_tag(packet);
-  u_int8_t* hmac = gcry_md_read(aa->handle_, 0);
+  u_int8_t* hmac = gcry_md_read(params->handle_, 0);
   u_int32_t length = (encrypted_packet_get_auth_tag_length(packet) < SHA1_LENGTH) ? encrypted_packet_get_auth_tag_length(packet) : SHA1_LENGTH;
 
   if(length > SHA1_LENGTH) {

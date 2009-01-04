@@ -44,7 +44,7 @@ typedef enum auth_algo_type_enum auth_algo_type_t;
 struct auth_algo_struct {
   auth_algo_type_t type_;
   buffer_t key_;
-  gcry_md_hd_t handle_;
+  void* params_;
 };
 typedef struct auth_algo_struct auth_algo_t;
 
@@ -54,7 +54,14 @@ void auth_algo_close(auth_algo_t* aa);
 void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet);
 int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet);
 
+
 #define SHA1_LENGTH 20
+
+struct auth_algo_sha1_param_struct {
+  gcry_md_hd_t handle_;
+};
+typedef struct auth_algo_sha1_param_struct auth_algo_sha1_param_t;
+
 int auth_algo_sha1_init(auth_algo_t* aa);
 void auth_algo_sha1_close(auth_algo_t* aa);
 void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet);
