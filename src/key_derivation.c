@@ -41,8 +41,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef NO_LIBGMP
 #include <gmp.h>
-
+#endif
 
 int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len)
 {
@@ -217,15 +218,17 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, sa
   }
   result->r_ = r;
 
-  mpz_t ctr, key_id;
-  mpz_init2(ctr, 128);
-  mpz_init2(key_id, 128);
-
   int faked_msb = 0;
   if(!kd->master_salt_.buf_[0]) {
     kd->master_salt_.buf_[0] = 1;
     faked_msb = 1;
   }
+
+#ifndef NO_LIBGMP
+  mpz_t ctr, key_id;
+  mpz_init2(ctr, 128);
+  mpz_init2(key_id, 128);
+
   mpz_import(ctr, kd->master_salt_.length_, 1, 1, 0, 0, kd->master_salt_.buf_);
 
   mpz_set_ui(key_id, label);
@@ -242,6 +245,9 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, sa
   if(result->key_.buf_)
     free(result->key_.buf_);
   result->key_.buf_ = mpz_export(NULL, (size_t*)&(result->key_.length_), 1, 1, 0, 0, ctr);
+  mpz_clear(ctr);
+  mpz_clear(key_id);
+#endif
 
 #ifndef ANYTUN_02_COMPAT
   if(faked_msb) {
@@ -249,9 +255,6 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, sa
     result->key_.buf_[0] = 0;
   }
 #endif
-
-  mpz_clear(ctr);
-  mpz_clear(key_id);
 
   return 1;
 }

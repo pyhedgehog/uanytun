@@ -44,7 +44,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef NO_LIBGMP
 #include <gmp.h>
+#endif
 
 int cipher_init(cipher_t* c, const char* type)
 {
@@ -56,6 +58,7 @@ int cipher_init(cipher_t* c, const char* type)
   c->type_ = c_unknown;
   if(!strcmp(type, "null"))
     c->type_ = c_null;
+#ifndef NO_CRYPT
   else if(!strncmp(type, "aes-ctr", 7)) {
     c->type_ = c_aes_ctr;
     if(type[7] == 0) {
@@ -68,12 +71,15 @@ int cipher_init(cipher_t* c, const char* type)
       c->key_length_ = atoi(tmp);
     }
   }
+#endif
   else {
     log_printf(ERR, "unknown cipher type");
     return -1;
   }
 
+#ifndef NO_CRYPT
   c->handle_ = 0;
+#endif
 
   c->key_.buf_ = NULL;
   c->key_.length_ = 0;
@@ -82,8 +88,10 @@ int cipher_init(cipher_t* c, const char* type)
   c->salt_.length_ = 0;
 
   int ret = 0;
+#ifndef NO_CRYPT
   if(c->type_ == c_aes_ctr)
     ret = cipher_aesctr_init(c);
+#endif
 
   if(ret)
     cipher_close(c);
@@ -96,8 +104,10 @@ void cipher_close(cipher_t* c)
   if(!c)
     return;
 
+#ifndef NO_CRYPT
   if(c->type_ == c_aes_ctr)
     cipher_aesctr_close(c);
+#endif
 
   if(c->key_.buf_)
     free(c->key_.buf_);
@@ -115,10 +125,12 @@ int cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encryp
   if(c->type_ == c_null)
     len = cipher_null_crypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
                             encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
+#ifndef NO_CRYPT
   else if(c->type_ == c_aes_ctr)
     len = cipher_aesctr_crypt(c, kd, plain_packet_get_packet(in), plain_packet_get_length(in),
                               encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out),
                               seq_nr, sender_id, mux);
+#endif
   else {
     log_printf(ERR, "unknown cipher type");
     return -1;
@@ -145,11 +157,13 @@ int cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, pl
   if(c->type_ == c_null)
     len = cipher_null_crypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                             plain_packet_get_packet(out), plain_packet_get_length(out));
+#ifndef NO_CRYPT
   else if(c->type_ == c_aes_ctr)
     len = cipher_aesctr_crypt(c, kd, encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                               plain_packet_get_packet(out), plain_packet_get_length(out),
                               encrypted_packet_get_seq_nr(in), encrypted_packet_get_sender_id(in),
                               encrypted_packet_get_mux(in));
+#endif
   else {
     log_printf(ERR, "unknown cipher type");
     return -1;
@@ -171,6 +185,7 @@ int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t
   return (ilen < olen) ? ilen : olen;
 }
 
+#ifndef NO_CRYPT
 /* ---------------- AES-Ctr Cipher ---------------- */
 
 int cipher_aesctr_init(cipher_t* c)
@@ -236,17 +251,18 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
   if(ret < 0)
     return result;
 
-  mpz_t ctr, sid_mux, seq;
-  mpz_init2(ctr, 128);
-  mpz_init2(sid_mux, 128);
-  mpz_init2(seq, 128);
-  
   int faked_msb = 0;
   if(!c->salt_.buf_[0]) {
     c->salt_.buf_[0] = 1;
     faked_msb = 1;
   }
 
+#ifndef NO_LIBGMP
+  mpz_t ctr, sid_mux, seq;
+  mpz_init2(ctr, 128);
+  mpz_init2(sid_mux, 128);
+  mpz_init2(seq, 128);
+  
   mpz_import(ctr, c->salt_.length_, 1, 1, 0, 0, c->salt_.buf_);
 
   mpz_set_ui(sid_mux, mux);
@@ -262,6 +278,10 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
   mpz_mul_2exp(ctr, ctr, 16);
 
   result.buf_ = mpz_export(NULL, (size_t*)&result.length_, 1, 1, 0, 0, ctr);
+  mpz_clear(ctr);
+  mpz_clear(sid_mux);
+  mpz_clear(seq);
+#endif
 
 #ifndef ANYTUN_02_COMPAT
   if(faked_msb) {
@@ -269,10 +289,6 @@ buffer_t cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_
     result.buf_[0] = 0;
   }
 #endif
-
-  mpz_clear(ctr);
-  mpz_clear(sid_mux);
-  mpz_clear(seq);
 
   return result;
 }
@@ -328,3 +344,4 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
 
   return (ilen < olen) ? ilen : olen;  
 }
+#endif

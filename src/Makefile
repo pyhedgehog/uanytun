@@ -34,7 +34,7 @@
 
 TARGET=$(shell uname -s)
 CC = gcc
-CCFLAGS = -g -O2 #-DANYTUN_02_COMPAT 
+CCFLAGS = -g -O2 #-DNO_LIBGMP #-DNO_CRYPT #-DANYTUN_02_COMPAT 
 LD = gcc
 LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error -lgmp
 
@@ -46,6 +46,9 @@ ifeq ($(TARGET),OpenBSD)
   LDFLAGS += -L/usr/local/lib
 endif
 
+CRYPT_OBJS = key_derivation.o \
+             auth_algo.o
+
 OBJS = log.o \
        signal.o \
        options.o \
@@ -54,10 +57,10 @@ OBJS = log.o \
        plain_packet.o \
        encrypted_packet.o \
        seq_window.o \
-       key_derivation.o \
        cipher.o \
-       auth_algo.o \
        uanytun.o
+
+OBJS += $(CRYPT_OBJS)
 
 EXECUTABLE = uanytun
 

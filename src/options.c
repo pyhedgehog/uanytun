@@ -175,15 +175,18 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_INT_PARAM("-m","--mux", opt->mux_)
     PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
     PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
+#ifndef NO_CRYPT
     PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
     PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
     PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
     PARSE_HEXSTRING_PARAM_SEC("-K","--key", opt->key_)
     PARSE_HEXSTRING_PARAM_SEC("-A","--salt", opt->salt_)
+#endif
     else 
       return i;
   }
 
+#ifndef NO_CRYPT
   if(!strcmp(opt->cipher_, "null") && !strcmp(opt->auth_algo_, "null")) {
     if(opt->kd_prf_) free(opt->kd_prf_);
     opt->kd_prf_ = strdup("null");
@@ -193,6 +196,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     if(opt->kd_prf_) free(opt->kd_prf_);
     opt->kd_prf_ = strdup("aes-ctr");
   }
+#endif
 
   if(!(opt->dev_name_) && !(opt->dev_type_))
     opt->dev_type_ = strdup("tun");
@@ -222,10 +226,14 @@ void options_default(options_t* opt)
   opt->ifconfig_param_remote_netmask_ = NULL;
   opt->post_up_script_ = NULL;
   opt->seq_window_size_ = 100;
+#ifndef NO_CRYPT
   opt->cipher_ = strdup("aes-ctr");
   opt->kd_prf_ = strdup("aes-ctr");
   opt->ld_kdr_ = 0;
   opt->auth_algo_ = strdup("sha1");
+#else
+  opt->cipher_ = strdup("null");
+#endif
   opt->mux_ = 0;
   opt->key_.buf_ = NULL;
   opt->key_.length_ = 0;
@@ -266,10 +274,12 @@ void options_clear(options_t* opt)
     free(opt->post_up_script_);
   if(opt->cipher_)
     free(opt->cipher_);
+#ifndef NO_CRYPT
   if(opt->kd_prf_)
     free(opt->kd_prf_);
   if(opt->auth_algo_)
     free(opt->auth_algo_);
+#endif
   if(opt->key_.buf_)
     free(opt->key_.buf_);
   if(opt->salt_.buf_)
@@ -299,11 +309,13 @@ void options_print_usage()
   printf("        [-w|--window-size] <window size>    seqence number window size\n");
   printf("        [-m|--mux] <mux-id>                 the multiplex id to use\n");
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
+#ifndef NO_CRYPT
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
 //  printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
   printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
   printf("        [-K|--key] <master key>             master key to use for encryption\n");
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
+#endif
 }
 
 void options_print(options_t* opt)
@@ -327,9 +339,11 @@ void options_print(options_t* opt)
   printf("mux: %d\n", opt->mux_);
   printf("seq_window_size: %d\n", opt->seq_window_size_);
   printf("cipher: '%s'\n", opt->cipher_);
+#ifndef NO_CRYPT
   printf("auth_algo: '%s'\n", opt->auth_algo_);
   printf("kd_prf: '%s'\n", opt->kd_prf_);
   printf("ld_kdr: %d\n", opt->ld_kdr_);
+#endif
 
   u_int32_t i;
   printf("key_[%d]: '", opt->key_.length_);

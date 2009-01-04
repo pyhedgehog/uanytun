@@ -54,9 +54,11 @@ struct options_struct {
   char* post_up_script_;
   window_size_t seq_window_size_;
   char* cipher_;
+#ifndef NO_CRYPT
   char* kd_prf_;
   int ld_kdr_;
   char* auth_algo_;
+#endif
   mux_t mux_;
   buffer_t key_;
   buffer_t salt_;

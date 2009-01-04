@@ -50,14 +50,20 @@
 #include "encrypted_packet.h"
 
 #include "seq_window.h"
-#include "key_derivation.h"
+
 #include "cipher.h"
+#ifndef NO_CRYPT
+#include "key_derivation.h"
 #include "auth_algo.h"
+
+#include <gcrypt.h>
+#endif
+
 
 #include "daemon.h"
 #include "sysexec.h"
 
-#include <gcrypt.h>
+#ifndef NO_CRYPT
 
 #define MIN_GCRYPT_VERSION "1.2.0"
 
@@ -83,6 +89,7 @@ int init_libgcrypt()
   log_printf(NOTICE, "libgcrypt init finished");
   return 0;
 }
+#endif
 
 int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 {
@@ -105,6 +112,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     return_value = ret;
   }
   
+#ifndef NO_CRYPT
   auth_algo_t aa;
   ret = auth_algo_init(&aa, opt->auth_algo_);
   if(ret) {
@@ -125,6 +133,9 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     log_printf(ERR, "could not initialize outbound key derivation of type %s", opt->kd_prf_);
     return_value = ret;
   }
+#else
+  key_derivation_t kd_in, kd_out;
+#endif
 
   seq_win_t seq_win;
   ret = seq_win_init(&seq_win, opt->seq_window_size_);
@@ -175,7 +186,9 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       cipher_encrypt(&c, &kd_out, &plain_packet, &encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
       seq_nr++;
       
+#ifndef NO_CRYPT
       auth_algo_generate(&aa, &kd_out, &encrypted_packet);
+#endif
       
       len = udp_write(sock, encrypted_packet_get_packet(&encrypted_packet), encrypted_packet_get_length(&encrypted_packet));
       if(len == -1)
@@ -190,11 +203,13 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
       }
 
       encrypted_packet_set_length(&encrypted_packet, len);
-      
+
+#ifndef NO_CRYPT
       if(!auth_algo_check_tag(&aa, &kd_out, &encrypted_packet)) {
         log_printf(WARNING, "wrong authentication tag, discarding packet");
         continue;
       }
+#endif
       
       if(encrypted_packet_get_mux(&encrypted_packet) != opt->mux_)
         continue;
@@ -227,9 +242,11 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   }
 
   cipher_close(&c);
+#ifndef NO_CRYPT
   auth_algo_close(&aa);
   key_derivation_close(&kd_out);
   key_derivation_close(&kd_in);
+#endif
   seq_win_clear(&seq_win);
 
   return return_value;
@@ -274,12 +291,14 @@ int main(int argc, char* argv[])
 
   log_printf(NOTICE, "just started...");
 
+#ifndef NO_CRYPT
   ret = init_libgcrypt();
   if(ret) {
     log_printf(ERR, "error on libgcrpyt initialization, exitting");
     options_clear(&opt);
     exit(ret);
   }
+#endif
 
 
   tun_device_t dev;
