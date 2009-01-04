@@ -62,7 +62,7 @@ int cipher_init(cipher_t* c, const char* type)
   else if(!strncmp(type, "aes-ctr", 7)) {
     c->type_ = c_aes_ctr;
     if(type[7] == 0) {
-      c->key_length_ = 128;
+      c->key_length_ = C_AES_DEFAULT_KEY_LENGTH;
     }
     else if(type[7] != '-') 
       return -1;
@@ -202,7 +202,7 @@ int cipher_aesctr_init(cipher_t* c)
   if(c->salt_.buf_)
     free(c->salt_.buf_);
 
-  c->salt_.length_ = 14;
+  c->salt_.length_ = C_AES_CTR_LENGTH - C_AES_CTR_ZERO_LENGTH;
   c->salt_.buf_ = malloc(c->salt_.length_);
   if(!c->salt_.buf_)
     return -2;
@@ -216,18 +216,21 @@ int cipher_aesctr_init(cipher_t* c)
   cipher_aesctr_param_t* params = c->params_;
 
 #ifndef NO_LIBGMP
-  mpz_init2(params->mp_ctr, 128);
-  mpz_init2(params->mp_sid_mux, 128);
-  mpz_init2(params->mp_seq, 128);
-#endif
+  mpz_init2(params->mp_ctr, C_AES_CTR_LENGTH * 8);
+  mpz_init2(params->mp_sid_mux, C_AES_CTR_LENGTH * 8);
+  mpz_init2(params->mp_seq, C_AES_CTR_LENGTH * 8);
 
-  params->ctr_.length_ = 16;
+  params->ctr_.length_ = C_AES_CTR_LENGTH;
   params->ctr_.buf_ = malloc(params->ctr_.length_);
   if(!params->ctr_.buf_) {
     free(c->params_);
     c->params_ = NULL;
     return -2;
   }
+#else
+  params->ctr_.length_ = C_AES_CTR_LENGTH;
+  params->ctr_.buf_ = params->ctr_.ctr_.buf_;
+#endif
 
 
   int algo;
@@ -261,9 +264,10 @@ void cipher_aesctr_close(cipher_t* c)
     mpz_clear(params->mp_ctr);
     mpz_clear(params->mp_sid_mux);
     mpz_clear(params->mp_seq);
-#endif
+
     if(params->ctr_.buf_)
       free(params->ctr_.buf_);
+#endif
 
     if(params->handle_)
       gcry_cipher_close(params->handle_);
@@ -312,6 +316,16 @@ int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, s
     return -1;
   }
   mpz_export(params->ctr_.buf_, NULL, 1, 1, 0, 0, params->mp_ctr);
+#else
+  if(c->salt_.length_ != sizeof(params->ctr_.ctr_.salt_.buf_)) {
+    log_printf(ERR, "cipher salt has the wrong length");
+    return -1;
+  }
+  memcpy(params->ctr_.ctr_.salt_.buf_, c->salt_.buf_, sizeof(params->ctr_.ctr_.salt_.buf_));
+  memset(params->ctr_.ctr_.salt_.zero_, 0, sizeof(params->ctr_.ctr_.salt_.zero_));
+  params->ctr_.ctr_.params_.mux_ ^= MUX_T_HTON(mux);
+  params->ctr_.ctr_.params_.sender_id_ ^= SENDER_ID_T_HTON(sender_id);
+  params->ctr_.ctr_.params_.seq_nr_ ^= SEQ_NR_T_HTON(seq_nr);
 #endif
 
 #ifndef ANYTUN_02_COMPAT

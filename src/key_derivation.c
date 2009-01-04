@@ -228,6 +228,7 @@ void key_derivation_aesctr_close(key_derivation_t* kd)
 #ifndef NO_LIBGMP
     mpz_clear(params->mp_ctr);
     mpz_clear(params->mp_key_id);
+
     if(params->ctr_.buf_)
       free(params->ctr_.buf_);
 #endif

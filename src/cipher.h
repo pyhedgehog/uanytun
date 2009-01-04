@@ -64,13 +64,45 @@ int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t
 
 
 #ifndef NO_CRYPT
+
+#define C_AES_DEFAULT_KEY_LENGTH 128
+#define C_AES_CTR_LENGTH 16
+#define C_AES_CTR_ZERO_LENGTH 2
+#ifdef NO_LIBGMP
+union __attribute__ ((__packed__)) cipher_aesctr_ctr_buf_union {
+  u_int8_t buf_[C_AES_CTR_LENGTH];
+  struct __attribute__ ((__packed__)) {
+    u_int8_t buf_[C_AES_CTR_LENGTH - C_AES_CTR_ZERO_LENGTH];
+    u_int8_t zero_[C_AES_CTR_ZERO_LENGTH];
+  } salt_;
+  struct __attribute__ ((__packed__)) {
+    u_int8_t fill_[C_AES_CTR_LENGTH - sizeof(mux_t) - sizeof(sender_id_t) - 2 - sizeof(seq_nr_t) - C_AES_CTR_ZERO_LENGTH];
+    mux_t mux_;
+    sender_id_t sender_id_;
+    u_int8_t empty_[2];
+    seq_nr_t seq_nr_;
+    u_int8_t zero_[C_AES_CTR_ZERO_LENGTH];
+  } params_;
+};
+typedef union cipher_aesctr_ctr_buf_union cipher_aesctr_ctr_buf_t;
+
+struct cipher_aesctr_ctr_struct {
+  u_int32_t length_;
+  u_int8_t* buf_;
+  cipher_aesctr_ctr_buf_t ctr_;
+};
+typedef struct cipher_aesctr_ctr_struct cipher_aesctr_ctr_t;
+#endif
+
 struct cipher_aesctr_param_struct {
   gcry_cipher_hd_t handle_;
-  buffer_t ctr_;
 #ifndef NO_LIBGMP
+  buffer_t ctr_;
   mpz_t mp_ctr;
   mpz_t mp_sid_mux;
   mpz_t mp_seq;
+#else
+  cipher_aesctr_ctr_t ctr_;
 #endif
 };
 typedef struct cipher_aesctr_param_struct cipher_aesctr_param_t;
