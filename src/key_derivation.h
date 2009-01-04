@@ -36,9 +36,6 @@
 #define _KEY_DERIVATION_H_
 
 #include <gcrypt.h>
-#ifndef NO_LIBGMP
-#include <gmp.h>
-#endif
 
 #define KD_LABEL_COUNT 3
 enum satp_prf_label_enum {
@@ -75,51 +72,37 @@ int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr
 int key_derivation_null_generate(u_int8_t* key, u_int32_t len);
 
 
-#define KD_AES_CTR_LENGTH 16
-#define KD_AES_CTR_ZERO_LENGTH 2
-#ifdef NO_LIBGMP
-union __attribute__ ((__packed__)) key_derivation_aesctr_ctr_buf_union {
-  u_int8_t buf_[KD_AES_CTR_LENGTH];
+#define KD_AESCTR_CTR_LENGTH 16
+#define KD_AESCTR_SALT_LENGTH 14
+
+union __attribute__((__packed__)) key_derivation_aesctr_ctr_union {
+  u_int8_t buf_[KD_AESCTR_CTR_LENGTH];
   struct __attribute__ ((__packed__)) {
-    u_int8_t buf_[KD_AES_CTR_LENGTH - KD_AES_CTR_ZERO_LENGTH];
-    u_int8_t zero_[KD_AES_CTR_ZERO_LENGTH];
+    u_int8_t buf_[KD_AESCTR_SALT_LENGTH];
+    u_int16_t zero_;
   } salt_;
 #ifndef ANYTUN_02_COMPAT
-  struct __attribute__ ((__packed__)) {
-    u_int8_t fill_[KD_AES_CTR_LENGTH - sizeof(u_int8_t) - sizeof(seq_nr_t) - KD_AES_CTR_ZERO_LENGTH];
+  struct __attribute__((__packed__)) {
+    u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(u_int8_t) - sizeof(seq_nr_t)];
     u_int8_t label_;
     seq_nr_t r_;
-    u_int8_t zero_[KD_AES_CTR_ZERO_LENGTH];
+    u_int16_t zero_;
   } params_;
 #else
-  struct __attribute__ ((__packed__)) {
-    u_int8_t fill_[KD_AES_CTR_LENGTH - sizeof(u_int8_t) - 2 - sizeof(seq_nr_t) - KD_AES_CTR_ZERO_LENGTH];
+  struct __attribute__((__packed__)) {
+    u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(u_int8_t) - 2 - sizeof(seq_nr_t)];
     u_int8_t label_;
     u_int8_t r_fill_[2];
     seq_nr_t r_;
-    u_int8_t zero_[KD_AES_CTR_ZERO_LENGTH];
+    u_int16_t zero_;
   } params_;
 #endif
 };
-typedef union key_derivation_aesctr_ctr_buf_union key_derivation_aesctr_ctr_buf_t;
-
-struct key_derivation_aesctr_ctr_struct {
-  u_int32_t length_;
-  u_int8_t* buf_;
-  key_derivation_aesctr_ctr_buf_t ctr_;
-};
-typedef struct key_derivation_aesctr_ctr_struct key_derivation_aesctr_ctr_t;
-#endif
+typedef union key_derivation_aesctr_ctr_union key_derivation_aesctr_ctr_t;
 
 struct key_derivation_aesctr_param_struct {
   gcry_cipher_hd_t handle_;
-#ifndef NO_LIBGMP
-  buffer_t ctr_;
-  mpz_t mp_ctr;
-  mpz_t mp_key_id;
-#else
   key_derivation_aesctr_ctr_t ctr_;
-#endif
 };
 typedef struct key_derivation_aesctr_param_struct key_derivation_aesctr_param_t;
 

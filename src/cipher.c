@@ -44,10 +44,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef NO_LIBGMP
-#include <gmp.h>
-#endif
-
 int cipher_init(cipher_t* c, const char* type)
 {
   if(!c) 
@@ -62,7 +58,7 @@ int cipher_init(cipher_t* c, const char* type)
   else if(!strncmp(type, "aes-ctr", 7)) {
     c->type_ = c_aes_ctr;
     if(type[7] == 0) {
-      c->key_length_ = C_AES_DEFAULT_KEY_LENGTH;
+      c->key_length_ = C_AESCTR_DEFAULT_KEY_LENGTH;
     }
     else if(type[7] != '-') 
       return -1;
@@ -202,7 +198,7 @@ int cipher_aesctr_init(cipher_t* c)
   if(c->salt_.buf_)
     free(c->salt_.buf_);
 
-  c->salt_.length_ = C_AES_CTR_LENGTH - C_AES_CTR_ZERO_LENGTH;
+  c->salt_.length_ = C_AESCTR_SALT_LENGTH;
   c->salt_.buf_ = malloc(c->salt_.length_);
   if(!c->salt_.buf_)
     return -2;
@@ -214,24 +210,6 @@ int cipher_aesctr_init(cipher_t* c)
     return -2;
 
   cipher_aesctr_param_t* params = c->params_;
-
-#ifndef NO_LIBGMP
-  mpz_init2(params->mp_ctr, C_AES_CTR_LENGTH * 8);
-  mpz_init2(params->mp_sid_mux, C_AES_CTR_LENGTH * 8);
-  mpz_init2(params->mp_seq, C_AES_CTR_LENGTH * 8);
-
-  params->ctr_.length_ = C_AES_CTR_LENGTH;
-  params->ctr_.buf_ = malloc(params->ctr_.length_);
-  if(!params->ctr_.buf_) {
-    free(c->params_);
-    c->params_ = NULL;
-    return -2;
-  }
-#else
-  params->ctr_.length_ = C_AES_CTR_LENGTH;
-  params->ctr_.buf_ = params->ctr_.ctr_.buf_;
-#endif
-
 
   int algo;
   switch(c->key_length_) {
@@ -260,14 +238,6 @@ void cipher_aesctr_close(cipher_t* c)
 
   if(c->params_) {
     cipher_aesctr_param_t* params = c->params_;
-#ifndef NO_LIBGMP
-    mpz_clear(params->mp_ctr);
-    mpz_clear(params->mp_sid_mux);
-    mpz_clear(params->mp_seq);
-
-    if(params->ctr_.buf_)
-      free(params->ctr_.buf_);
-#endif
 
     if(params->handle_)
       gcry_cipher_close(params->handle_);
@@ -282,10 +252,8 @@ int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, s
     return -1;
   
   cipher_aesctr_param_t* params = c->params_;
-  if(!params->ctr_.buf_)
-    return -1;
 
-  int ret = key_derivation_generate(kd, LABEL_SATP_SALT, seq_nr, c->salt_.buf_, c->salt_.length_);
+  int ret = key_derivation_generate(kd, LABEL_SATP_SALT, seq_nr, c->salt_.buf_, C_AESCTR_SALT_LENGTH);
   if(ret < 0)
     return ret;
 
@@ -295,38 +263,11 @@ int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, s
     faked_msb = 1;
   }
 
-#ifndef NO_LIBGMP
-  mpz_import(params->mp_ctr, c->salt_.length_, 1, 1, 0, 0, c->salt_.buf_);
-
-  mpz_set_ui(params->mp_sid_mux, mux);
-  mpz_mul_2exp(params->mp_sid_mux, params->mp_sid_mux, (sizeof(sender_id) * 8));
-  mpz_add_ui(params->mp_sid_mux, params->mp_sid_mux, sender_id);
-  mpz_mul_2exp(params->mp_sid_mux, params->mp_sid_mux, 48);
-
-  mpz_set_ui(params->mp_seq, seq_nr);
-
-  mpz_xor(params->mp_ctr, params->mp_ctr, params->mp_sid_mux);
-  mpz_xor(params->mp_ctr, params->mp_ctr, params->mp_seq);
-
-  mpz_mul_2exp(params->mp_ctr, params->mp_ctr, 16);
-
-  int out_size = (mpz_sizeinbase(params->mp_ctr, 2) + 7) / 8;
-  if(out_size > params->ctr_.length_) {
-    log_printf(ERR, "computed cipher ctr is too big ?!?");
-    return -1;
-  }
-  mpz_export(params->ctr_.buf_, NULL, 1, 1, 0, 0, params->mp_ctr);
-#else
-  if(c->salt_.length_ != sizeof(params->ctr_.ctr_.salt_.buf_)) {
-    log_printf(ERR, "cipher salt has the wrong length");
-    return -1;
-  }
-  memcpy(params->ctr_.ctr_.salt_.buf_, c->salt_.buf_, sizeof(params->ctr_.ctr_.salt_.buf_));
-  memset(params->ctr_.ctr_.salt_.zero_, 0, sizeof(params->ctr_.ctr_.salt_.zero_));
-  params->ctr_.ctr_.params_.mux_ ^= MUX_T_HTON(mux);
-  params->ctr_.ctr_.params_.sender_id_ ^= SENDER_ID_T_HTON(sender_id);
-  params->ctr_.ctr_.params_.seq_nr_ ^= SEQ_NR_T_HTON(seq_nr);
-#endif
+  memcpy(params->ctr_.salt_.buf_, c->salt_.buf_, C_AESCTR_SALT_LENGTH);
+  params->ctr_.salt_.zero_ = 0;
+  params->ctr_.params_.mux_ ^= MUX_T_HTON(mux);
+  params->ctr_.params_.sender_id_ ^= SENDER_ID_T_HTON(sender_id);
+  params->ctr_.params_.seq_nr_ ^= SEQ_NR_T_HTON(seq_nr);
 
 #ifndef ANYTUN_02_COMPAT
   if(faked_msb) {
@@ -345,16 +286,12 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
     return -1;
   }
 
-  cipher_aesctr_param_t* params = c->params_;
-  if(!params->ctr_.buf_) {
-    log_printf(ERR, "cipher not initialized");
-    return -1;
-  }
-
   if(!kd) {
     log_printf(ERR, "no key derivation supplied");
     return -1;
   }
+
+  cipher_aesctr_param_t* params = c->params_;
 
   int ret = key_derivation_generate(kd, LABEL_SATP_ENCRYPTION, seq_nr, c->key_.buf_, c->key_.length_);
   if(ret < 0)
@@ -381,7 +318,7 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
     log_printf(ERR, "failed to calculate cipher CTR");
     return ret;
   }
-  err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, params->ctr_.length_);
+  err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
 
   if(err) {
     log_printf(ERR, "failed to set cipher CTR: %s/%s", gcry_strerror(err), gcry_strsource(err));
