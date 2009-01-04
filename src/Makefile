@@ -34,9 +34,9 @@
 
 TARGET=$(shell uname -s)
 CC = gcc
-CCFLAGS = -g -O2 # -DNO_LIBGMP # -DANYTUN_02_COMPAT #-DNO_CRYPT
+CCFLAGS = -g -O2 -DNO_LIBGMP #-DANYTUN_02_COMPAT #-DNO_CRYPT
 LD = gcc
-LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error -lgmp
+LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error #-lgmp
 
 ifeq ($(TARGET),Linux)
   LDFLAGS += -ldl
