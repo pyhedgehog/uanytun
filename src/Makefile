@@ -34,7 +34,7 @@
 
 TARGET=$(shell uname -s)
 CC = gcc
-CCFLAGS = -g -O2 #-DNO_LIBGMP #-DNO_CRYPT #-DANYTUN_02_COMPAT 
+CCFLAGS = -g -O2 -DANYTUN_02_COMPAT #-DNO_LIBGMP #-DNO_CRYPT
 LD = gcc
 LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error -lgmp
 

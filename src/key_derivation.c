@@ -65,7 +65,7 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, u
     kd->ld_kdr_ = sizeof(seq_nr_t) * 8;
 
   kd->key_length_ = key_len * sizeof(key[0]) * 8;
-  kd->handle_ = 0;
+  kd->params_ = NULL;
 
   int i;
   for(i = 0; i<KD_LABEL_COUNT; ++i) {
@@ -178,14 +178,35 @@ int key_derivation_aesctr_init(key_derivation_t* kd)
     return -1;
   }
   }
+  
+  if(kd->params_)
+    free(kd->params_);
+  kd->params_ = malloc(sizeof(key_derivation_aesctr_param_t));
+  if(!kd->params_)
+    return -2;
 
-  gcry_error_t err = gcry_cipher_open(&kd->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
+  key_derivation_aesctr_param_t* params = kd->params_;
+
+#ifndef NO_LIBGMP
+  mpz_init2(params->mp_ctr, 128);
+  mpz_init2(params->mp_key_id, 128);
+#endif
+
+  params->ctr_.length_ = 16;
+  params->ctr_.buf_ = malloc(params->ctr_.length_);
+  if(!params->ctr_.buf_) {
+    free(kd->params_);
+    kd->params_ = NULL;
+    return -2;
+  }
+
+  gcry_error_t err = gcry_cipher_open(&params->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
     log_printf(ERR, "failed to open key derivation cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
     return -1;
   } 
 
-  err = gcry_cipher_setkey(kd->handle_, kd->master_key_.buf_, kd->master_key_.length_);
+  err = gcry_cipher_setkey(params->handle_, kd->master_key_.buf_, kd->master_key_.length_);
   if(err) {
     log_printf(ERR, "failed to set key derivation key: %s/%s", gcry_strerror(err), gcry_strsource(err));
     return -1;
@@ -199,24 +220,40 @@ void key_derivation_aesctr_close(key_derivation_t* kd)
   if(!kd)
     return;
 
-  if(kd->handle_)
-    gcry_cipher_close(kd->handle_);
+  if(kd->params_) {
+    key_derivation_aesctr_param_t* params = kd->params_;
+#ifndef NO_LIBGMP
+    mpz_clear(params->mp_ctr);
+    mpz_clear(params->mp_key_id);
+#endif
+    if(params->ctr_.buf_)
+      free(params->ctr_.buf_);
+
+    if(params->handle_)
+      gcry_cipher_close(params->handle_);
+
+    free(kd->params_);
+  }
 }
 
-int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, satp_prf_label_t label, seq_nr_t seq_nr)
+int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_label_t label, seq_nr_t seq_nr)
 {
-  if(!kd || !result)
+  if(!kd || !kd->params_ || !r)
     return -1;
 
-  seq_nr_t r = 0;
-  if(kd->ld_kdr_ >= 0)
-    r = seq_nr >> kd->ld_kdr_;
+  key_derivation_aesctr_param_t* params = kd->params_;
+  if(!params->ctr_.buf_)
+    return -1;
+    
 
-  if(kd->key_store_[label].key_.buf_ && kd->key_store_[label].r_ == r) {
-    if(!r || (seq_nr % r))
+  *r = 0;
+  if(kd->ld_kdr_ >= 0)
+    *r = seq_nr >> kd->ld_kdr_;
+
+  if(kd->key_store_[label].key_.buf_ && kd->key_store_[label].r_ == *r) {
+    if(!(*r) || (seq_nr % (*r)))
       return 0;
   }
-  result->r_ = r;
 
   int faked_msb = 0;
   if(!kd->master_salt_.buf_[0]) {
@@ -225,34 +262,31 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, sa
   }
 
 #ifndef NO_LIBGMP
-  mpz_t ctr, key_id;
-  mpz_init2(ctr, 128);
-  mpz_init2(key_id, 128);
+  mpz_import(params->mp_ctr, kd->master_salt_.length_, 1, 1, 0, 0, kd->master_salt_.buf_);
 
-  mpz_import(ctr, kd->master_salt_.length_, 1, 1, 0, 0, kd->master_salt_.buf_);
-
-  mpz_set_ui(key_id, label);
+  mpz_set_ui(params->mp_key_id, label);
 #ifndef ANYTUN_02_COMPAT
-  mpz_mul_2exp(key_id, key_id, (sizeof(r) * 8));
+  mpz_mul_2exp(params->mp_key_id, params->mp_key_id, (sizeof(*r) * 8));
 #else
-  mpz_mul_2exp(key_id, key_id, 48);
+  mpz_mul_2exp(params->mp_key_id, params->mp_key_id, 48);
 #endif
-  mpz_add_ui(key_id, key_id, r);
+  mpz_add_ui(params->mp_key_id, params->mp_key_id, *r);
 
-  mpz_xor(ctr, ctr, key_id);
-  mpz_mul_2exp(ctr, ctr, 16);
+  mpz_xor(params->mp_ctr, params->mp_ctr, params->mp_key_id);
+  mpz_mul_2exp(params->mp_ctr, params->mp_ctr, 16);
 
-  if(result->key_.buf_)
-    free(result->key_.buf_);
-  result->key_.buf_ = mpz_export(NULL, (size_t*)&(result->key_.length_), 1, 1, 0, 0, ctr);
-  mpz_clear(ctr);
-  mpz_clear(key_id);
+  int out_size = (mpz_sizeinbase(params->mp_ctr, 2) + 7) / 8;
+  if(out_size > params->ctr_.length_) {
+    log_printf(ERR, "computed ctr is too big ?!?");
+    return -1;
+  }
+  mpz_export(params->ctr_.buf_, NULL, 1, 1, 0, 0, params->mp_ctr);
 #endif
 
 #ifndef ANYTUN_02_COMPAT
   if(faked_msb) {
     kd->master_salt_.buf_[0] = 0;
-    result->key_.buf_[0] = 0;
+    params->ctr_.buf_[0] = 0;
   }
 #endif
 
@@ -261,16 +295,19 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, sa
 
 int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
 {
-  if(!kd || !kd->master_key_.buf_ || !kd->master_salt_.buf_) {
+  if(!kd || !kd->params_ || !kd->master_key_.buf_ || !kd->master_salt_.buf_) {
     log_printf(ERR, "key derivation not initialized or no key or salt set");
     return -1;
   }
 
-  key_store_t ctr;
-  ctr.key_.buf_ = NULL;
-  ctr.key_.length_ = 0;
-  ctr.r_ = 0;
-  int ret = key_derivation_aesctr_calc_ctr(kd, &ctr, label, seq_nr);
+  key_derivation_aesctr_param_t* params = kd->params_;
+  if(!params->ctr_.buf_) {
+    log_printf(ERR, "key derivation not initialized or no key or salt set");
+    return -1;
+  }
+
+  seq_nr_t r;
+  int ret = key_derivation_aesctr_calc_ctr(kd, &r, label, seq_nr);
   if(ret < 0) {
     log_printf(ERR, "failed to calculate key derivation CTR");
     return -1;
@@ -285,14 +322,13 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
     return 0;
   }
 
-  gcry_error_t err = gcry_cipher_reset(kd->handle_);
+  gcry_error_t err = gcry_cipher_reset(params->handle_);
   if(err) {
     log_printf(ERR, "failed to reset key derivation cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
     return -1;
   }
 
-  err = gcry_cipher_setctr(kd->handle_, ctr.key_.buf_, ctr.key_.length_);
-  free(ctr.key_.buf_);
+  err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, params->ctr_.length_);
 
   if(err) {
     log_printf(ERR, "failed to set key derivation CTR: %s/%s", gcry_strerror(err), gcry_strsource(err));
@@ -300,7 +336,7 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
   }
 
   memset(key, 0, len);
-  err = gcry_cipher_encrypt(kd->handle_, key, len, NULL, 0);
+  err = gcry_cipher_encrypt(params->handle_, key, len, NULL, 0);
   if(err) {
     log_printf(ERR, "failed to generate key derivation bitstream: %s/%s", gcry_strerror(err), gcry_strsource(err));
     return -1;
@@ -327,7 +363,7 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
   }
 
   memcpy(kd->key_store_[label].key_.buf_, key, len);
-  kd->key_store_[label].r_ = ctr.r_;
+  kd->key_store_[label].r_ = r;
 
   return 1;
 }

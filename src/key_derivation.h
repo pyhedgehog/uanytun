@@ -36,6 +36,9 @@
 #define _KEY_DERIVATION_H_
 
 #include <gcrypt.h>
+#ifndef NO_LIBGMP
+#include <gmp.h>
+#endif
 
 #define KD_LABEL_COUNT 3
 enum satp_prf_label_enum {
@@ -56,12 +59,12 @@ typedef struct key_store_struct key_store_t;
 
 struct key_derivation_struct {
   key_derivation_type_t type_;
-  int8_t ld_kdr_;
   u_int16_t key_length_;
+  int8_t ld_kdr_;
   buffer_t master_key_;
   buffer_t master_salt_;
-  gcry_cipher_hd_t handle_;
   key_store_t key_store_[KD_LABEL_COUNT];
+  void* params_;
 };
 typedef struct key_derivation_struct key_derivation_t;
 
@@ -71,9 +74,19 @@ int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr
 
 int key_derivation_null_generate(u_int8_t* key, u_int32_t len);
 
+struct key_derivation_aesctr_param_struct {
+  gcry_cipher_hd_t handle_;
+  buffer_t ctr_;
+#ifndef NO_LIBGMP
+  mpz_t mp_ctr;
+  mpz_t mp_key_id;
+#endif
+};
+typedef struct key_derivation_aesctr_param_struct key_derivation_aesctr_param_t;
+
 int key_derivation_aesctr_init(key_derivation_t* kd);
 void key_derivation_aesctr_close(key_derivation_t* kd);
-int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_t* result, satp_prf_label_t label, seq_nr_t seq_nr);
+int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_label_t label, seq_nr_t seq_nr);
 int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
 
 #endif
