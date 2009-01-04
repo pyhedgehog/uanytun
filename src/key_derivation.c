@@ -188,17 +188,20 @@ int key_derivation_aesctr_init(key_derivation_t* kd)
   key_derivation_aesctr_param_t* params = kd->params_;
 
 #ifndef NO_LIBGMP
-  mpz_init2(params->mp_ctr, 128);
-  mpz_init2(params->mp_key_id, 128);
-#endif
+  mpz_init2(params->mp_ctr, KD_AES_CTR_LENGTH * 8);
+  mpz_init2(params->mp_key_id, KD_AES_CTR_LENGTH * 8);
 
-  params->ctr_.length_ = 16;
+  params->ctr_.length_ = KD_AES_CTR_LENGTH;
   params->ctr_.buf_ = malloc(params->ctr_.length_);
   if(!params->ctr_.buf_) {
     free(kd->params_);
     kd->params_ = NULL;
     return -2;
   }
+#else
+  params->ctr_.length_ = KD_AES_CTR_LENGTH;
+  params->ctr_.buf_ = params->ctr_.ctr_.buf_;
+#endif
 
   gcry_error_t err = gcry_cipher_open(&params->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
@@ -225,9 +228,9 @@ void key_derivation_aesctr_close(key_derivation_t* kd)
 #ifndef NO_LIBGMP
     mpz_clear(params->mp_ctr);
     mpz_clear(params->mp_key_id);
-#endif
     if(params->ctr_.buf_)
       free(params->ctr_.buf_);
+#endif
 
     if(params->handle_)
       gcry_cipher_close(params->handle_);
@@ -273,7 +276,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_l
   mpz_add_ui(params->mp_key_id, params->mp_key_id, *r);
 
   mpz_xor(params->mp_ctr, params->mp_ctr, params->mp_key_id);
-  mpz_mul_2exp(params->mp_ctr, params->mp_ctr, 16);
+  mpz_mul_2exp(params->mp_ctr, params->mp_ctr, KD_AES_CTR_ZERO_LENGTH * 8);
 
   int out_size = (mpz_sizeinbase(params->mp_ctr, 2) + 7) / 8;
   if(out_size > params->ctr_.length_) {
@@ -281,6 +284,15 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_l
     return -1;
   }
   mpz_export(params->ctr_.buf_, NULL, 1, 1, 0, 0, params->mp_ctr);
+#else
+  if(kd->master_salt_.length_ != sizeof(params->ctr_.ctr_.salt_.buf_)) {
+    log_printf(ERR, "master salt has the wrong length");
+    return -1;
+  }
+  memcpy(params->ctr_.ctr_.salt_.buf_, kd->master_salt_.buf_, sizeof(params->ctr_.ctr_.salt_.buf_));
+  memset(params->ctr_.ctr_.salt_.zero_, 0, sizeof(params->ctr_.ctr_.salt_.zero_));
+  params->ctr_.ctr_.params_.label_ ^= label;
+  params->ctr_.ctr_.params_.r_ ^= SEQ_NR_T_HTON(*r);
 #endif
 
 #ifndef ANYTUN_02_COMPAT
