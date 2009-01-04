@@ -277,7 +277,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_l
 
   int out_size = (mpz_sizeinbase(params->mp_ctr, 2) + 7) / 8;
   if(out_size > params->ctr_.length_) {
-    log_printf(ERR, "computed ctr is too big ?!?");
+    log_printf(ERR, "computed key derivation ctr is too big ?!?");
     return -1;
   }
   mpz_export(params->ctr_.buf_, NULL, 1, 1, 0, 0, params->mp_ctr);
