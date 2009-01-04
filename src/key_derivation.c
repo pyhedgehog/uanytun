@@ -185,13 +185,13 @@ int key_derivation_aesctr_init(key_derivation_t* kd)
 
   gcry_error_t err = gcry_cipher_open(&params->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
-    log_printf(ERR, "failed to open key derivation cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to open key derivation cipher: %s", gcry_strerror(err));
     return -1;
   } 
 
   err = gcry_cipher_setkey(params->handle_, kd->master_key_.buf_, kd->master_key_.length_);
   if(err) {
-    log_printf(ERR, "failed to set key derivation key: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to set key derivation key: %s", gcry_strerror(err));
     return -1;
   }
 
@@ -281,21 +281,21 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
 
   gcry_error_t err = gcry_cipher_reset(params->handle_);
   if(err) {
-    log_printf(ERR, "failed to reset key derivation cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to reset key derivation cipher: %s", gcry_strerror(err));
     return -1;
   }
 
   err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, KD_AESCTR_CTR_LENGTH);
 
   if(err) {
-    log_printf(ERR, "failed to set key derivation CTR: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to set key derivation CTR: %s", gcry_strerror(err));
     return -1;
   }
 
   memset(key, 0, len);
   err = gcry_cipher_encrypt(params->handle_, key, len, NULL, 0);
   if(err) {
-    log_printf(ERR, "failed to generate key derivation bitstream: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to generate key derivation bitstream: %s", gcry_strerror(err));
     return -1;
   }
   

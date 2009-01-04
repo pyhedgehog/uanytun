@@ -76,13 +76,13 @@ int init_libgcrypt()
 
   gcry_error_t err = gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
   if(err) {
-    log_printf(ERR, "failed to disable secure memory: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to disable secure memory: %s", gcry_strerror(err));
     return -1;
   }
 
   err = gcry_control(GCRYCTL_INITIALIZATION_FINISHED);
   if(err) {
-    log_printf(ERR, "failed to finish libgcrypt initialization: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to finish libgcrypt initialization: %s", gcry_strerror(err));
     return -1;
   }
 

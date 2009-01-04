@@ -224,7 +224,7 @@ int cipher_aesctr_init(cipher_t* c)
 
   gcry_error_t err = gcry_cipher_open(&params->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
-    log_printf(ERR, "failed to open cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to open cipher: %s", gcry_strerror(err));
     return -1;
   } 
 
@@ -301,14 +301,14 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
   if(ret) { // a new key got generated
     err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
     if(err) {
-      log_printf(ERR, "failed to set cipher key: %s/%s", gcry_strerror(err), gcry_strsource(err));
+      log_printf(ERR, "failed to set cipher key: %s", gcry_strerror(err));
       return -1;
     }
   } // no new key got generated
   else {
     err = gcry_cipher_reset(params->handle_);
     if(err) {
-      log_printf(ERR, "failed to reset cipher: %s/%s", gcry_strerror(err), gcry_strsource(err));
+      log_printf(ERR, "failed to reset cipher: %s", gcry_strerror(err));
       return -1;
     }
   }
@@ -321,13 +321,13 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
   err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
 
   if(err) {
-    log_printf(ERR, "failed to set cipher CTR: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to set cipher CTR: %s", gcry_strerror(err));
     return -1;
   }
 
   err = gcry_cipher_encrypt(params->handle_, out, olen, in, ilen);
   if(err) {
-    log_printf(ERR, "failed to de/encrypt packet: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to de/encrypt packet: %s", gcry_strerror(err));
     return -1;
   }
 

@@ -134,7 +134,7 @@ int auth_algo_sha1_init(auth_algo_t* aa)
 
   gcry_error_t err = gcry_md_open(&aa->handle_, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
   if(err) {
-    log_printf(ERR, "failed to open message digest algo: %s/%s", gcry_strerror(err), gcry_strsource(err));
+    log_printf(ERR, "failed to open message digest algo: %s", gcry_strerror(err));
     return -1;
   } 
 
@@ -168,7 +168,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
   if(ret) { // a new key got generated
     gcry_error_t err = gcry_md_setkey(aa->handle_, aa->key_.buf_, aa->key_.length_);
     if(err) {
-      log_printf(ERR, "failed to set hmac key: %s/%s", gcry_strerror(err), gcry_strsource(err));
+      log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
       return;
     } 
   }
@@ -207,7 +207,7 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
   if(ret) { // a new key got generated
     gcry_error_t err = gcry_md_setkey(aa->handle_, aa->key_.buf_, aa->key_.length_);
     if(err) {
-      log_printf(ERR, "failed to set hmac key: %s/%s", gcry_strerror(err), gcry_strsource(err));
+      log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
       return;
     }
   }
