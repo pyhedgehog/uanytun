@@ -64,6 +64,7 @@
 #include "sysexec.h"
 
 #ifndef NO_CRYPT
+#ifndef USE_SSL_CRYPTO
 
 #define MIN_GCRYPT_VERSION "1.2.0"
 
@@ -89,6 +90,7 @@ int init_libgcrypt()
   log_printf(NOTICE, "libgcrypt init finished");
   return 0;
 }
+#endif
 #endif
 
 int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
@@ -292,12 +294,14 @@ int main(int argc, char* argv[])
   log_printf(NOTICE, "just started...");
 
 #ifndef NO_CRYPT
+#ifndef USE_SSL_CRYPTO
   ret = init_libgcrypt();
   if(ret) {
     log_printf(ERR, "error on libgcrpyt initialization, exitting");
     options_clear(&opt);
     exit(ret);
   }
+#endif
 #endif
 
 

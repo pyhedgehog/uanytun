@@ -140,11 +140,16 @@ int auth_algo_sha1_init(auth_algo_t* aa)
 
   auth_algo_sha1_param_t* params = aa->params_;
 
+#ifndef USE_SSL_CRYPTO
   gcry_error_t err = gcry_md_open(&params->handle_, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
   if(err) {
     log_printf(ERR, "failed to open message digest algo: %s", gcry_strerror(err));
     return -1;
   } 
+#else
+  HMAC_CTX_init(&params->ctx_);
+  HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
+#endif
 
   return 0;
 }
@@ -157,8 +162,12 @@ void auth_algo_sha1_close(auth_algo_t* aa)
   if(aa->params_) {
     auth_algo_sha1_param_t* params = aa->params_;
 
+#ifndef USE_SSL_CRYPTO
     if(params->handle_)
       gcry_md_close(params->handle_);
+#else
+    HMAC_CTX_cleanup(&params->ctx_);
+#endif    
 
     free(aa->params_);
   }
@@ -181,21 +190,35 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
   if(ret < 0)
     return;
   if(ret) { // a new key got generated
+#ifndef USE_SSL_CRYPTO
     gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
     if(err) {
       log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
       return;
     } 
+#else 
+    HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
+  }
+  else {
+    HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
+#endif
   }
 
   encrypted_packet_add_auth_tag(packet);
 
+#ifndef USE_SSL_CRYPTO
   gcry_md_reset(params->handle_);
   gcry_md_write(params->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   gcry_md_final(params->handle_);
+  u_int8_t* hmac = gcry_md_read(params->handle_, 0);
+#else
+  u_int8_t hmac[SHA1_LENGTH];
+  HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
+  HMAC_Final(&params->ctx_, hmac, NULL);
+#endif
+
 
   u_int8_t* tag = encrypted_packet_get_auth_tag(packet);
-  u_int8_t* hmac = gcry_md_read(params->handle_, 0);
   u_int32_t length = (encrypted_packet_get_auth_tag_length(packet) < SHA1_LENGTH) ? encrypted_packet_get_auth_tag_length(packet) : SHA1_LENGTH;
 
   if(length > SHA1_LENGTH)
@@ -221,19 +244,33 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
   if(ret < 0)
     return 0;
   if(ret) { // a new key got generated
+#ifndef USE_SSL_CRYPTO
     gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
     if(err) {
       log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
       return;
-    }
+    } 
+#else 
+    HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
+  }
+  else {
+    HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
+#endif
   }
 
+
+#ifndef USE_SSL_CRYPTO
   gcry_md_reset(params->handle_);
   gcry_md_write(params->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   gcry_md_final(params->handle_);
+  u_int8_t* hmac = gcry_md_read(params->handle_, 0);
+#else
+  u_int8_t hmac[SHA1_LENGTH];
+  HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
+  HMAC_Final(&params->ctx_, hmac, NULL);
+#endif
 
   u_int8_t* tag = encrypted_packet_get_auth_tag(packet);
-  u_int8_t* hmac = gcry_md_read(params->handle_, 0);
   u_int32_t length = (encrypted_packet_get_auth_tag_length(packet) < SHA1_LENGTH) ? encrypted_packet_get_auth_tag_length(packet) : SHA1_LENGTH;
 
   if(length > SHA1_LENGTH) {

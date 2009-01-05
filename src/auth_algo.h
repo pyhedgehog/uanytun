@@ -35,7 +35,11 @@
 #ifndef _AUTH_ALGO_H_
 #define _AUTH_ALGO_H_
 
+#ifndef USE_SSL_CRYPTO
 #include <gcrypt.h>
+#else
+#include <openssl/hmac.h>
+#endif
 #include "key_derivation.h"
 
 enum auth_algo_type_enum { aa_unknown, aa_null, aa_sha1 };
@@ -58,7 +62,11 @@ int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_
 #define SHA1_LENGTH 20
 
 struct auth_algo_sha1_param_struct {
+#ifndef USE_SSL_CRYPTO
   gcry_md_hd_t handle_;
+#else
+  HMAC_CTX ctx_;
+#endif
 };
 typedef struct auth_algo_sha1_param_struct auth_algo_sha1_param_t;
 
