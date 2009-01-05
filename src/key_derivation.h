@@ -35,7 +35,11 @@
 #ifndef _KEY_DERIVATION_H_
 #define _KEY_DERIVATION_H_
 
+#ifndef USE_SSL_CRYPTO
 #include <gcrypt.h>
+#else
+#include <openssl/aes.h>
+#endif
 
 #define KD_LABEL_COUNT 3
 enum satp_prf_label_enum {
@@ -101,7 +105,12 @@ union __attribute__((__packed__)) key_derivation_aesctr_ctr_union {
 typedef union key_derivation_aesctr_ctr_union key_derivation_aesctr_ctr_t;
 
 struct key_derivation_aesctr_param_struct {
+#ifndef USE_SSL_CRYPTO
   gcry_cipher_hd_t handle_;
+#else
+  AES_KEY aes_key_;
+  u_int8_t ecount_buf[AES_BLOCK_SIZE];
+#endif
   key_derivation_aesctr_ctr_t ctr_;
 };
 typedef struct key_derivation_aesctr_param_struct key_derivation_aesctr_param_t;

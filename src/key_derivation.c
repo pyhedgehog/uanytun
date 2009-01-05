@@ -164,6 +164,15 @@ int key_derivation_aesctr_init(key_derivation_t* kd)
   if(!kd)
     return -1;
 
+  if(kd->params_)
+    free(kd->params_);
+  kd->params_ = malloc(sizeof(key_derivation_aesctr_param_t));
+  if(!kd->params_)
+    return -2;
+
+  key_derivation_aesctr_param_t* params = kd->params_;
+
+#ifndef USE_SSL_CRYPTO
   int algo;
   switch(kd->key_length_) {
   case 128: algo = GCRY_CIPHER_AES128; break;
@@ -174,14 +183,6 @@ int key_derivation_aesctr_init(key_derivation_t* kd)
     return -1;
   }
   }
-  
-  if(kd->params_)
-    free(kd->params_);
-  kd->params_ = malloc(sizeof(key_derivation_aesctr_param_t));
-  if(!kd->params_)
-    return -2;
-
-  key_derivation_aesctr_param_t* params = kd->params_;
 
   gcry_error_t err = gcry_cipher_open(&params->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
@@ -194,6 +195,13 @@ int key_derivation_aesctr_init(key_derivation_t* kd)
     log_printf(ERR, "failed to set key derivation key: %s", gcry_strerror(err));
     return -1;
   }
+#else
+  int ret = AES_set_encrypt_key(kd->master_key_.buf_, kd->master_key_.length_*8, &params->aes_key_);
+  if(ret) {
+    log_printf(ERR, "failed to set key derivation ssl aes-key (code: %d)", ret);
+    return -1;
+  }
+#endif
 
   return 0;
 }
@@ -206,8 +214,10 @@ void key_derivation_aesctr_close(key_derivation_t* kd)
   if(kd->params_) {
     key_derivation_aesctr_param_t* params = kd->params_;
 
+#ifndef USE_SSL_CRYPTO
     if(params->handle_)
       gcry_cipher_close(params->handle_);
+#endif
 
     free(kd->params_);
   }
@@ -279,6 +289,7 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
     return 0;
   }
 
+#ifndef USE_SSL_CRYPTO
   gcry_error_t err = gcry_cipher_reset(params->handle_);
   if(err) {
     log_printf(ERR, "failed to reset key derivation cipher: %s", gcry_strerror(err));
@@ -298,6 +309,16 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
     log_printf(ERR, "failed to generate key derivation bitstream: %s", gcry_strerror(err));
     return -1;
   }
+#else
+  if(KD_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
+    log_printf(ERR, "failed to set key derivation CTR: size don't fits");
+    return -1;
+  }
+  u_int32_t num = 0;
+  memset(params->ecount_buf, 0, AES_BLOCK_SIZE);
+  memset(key, 0, len);
+  AES_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf, &num);
+#endif
   
   if(!kd->ld_kdr_)
     return 1;
