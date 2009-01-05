@@ -211,6 +211,7 @@ int cipher_aesctr_init(cipher_t* c)
 
   cipher_aesctr_param_t* params = c->params_;
 
+#ifndef USE_SSL_CRYPTO
   int algo;
   switch(c->key_length_) {
   case 128: algo = GCRY_CIPHER_AES128; break;
@@ -227,6 +228,7 @@ int cipher_aesctr_init(cipher_t* c)
     log_printf(ERR, "failed to open cipher: %s", gcry_strerror(err));
     return -1;
   } 
+#endif
 
   return 0;
 }
@@ -239,8 +241,10 @@ void cipher_aesctr_close(cipher_t* c)
   if(c->params_) {
     cipher_aesctr_param_t* params = c->params_;
 
+#ifndef USE_SSL_CRYPTO
     if(params->handle_)
       gcry_cipher_close(params->handle_);
+#endif
 
     free(c->params_);
   }
@@ -297,20 +301,27 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
   if(ret < 0)
     return ret;
   
-  gcry_error_t err;
   if(ret) { // a new key got generated
-    err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
+#ifdef USE_SSL_CRYPTO
+    ret = AES_set_encrypt_key(c->key_.buf_, c->key_length_, &params->aes_key_);
+    if(ret) {
+      log_printf(ERR, "failed to set cipher ssl aes-key (code: %d)", ret);
+      return -1;
+    }
+#else
+    gcry_error_t err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
     if(err) {
       log_printf(ERR, "failed to set cipher key: %s", gcry_strerror(err));
       return -1;
     }
   } // no new key got generated
   else {
-    err = gcry_cipher_reset(params->handle_);
+    gcry_error_t err = gcry_cipher_reset(params->handle_);
     if(err) {
       log_printf(ERR, "failed to reset cipher: %s", gcry_strerror(err));
       return -1;
     }
+#endif
   }
 
   ret = cipher_aesctr_calc_ctr(c, kd, seq_nr, sender_id, mux);
@@ -318,8 +329,9 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
     log_printf(ERR, "failed to calculate cipher CTR");
     return ret;
   }
-  err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
-
+  
+#ifndef USE_SSL_CRYPTO
+  gcry_error_t err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
   if(err) {
     log_printf(ERR, "failed to set cipher CTR: %s", gcry_strerror(err));
     return -1;
@@ -330,6 +342,15 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
     log_printf(ERR, "failed to de/encrypt packet: %s", gcry_strerror(err));
     return -1;
   }
+#else
+  if(C_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
+    log_printf(ERR, "failed to set cipher CTR: size don't fits");
+    return -1;
+  }
+  u_int32_t num = 0;
+  memset(params->ecount_buf, 0, AES_BLOCK_SIZE);
+  AES_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_, params->ecount_buf, &num);
+#endif
 
   return (ilen < olen) ? ilen : olen;  
 }

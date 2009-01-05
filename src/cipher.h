@@ -36,7 +36,11 @@
 #define _CIPHER_H_
 
 #ifndef NO_CRYPT
+#ifndef USE_SSL_CRYPTO
 #include <gcrypt.h>
+#else
+#include <openssl/aes.h>
+#endif
 #include "key_derivation.h"
 #else
 typedef u_int8_t key_derivation_t;
@@ -87,7 +91,12 @@ union __attribute__((__packed__)) cipher_aesctr_ctr_union {
 typedef union cipher_aesctr_ctr_union cipher_aesctr_ctr_t;
 
 struct cipher_aesctr_param_struct {
+#ifndef USE_SSL_CRYPTO
   gcry_cipher_hd_t handle_;
+#else
+  AES_KEY aes_key_;
+  u_int8_t ecount_buf[AES_BLOCK_SIZE];
+#endif
   cipher_aesctr_ctr_t ctr_;
 };
 typedef struct cipher_aesctr_param_struct cipher_aesctr_param_t;
