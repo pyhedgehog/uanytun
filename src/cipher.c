@@ -261,24 +261,16 @@ int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, s
   if(ret < 0)
     return ret;
 
-  int faked_msb = 0;
-  if(!c->salt_.buf_[0]) {
+#ifdef ANYTUN_02_COMPAT
+  if(!c->salt_.buf_[0])
     c->salt_.buf_[0] = 1;
-    faked_msb = 1;
-  }
+#endif
 
   memcpy(params->ctr_.salt_.buf_, c->salt_.buf_, C_AESCTR_SALT_LENGTH);
   params->ctr_.salt_.zero_ = 0;
   params->ctr_.params_.mux_ ^= MUX_T_HTON(mux);
   params->ctr_.params_.sender_id_ ^= SENDER_ID_T_HTON(sender_id);
   params->ctr_.params_.seq_nr_ ^= SEQ_NR_T_HTON(seq_nr);
-
-#ifndef ANYTUN_02_COMPAT
-  if(faked_msb) {
-    c->salt_.buf_[0] = 0;
-    params->ctr_.buf_[0] = 0;
-  }
-#endif
 
   return 0;
 }

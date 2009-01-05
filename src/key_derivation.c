@@ -239,11 +239,10 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_l
       return 0;
   }
 
-  int faked_msb = 0;
-  if(!kd->master_salt_.buf_[0]) {
+#ifdef ANYTUN_02_COMPAT
+  if(!kd->master_salt_.buf_[0])
     kd->master_salt_.buf_[0] = 1;
-    faked_msb = 1;
-  }
+#endif
 
   if(kd->master_salt_.length_ != KD_AESCTR_SALT_LENGTH) {
     log_printf(ERR, "master salt has the wrong length");
@@ -253,13 +252,6 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_l
   params->ctr_.salt_.zero_ = 0;
   params->ctr_.params_.label_ ^= label;
   params->ctr_.params_.r_ ^= SEQ_NR_T_HTON(*r);
-
-#ifndef ANYTUN_02_COMPAT
-  if(faked_msb) {
-    kd->master_salt_.buf_[0] = 0;
-    params->ctr_.buf_[0] = 0;
-  }
-#endif
 
   return 1;
 }
