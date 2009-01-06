@@ -95,7 +95,6 @@ int init_libgcrypt()
 
 int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 {
-  int return_value = 0;
   log_printf(INFO, "entering main loop");
 
   plain_packet_t plain_packet;
@@ -111,7 +110,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   int ret = cipher_init(&c, opt->cipher_);
   if(ret) {
     log_printf(ERR, "could not initialize cipher of type %s", opt->cipher_);
-    return_value = ret;
+    return ret;
   }
   
 #ifndef NO_CRYPT
@@ -119,26 +118,33 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   ret = auth_algo_init(&aa, opt->auth_algo_);
   if(ret) {
     log_printf(ERR, "could not initialize auth algo of type %s", opt->auth_algo_);
-    return_value = ret;
+    cipher_close(&c);
+    return ret;
   }
 
   key_derivation_t kd_in;
-  ret = key_derivation_init(&kd_in, opt->kd_prf_, opt->ld_kdr_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
+  ret = key_derivation_init(&kd_in, opt->kd_prf_, opt->ld_kdr_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
     log_printf(ERR, "could not initialize inbound key derivation of type %s", opt->kd_prf_);
-    return_value = ret;
+    cipher_close(&c);
+    auth_algo_close(&aa);
+    return ret;
   }
 
   key_derivation_t kd_out;
-  ret = key_derivation_init(&kd_out, opt->kd_prf_, opt->ld_kdr_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
+  ret = key_derivation_init(&kd_out, opt->kd_prf_, opt->ld_kdr_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
     log_printf(ERR, "could not initialize outbound key derivation of type %s", opt->kd_prf_);
-    return_value = ret;
+    cipher_close(&c);
+    auth_algo_close(&aa);
+    key_derivation_close(&kd_in);
+    return ret;
   }
 #else
   key_derivation_t kd_in, kd_out;
 #endif
 
+  int return_value = 0;
   seq_win_t seq_win;
   ret = seq_win_init(&seq_win, opt->seq_window_size_);
   if(ret) {

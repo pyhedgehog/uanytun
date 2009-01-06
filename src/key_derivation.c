@@ -41,16 +41,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len)
+int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len)
 {
   if(!kd) 
     return -1;
 
+  kd->key_length_ = 0;
+
   kd->type_ = kd_unknown;
   if(!strcmp(type, "null"))
     kd->type_ = kd_null;
-  else if(!strcmp(type, "aes-ctr"))
+  else if(!strncmp(type, "aes-ctr", 7)) {
     kd->type_ = kd_aes_ctr;
+    if(type[7] == 0) {
+      kd->key_length_ = KD_AESCTR_DEFAULT_KEY_LENGTH;
+    }
+    else if(type[7] != '-') 
+      return -1;
+    else {
+      const char* tmp = &type[8];
+      kd->key_length_ = atoi(tmp);
+    }
+  }
   else {
     log_printf(ERR, "unknown key derivation type");
     return -1;
@@ -60,7 +72,6 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, u
   if(ld_kdr > (int8_t)(sizeof(seq_nr_t) * 8))
     kd->ld_kdr_ = sizeof(seq_nr_t) * 8;
 
-  kd->key_length_ = key_len * sizeof(key[0]) * 8;
   kd->params_ = NULL;
 
   int i;
@@ -99,12 +110,24 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, u
 
   int ret = 0;
   if(kd->type_ == kd_aes_ctr)
-    ret = key_derivation_aesctr_init(kd);
+    ret = key_derivation_aesctr_init(kd, passphrase);
 
   if(ret)
     key_derivation_close(kd);
 
   return ret;
+}
+
+int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphrase, u_int16_t key_length)
+{
+
+  return 0;
+}
+
+int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passphrase, u_int16_t salt_length)
+{
+
+  return 0;
 }
 
 void key_derivation_close(key_derivation_t* kd)
@@ -159,7 +182,7 @@ int key_derivation_null_generate(u_int8_t* key, u_int32_t len)
 
 /* ---------------- AES-Ctr Key Derivation ---------------- */
 
-int key_derivation_aesctr_init(key_derivation_t* kd)
+int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase)
 {
   if(!kd)
     return -1;
@@ -173,6 +196,8 @@ int key_derivation_aesctr_init(key_derivation_t* kd)
   key_derivation_aesctr_param_t* params = kd->params_;
 
 #ifndef USE_SSL_CRYPTO
+  params->handle_ = 0;
+
   int algo;
   switch(kd->key_length_) {
   case 128: algo = GCRY_CIPHER_AES128; break;

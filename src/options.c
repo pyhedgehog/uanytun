@@ -40,6 +40,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "log.h"
+
 #define PARSE_BOOL_PARAM(SHORT, LONG, VALUE)             \
     else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
       VALUE = 1;
@@ -67,6 +69,22 @@
       VALUE = strdup(argv[i+1]);                         \
       if(!VALUE)                                         \
         return -2;                                       \
+      argc--;                                            \
+      i++;                                               \
+    }
+
+#define PARSE_STRING_PARAM_SEC(SHORT, LONG, VALUE)       \
+    else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
+    {                                                    \
+      if(argc < 1 || argv[i+1][0] == '-')                \
+        return i;                                        \
+      if(VALUE) free(VALUE);                             \
+      VALUE = strdup(argv[i+1]);                         \
+      if(!VALUE)                                         \
+        return -2;                                       \
+      size_t j;                                          \
+      for(j=0; j < strlen(argv[i+1]); ++j)               \
+        argv[i+1][j] = '#';                              \
       argc--;                                            \
       i++;                                               \
     }
@@ -174,11 +192,12 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_INT_PARAM("-s","--sender-id", opt->sender_id_)
     PARSE_INT_PARAM("-m","--mux", opt->mux_)
     PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
-    PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
 #ifndef NO_CRYPT
+    PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
     PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
     PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
     PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
+    PARSE_STRING_PARAM_SEC("-E","--passphrase", opt->passphrase_)
     PARSE_HEXSTRING_PARAM_SEC("-K","--key", opt->key_)
     PARSE_HEXSTRING_PARAM_SEC("-A","--salt", opt->salt_)
 #endif
@@ -187,14 +206,9 @@ int options_parse(options_t* opt, int argc, char* argv[])
   }
 
 #ifndef NO_CRYPT
-  if(!strcmp(opt->cipher_, "null") && !strcmp(opt->auth_algo_, "null")) {
-    if(opt->kd_prf_) free(opt->kd_prf_);
-    opt->kd_prf_ = strdup("null");
-  }
   if((strcmp(opt->cipher_, "null") || strcmp(opt->auth_algo_, "null")) && 
      !strcmp(opt->kd_prf_, "null")) {
-    if(opt->kd_prf_) free(opt->kd_prf_);
-    opt->kd_prf_ = strdup("aes-ctr");
+    log_printf(WARNING, "using NULL key derivation with encryption and or authentication enabled!");
   }
 #endif
 
@@ -231,6 +245,7 @@ void options_default(options_t* opt)
   opt->kd_prf_ = strdup("aes-ctr");
   opt->ld_kdr_ = 0;
   opt->auth_algo_ = strdup("sha1");
+  opt->passphrase_ = NULL;
 #else
   opt->cipher_ = strdup("null");
 #endif
@@ -279,6 +294,8 @@ void options_clear(options_t* opt)
     free(opt->kd_prf_);
   if(opt->auth_algo_)
     free(opt->auth_algo_);
+  if(opt->passphrase_)
+    free(opt->passphrase_);
 #endif
   if(opt->key_.buf_)
     free(opt->key_.buf_);
@@ -308,11 +325,12 @@ void options_print_usage()
   printf("        [-s|--sender-id ] <sender id>       the sender id to use\n");
   printf("        [-w|--window-size] <window size>    seqence number window size\n");
   printf("        [-m|--mux] <mux-id>                 the multiplex id to use\n");
-  printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
 #ifndef NO_CRYPT
+  printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
-//  printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
+  printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
   printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
+  printf("        [-E|--passphrase <pass phrase>      a passprhase to generate master key and salt from\n");
   printf("        [-K|--key] <master key>             master key to use for encryption\n");
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
 #endif
@@ -343,6 +361,7 @@ void options_print(options_t* opt)
   printf("auth_algo: '%s'\n", opt->auth_algo_);
   printf("kd_prf: '%s'\n", opt->kd_prf_);
   printf("ld_kdr: %d\n", opt->ld_kdr_);
+  printf("passphrase: '%s'\n", opt->passphrase_);
 #endif
 
   u_int32_t i;

@@ -58,6 +58,7 @@ struct options_struct {
   char* kd_prf_;
   int ld_kdr_;
   char* auth_algo_;
+  char* passphrase_;
 #endif
   mux_t mux_;
   buffer_t key_;
