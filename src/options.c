@@ -239,7 +239,7 @@ void options_default(options_t* opt)
   opt->ifconfig_param_local_ = NULL;
   opt->ifconfig_param_remote_netmask_ = NULL;
   opt->post_up_script_ = NULL;
-  opt->seq_window_size_ = 100;
+  opt->seq_window_size_ = 0;
 #ifndef NO_CRYPT
   opt->cipher_ = strdup("aes-ctr");
   opt->kd_prf_ = strdup("aes-ctr");

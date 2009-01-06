@@ -28,7 +28,9 @@ SYNOPSIS
 [ *-m|--mux* <mux-id> ]
 [ *-c|--cipher* <cipher type> ]
 [ *-a|--auth-algo* <algo type> ]
+[ *-k|--kd-prf* <kd-prf type> ]
 [ *-l|--ld-kdr* <ld-kdr> ]
+[ *-E|--passphrase <pass phrase> ]
 [ *-K|--key* <master key> ]
 [ *-A|--salt* <master salt> ]
 
@@ -220,6 +222,22 @@ Possible values:
 If HMAC-SHA1 is used, the packet length is increased by
 10 bytes. These 10 bytes contain the authentication data.
 
+-k|--kd--prf <kd-prf type>
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+key derivation pseudo random function.
+
+The pseudo random function which is used for calculating the 
+session keys and session salt.
+
+Possible values:
+
+* *null* - no random function, keys and salt are set to 0..00
+* *aes-ctr* - AES in counter mode with 128 Bits, default value
+* *aes-ctr-128* - AES in counter mode with 128 Bits
+* *aes-ctr-192* - AES in counter mode with 192 Bits
+* *aes-ctr-256* - AES in counter mode with 256 Bits
+
 -l|--ld-kdr <ld-kdr>
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -230,6 +248,15 @@ it forever. The default is 0 which means to calculate a new key
 for every packet. A value of 1 would tell the key derivation
 to generate a new key after 2 packets, for 2 its 4 packets and 
 so on.
+
+-E|--passphrase <pass phrase>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This passphrase is used to generate the master key and master salt.
+For the master key the last n bits of the SHA256 digest of the 
+passphrase (where n is the length of the master key in bits) is used. 
+The master salt gets generated with the SHA1 digest. 
+This overrides any setting for *--key* or *--salt*.
 
 -K|--key <master key>
 ~~~~~~~~~~~~~~~~~~~~~
