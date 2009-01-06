@@ -36,6 +36,10 @@
 
 #include "key_derivation.h"
 
+#ifdef USE_SSL_CRYPTO
+#include <openssl/sha.h>
+#endif
+
 #include "log.h"
 
 #include <stdlib.h>
@@ -120,12 +124,113 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, c
 
 int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphrase, u_int16_t key_length)
 {
+  if(!kd ||  !passphrase)
+    return -1;
+
+  if(!key_length || (key_length % 8)) {
+    log_printf(ERR, "bad master key length");
+    return -1;
+  }
+
+#ifndef USE_SSL_CRYPTO
+  if(key_length > (gcry_md_get_algo_dlen(GCRY_MD_SHA256) * 8)) {
+#else
+  if(key_length > (SHA256_DIGEST_LENGTH * 8)) {
+#endif
+    log_printf(ERR, "master key too long for passphrase algorithm");
+    return -1;
+  }
+
+  if(kd->master_key_.buf_) {
+    log_printf(ERR, "master key and passphrase provided, overwriting given master key");
+    free(kd->master_key_.buf_);
+    kd->master_key_.buf_ = NULL;
+    kd->master_key_.length_ = 0;
+  }    
+
+  buffer_t digest;
+#ifndef USE_SSL_CRYPTO
+  digest.length_ = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
+#else
+  digest.length_ = SHA256_DIGEST_LENGTH;
+#endif
+  digest.buf_ = malloc(digest.length_);
+  if(!digest.buf_)
+    return -2;
+
+
+#ifndef USE_SSL_CRYPTO
+  gcry_md_hash_buffer(GCRY_MD_SHA256, digest.buf_, passphrase, strlen(passphrase));
+#else
+  SHA256(passphrase, strlen(passphrase), digest.buf_);
+#endif
+
+  kd->master_key_.length_ = key_length/8;
+  kd->master_key_.buf_ = malloc(kd->master_key_.length_);
+  if(!kd->master_key_.buf_) {
+    kd->master_key_.length_ = 0;
+    free(digest.buf_);
+    return -2;
+  }
+
+  memcpy(kd->master_key_.buf_, &digest.buf_[digest.length_ - kd->master_key_.length_], kd->master_key_.length_);
+  free(digest.buf_);
 
   return 0;
 }
 
 int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passphrase, u_int16_t salt_length)
 {
+  if(!kd ||  !passphrase)
+    return -1;
+
+  if(!salt_length || (salt_length % 8)) {
+    log_printf(ERR, "bad master salt length");
+    return -1;
+  }
+
+#ifndef USE_SSL_CRYPTO
+  if(salt_length > (gcry_md_get_algo_dlen(GCRY_MD_SHA1) * 8)) {
+#else
+  if(salt_length > (SHA_DIGEST_LENGTH * 8)) {
+#endif
+    log_printf(ERR, "master salt too long for passphrase algorithm");
+    return -1;
+  }
+
+  if(kd->master_salt_.buf_) {
+    log_printf(ERR, "master salt and passphrase provided, overwriting given master salt");
+    free(kd->master_salt_.buf_);
+    kd->master_salt_.buf_ = NULL;
+    kd->master_salt_.length_ = 0;
+  }    
+
+  buffer_t digest;
+#ifndef USE_SSL_CRYPTO
+  digest.length_ = gcry_md_get_algo_dlen(GCRY_MD_SHA1);
+#else
+  digest.length_ = SHA_DIGEST_LENGTH;
+#endif
+  digest.buf_ = malloc(digest.length_);
+  if(!digest.buf_)
+    return -2;
+
+#ifndef USE_SSL_CRYPTO
+  gcry_md_hash_buffer(GCRY_MD_SHA1, digest.buf_, passphrase, strlen(passphrase));
+#else
+  SHA1(passphrase, strlen(passphrase), digest.buf_);
+#endif
+
+  kd->master_salt_.length_ = salt_length/8;
+  kd->master_salt_.buf_ = malloc(kd->master_salt_.length_);
+  if(!kd->master_salt_.buf_) {
+    kd->master_salt_.length_ = 0;
+    free(digest.buf_);
+    return -2;
+  }
+
+  memcpy(kd->master_salt_.buf_, &digest.buf_[digest.length_ - kd->master_salt_.length_], kd->master_salt_.length_);
+  free(digest.buf_);
 
   return 0;
 }
@@ -194,10 +299,20 @@ int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase)
     return -2;
 
   key_derivation_aesctr_param_t* params = kd->params_;
-
 #ifndef USE_SSL_CRYPTO
   params->handle_ = 0;
+#endif
 
+  if(passphrase) {
+    int ret = key_derivation_generate_master_key(kd, passphrase, kd->key_length_);
+    if(ret)
+      return ret;
+    ret = key_derivation_generate_master_salt(kd, passphrase, KD_AESCTR_SALT_LENGTH*8);
+    if(ret)
+      return ret;
+  }
+
+#ifndef USE_SSL_CRYPTO
   int algo;
   switch(kd->key_length_) {
   case 128: algo = GCRY_CIPHER_AES128; break;
