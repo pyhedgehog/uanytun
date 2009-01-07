@@ -322,24 +322,27 @@ void print_hex_dump(const u_int8_t* buf, u_int32_t len)
 int main(int argc, char* argv[])
 {
   log_init("uanytun", DAEMON);
+  log_printf(NOTICE, "just started...");
   signal_init();
 
   options_t opt;
   int ret = options_parse(&opt, argc, argv);
   if(ret) {
     options_clear(&opt);
-    if(ret > 0)
+    if(ret > 0) {
       fprintf(stderr, "syntax error near: %s\n\n", argv[ret]);
-    if(ret == -2)
+      log_printf(ERR, "syntax error, exitting");
+    }
+    if(ret == -2) {
       fprintf(stderr, "memory error on options_parse, exitting\n");
+      log_printf(ERR, "memory error on options_parse, exitting");
+    }
 
     if(ret == -1 || ret > 0) 
       options_print_usage();
 
     exit(ret);
   }
-
-  log_printf(NOTICE, "just started...");
 
 #ifndef NO_CRYPT
 #ifndef USE_SSL_CRYPTO

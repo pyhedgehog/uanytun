@@ -256,7 +256,7 @@ This passphrase is used to generate the master key and master salt.
 For the master key the last n bits of the SHA256 digest of the 
 passphrase (where n is the length of the master key in bits) is used. 
 The master salt gets generated with the SHA1 digest. 
-This overrides any setting for *--key* or *--salt*.
+You may force a specific key and or salt by using *--key* and *--salt*.
 
 -K|--key <master key>
 ~~~~~~~~~~~~~~~~~~~~~

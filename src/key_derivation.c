@@ -127,6 +127,12 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
   if(!kd || !passphrase)
     return -1;
 
+  if(kd->master_key_.buf_) {
+    log_printf(ERR, "master key and passphrase provided, ignoring passphrase");
+    return 0;
+  }    
+  log_printf(NOTICE, "using passphrase to generate master key");
+
   if(!key_length || (key_length % 8)) {
     log_printf(ERR, "bad master key length");
     return -1;
@@ -140,13 +146,6 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
     log_printf(ERR, "master key too long for passphrase algorithm");
     return -1;
   }
-
-  if(kd->master_key_.buf_) {
-    log_printf(ERR, "master key and passphrase provided, overwriting given master key");
-    free(kd->master_key_.buf_);
-    kd->master_key_.buf_ = NULL;
-    kd->master_key_.length_ = 0;
-  }    
 
   buffer_t digest;
 #ifndef USE_SSL_CRYPTO
@@ -184,6 +183,12 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
   if(!kd || !passphrase)
     return -1;
 
+  if(kd->master_salt_.buf_) {
+    log_printf(ERR, "master salt and passphrase provided, ignoring passphrase");
+    return 0;
+  }    
+  log_printf(NOTICE, "using passphrase to generate master salt");
+
   if(!salt_length || (salt_length % 8)) {
     log_printf(ERR, "bad master salt length");
     return -1;
@@ -197,13 +202,6 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
     log_printf(ERR, "master salt too long for passphrase algorithm");
     return -1;
   }
-
-  if(kd->master_salt_.buf_) {
-    log_printf(ERR, "master salt and passphrase provided, overwriting given master salt");
-    free(kd->master_salt_.buf_);
-    kd->master_salt_.buf_ = NULL;
-    kd->master_salt_.length_ = 0;
-  }    
 
   buffer_t digest;
 #ifndef USE_SSL_CRYPTO
