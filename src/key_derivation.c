@@ -124,7 +124,7 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, c
 
 int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphrase, u_int16_t key_length)
 {
-  if(!kd ||  !passphrase)
+  if(!kd || !passphrase)
     return -1;
 
   if(!key_length || (key_length % 8)) {
@@ -181,7 +181,7 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
 
 int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passphrase, u_int16_t salt_length)
 {
-  if(!kd ||  !passphrase)
+  if(!kd || !passphrase)
     return -1;
 
   if(!salt_length || (salt_length % 8)) {
@@ -429,7 +429,6 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
   }
 
   err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, KD_AESCTR_CTR_LENGTH);
-
   if(err) {
     log_printf(ERR, "failed to set key derivation CTR: %s", gcry_strerror(err));
     return -1;

@@ -200,7 +200,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
     HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
   }
   else {
-    HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
+    HMAC_Init_ex(&params->ctx_, NULL, 0, NULL, NULL);
 #endif
   }
 
@@ -254,7 +254,7 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
     HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
   }
   else {
-    HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
+    HMAC_Init_ex(&params->ctx_, NULL, 0, NULL, NULL);
 #endif
   }
 

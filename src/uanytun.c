@@ -148,6 +148,9 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
 int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
                      cipher_t* c, auth_algo_t* aa, key_derivation_t* kd_out, seq_nr_t seq_nr)
 {
+  plain_packet_set_payload_length(plain_packet, -1);
+  encrypted_packet_set_length(encrypted_packet, -1);
+
   int len = tun_read(dev, plain_packet_get_payload(plain_packet), plain_packet_get_payload_length(plain_packet));
   if(len == -1) {
     log_printf(ERR, "error on reading from device: %m");
@@ -179,6 +182,9 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
 int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
                       cipher_t* c, auth_algo_t* aa, key_derivation_t* kd_in, seq_win_t* seq_win)
 {
+  plain_packet_set_payload_length(plain_packet, -1);
+  encrypted_packet_set_length(encrypted_packet, -1);
+
   udp_endpoint_t remote;
   memset(&remote, 0, sizeof(udp_endpoint_t));
   int len = udp_read(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet), &remote);
@@ -252,9 +258,6 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 
   int return_value = 0;
   while(!return_value) {
-    plain_packet_set_payload_length(&plain_packet, -1);
-    encrypted_packet_set_length(&encrypted_packet, -1);
-
     FD_ZERO(&readfds);
     FD_SET(dev->fd_, &readfds);
     FD_SET(sock->fd_, &readfds);
@@ -277,12 +280,14 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     if(FD_ISSET(dev->fd_, &readfds)) {
       return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd_out, seq_nr);
       seq_nr++;
-      continue;
+      if(return_value)
+        break;
     }
 
     if(FD_ISSET(sock->fd_, &readfds)) {
       return_value = process_sock_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd_in, &seq_win); 
-      continue;
+      if(return_value)
+        break;
     }
   }
 
