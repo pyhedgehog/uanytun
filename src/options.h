@@ -66,7 +66,7 @@ struct options_struct {
 };
 typedef struct options_struct options_t;
 
-buffer_t options_parse_hex_string(const char* hex);
+int options_parse_hex_string(const char* hex, buffer_t* buffer);
 
 int options_parse(options_t* opt, int argc, char* argv[]);
 void options_default(options_t* opt);

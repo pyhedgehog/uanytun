@@ -113,9 +113,12 @@
       if(argc < 1 || argv[i+1][0] == '-')                \
         return i;                                        \
       if(VALUE.buf_) free(VALUE.buf_);                   \
-      VALUE = options_parse_hex_string(argv[i+1]);       \
-      if(!VALUE.buf_)                                    \
-        return -2;                                       \
+      int ret;                                           \
+      ret = options_parse_hex_string(argv[i+1], &VALUE); \
+      if(ret > 0)                                        \
+        return i+1;                                      \
+      else if(ret < 0)                                   \
+        return ret;                                      \
       size_t j;                                          \
       for(j=0; j < strlen(argv[i+1]); ++j)               \
         argv[i+1][j] = '#';                              \
@@ -123,34 +126,35 @@
       i++;                                               \
     }
 
-buffer_t options_parse_hex_string(const char* hex)
+int options_parse_hex_string(const char* hex, buffer_t* buffer)
 {
+  if(!hex || !buffer)
+    return -1;
+
   u_int32_t hex_len = strlen(hex);
-  buffer_t buffer;
+  if(hex_len%2)
+    return 1;
 
-  buffer.length_ = 0;
-  buffer.buf_ = NULL;
-
-  if(hex_len%2) 
-    return buffer;
+  if(buffer->buf_) 
+    free(buffer->buf_);
   
-  buffer.length_ = hex_len/2;
-  buffer.buf_ = malloc(buffer.length_);
-  if(!buffer.buf_) {
-    buffer.length_ = 0;
-    return buffer;
+  buffer->length_ = hex_len/2;
+  buffer->buf_ = malloc(buffer->length_);
+  if(!buffer->buf_) {
+    buffer->length_ = 0;
+    return -2;
   }
 
   const char* ptr = hex;
   int i;
-  for(i=0;i<buffer.length_;++i) {
+  for(i=0;i<buffer->length_;++i) {
     u_int32_t tmp;
     sscanf(ptr, "%2X", &tmp);
-    buffer.buf_[i] = (u_int8_t)tmp;
+    buffer->buf_[i] = (u_int8_t)tmp;
     ptr += 2;
   }
 
-  return buffer;
+  return 0;
 }
 
 int options_parse(options_t* opt, int argc, char* argv[])
