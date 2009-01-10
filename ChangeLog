@@ -1,3 +1,11 @@
+2009.01.?? -- Version 0.2svn??
+
+* added crypto support using libgcrypt or openssl
+* added new passphrase option to generate master key and or salt
+* cleaned up and improved build system
+* some code cleanup
+
+
 2008.12.31 -- Version 0.1svn37
 
 * Initial release.

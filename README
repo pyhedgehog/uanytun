@@ -4,15 +4,29 @@ Dependencies
 Linux
 -----
 
-build-essential
-libgcrypt11-dev
+using libgcrypt:
+ 
+ build-essential
+ libgcrypt11-dev
+
+using ssl crypto library:
+
+ build-essential
+ libssl-dev
+
 
 OpenBSD
 -------
 
-libgcrypt
-libgpg-error
-gmake
+using libgcrypt:
+
+ gmake
+ libgcrypt
+ libgpg-error
+
+using ssl crypto library:
+
+ gmake
 
 
 Installation
@@ -25,13 +39,25 @@ svn co https://svn.chaos-at-home.org/uanytun
 Building from source
 --------------------
 
+using libgcrypt:
+
 # cd src
 # ./configure
 # make
 
+using ssl crypto library:
+
+# cd src
+# ./configure --use-ssl-crypto
+# make
+
+
 Notes: 
+  - try './configure --help' for further information
+  - if using openssl pre 0.9.8 you have to disable passphrase
+    because openssl had no SHA256 implementation prior to this
+    version
   - on OpenBSD you have to use gmake instead of make
   - currently there is no support for using IPv6 as
-    outer Protocol because OpenBSD does not support
+    outer Protocol on OpenBSD because it does not support
     V4-Mapped adresses
-
