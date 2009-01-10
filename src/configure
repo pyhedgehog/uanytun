@@ -40,6 +40,7 @@ LDFLAGS='-g -Wall -O2'
 
 CRYPTO_LIB='gcrypt'
 ANYTUN_02_COMPAT=0
+PASSPHRASE=1
 V4_MAPPED=1
 
 print_usage() {
@@ -47,6 +48,7 @@ print_usage() {
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --disable-crypto          disable crypto at all (only NULL cipher)"
   echo "          --enable-anytun02-compat  enable compatiblity mode for anytun 0.2"
+  echo "          --disable-passphrase      disable master key and salt passphrase"
   echo "          --disable-v4-mapped       disable V4-Mapped addresses (until now this means"
   echo "                                    to disable IPv6 as outer protocol)"
 }
@@ -62,6 +64,9 @@ do
   ;; 
   --enable-anytun02-compat)
     ANYTUN_02_COMPAT=1
+  ;;
+  --disable-passphrase)
+    PASSPHRASE=0
   ;;
   --disable-v4-mapped)
     V4_MAPPED=0 
@@ -106,23 +111,28 @@ esac
 case $CRYPTO_LIB in
   gcrypt)
     LDFLAGS=$LDFLAGS' -lgcrypt -lgpg-error'
-    echo "Using libgcrypt library"
+    echo "using libgcrypt library"
   ;;
   ssl)
     CFLAGS=$CFLAGS' -DUSE_SSL_CRYPTO'
     LDFLAGS=$LDFLAGS' -lcrypto'
-    echo "Using ssl crypto library"
+    echo "using ssl crypto library"
   ;;
   none)
     CFLAGS=$CFLAGS' -DNO_CRYPT'
     echo "NO_CRYPT_OBJ = 1" >> include.mk
-    echo "Disabling crypto"
+    echo "disabling crypto"
   ;;
 esac
 
 if [ $ANYTUN_02_COMPAT -eq 1 ]; then
   CFLAGS=$CFLAGS' -DANYTUN_02_COMPAT'
-  echo "enbabling anytun 0.2 crypto compatiblity mode"
+  echo "enabling anytun 0.2 crypto compatiblity mode"
+fi
+
+if [ $PASSPHRASE -eq 0 ]; then
+  CFLAGS=$CFLAGS' -DNO_PASSPHRASE'
+  echo "disabling master key and salt passphrase"
 fi
 
 if [ $V4_MAPPED -eq 0 ]; then

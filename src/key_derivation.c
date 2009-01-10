@@ -122,6 +122,7 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, c
   return ret;
 }
 
+#ifndef NO_PASSPHRASE
 int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphrase, u_int16_t key_length)
 {
   if(!kd || !passphrase)
@@ -232,6 +233,7 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
 
   return 0;
 }
+#endif
 
 void key_derivation_close(key_derivation_t* kd)
 {
@@ -301,6 +303,7 @@ int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase)
   params->handle_ = 0;
 #endif
 
+#ifndef NO_PASSPHRASE
   if(passphrase) {
     int ret = key_derivation_generate_master_key(kd, passphrase, kd->key_length_);
     if(ret)
@@ -309,6 +312,7 @@ int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase)
     if(ret)
       return ret;
   }
+#endif
 
 #ifndef USE_SSL_CRYPTO
   int algo;

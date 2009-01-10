@@ -70,8 +70,10 @@ struct key_derivation_struct {
 typedef struct key_derivation_struct key_derivation_t;
 
 int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len);
+#ifndef NO_PASSPHRASE
 int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphrase, u_int16_t key_length);
 int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passphrase, u_int16_t salt_length);
+#endif
 void key_derivation_close(key_derivation_t* kd);
 int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
 
