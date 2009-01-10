@@ -35,16 +35,92 @@
 
 TARGET=`uname -s`
 
+CFLAGS='-g -O2'
+LDFLAGS='-g -Wall -O2'
+
+CRYPTO_LIB='gcrypt'
+ANYTUN_02_COMPAT=0
+V4_MAPPED=1
+
+for arg
+do
+  case $arg in
+  --use-ssl-crypto)
+    CRYPTO_LIB='ssl'
+  ;;
+  --disable-crypto)
+    CRYPTO_LIB='none'
+  ;; 
+  --enable-anytun02-compat)
+    ANYTUN_02_COMPAT=1
+  ;;
+  --disable-v4-mapped)
+    V4_MAPPED=0 
+  ;; 
+  *)
+    echo "Unknown argument: $arg"
+    exit 1
+  ;;
+  esac
+done
+
+rm -f include.mk
 case $TARGET in 
 	Linux)
 		rm -rf tun.c
 		ln -sf linux/tun.c
+    echo "loading Linux specific TUN Device"
+    LDFLAGS=$LDFLAGS" -ldl"
 	;;
 	OpenBSD|FreeBSD|NetBSD)
 		rm -rf tun.c
 		ln -sf bsd/tun.c
+    echo "loading BSD specific TUN Device"
+    CFLAGS=$CFLAGS' -I/usr/local/include'
+    LDFLAGS=$LDFLAGS' -L/usr/local/lib'
+    if [ '$TARGET' == 'OpenBSD' ]; then
+      V4_MAPPED=0
+    fi
 	;;
 	*)
 		echo "Plattform not supported"
+    exit 1;
 	;;
 esac
+
+
+case $CRYPTO_LIB in
+  gcrypt)
+    LDFLAGS=$LDFLAGS' -lgcrypt -lgpg-error'
+    echo "Using libgcrypt library"
+  ;;
+  ssl)
+    CFLAGS=$CFLAGS' -DUSE_SSL_CRYPTO'
+    LDFLAGS=$LDFLAGS' -lcrypto'
+    echo "Using ssl crypto library"
+  ;;
+  none)
+    CFLAGS=$CFLAGS' -DNO_CRYPT'
+    echo "Disabling crypto"
+  ;;
+esac
+
+if [ $ANYTUN_02_COMPAT -eq 1 ]; then
+  CFLAGS=$CFLAGS' -DANYTUN_02_COMPAT'
+  echo "enbabling anytun 0.2 crypto compatiblity mode"
+fi
+
+if [ $V4_MAPPED -eq 0 ]; then
+  CFLAGS=$CFLAGS' -DNO_UDPV6'
+  echo "WARNING: disabling V4 mapped addresses, this prevents uanytun from using IPv6 as outer Protocol"
+fi
+
+cat >> include.mk <<EOF
+TARGET = $TARGET
+CC = gcc
+CFLAGS = $CFLAGS
+LD = gcc
+LDFLAGS = $LDFLAGS
+EOF
+
+exit 0

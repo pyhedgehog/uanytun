@@ -32,88 +32,51 @@
 ##  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-TARGET=$(shell uname -s)
-CC = gcc
-CCFLAGS = -g -O2 -DANYTUN_02_COMPAT #-DUSE_SSL_CRYPTO #-DNO_CRYPT
-LD = gcc
-LDFLAGS = -g -Wall -O2 -lgcrypt -lgpg-error #-lcrypto
+include include.mk
 
-ifeq ($(TARGET),Linux)
-  LDFLAGS += -ldl
-endif
-ifeq ($(TARGET),OpenBSD)
-  CCFLAGS += -I/usr/local/include -DNO_UDPV6
-  LDFLAGS += -L/usr/local/lib
-endif
-
-CRYPT_OBJS = key_derivation.o \
-             auth_algo.o
-
-OBJS = log.o \
-       signal.o \
-       options.o \
-       tun.o \
-       udp.o \
-       plain_packet.o \
-       encrypted_packet.o \
-       seq_window.o \
-       cipher.o \
-       uanytun.o
-
-OBJS += $(CRYPT_OBJS)
-
+DEPENDFILE = .depend
 EXECUTABLE = uanytun
 
-all: $(EXECUTABLE)
+CRYPT_OBJ = key_derivation.o \
+             auth_algo.o
+OBJ = log.o \
+      signal.o \
+      options.o \
+      tun.o \
+      udp.o \
+      plain_packet.o \
+      encrypted_packet.o \
+      seq_window.o \
+      cipher.o \
+      uanytun.o
 
-uanytun: $(OBJS)
-	$(LD) $(OBJS) -o $@ $(LDFLAGS)
+OBJ += $(CRYPT_OBJ)
 
-uanytun.o: uanytun.c
-	$(CC) $(CCFLAGS) $< -c
+SRC = $(OBJ:%.o=%.c)
 
-log.o: log.c log.h
-	$(CC) $(CCFLAGS) $< -c
+.PHONY: dep distclean clean
 
-signal.o: signal.c signal.h
-	$(CC) $(CCFLAGS) $< -c
+all: dep $(EXECUTABLE)
 
-options.o: options.c options.h
-	$(CC) $(CCFLAGS) $< -c
+dep: $(SRC)
+	$(CC) -MM $(SRC) > $(DEPENDFILE)
 
-tun.o: tun.c tun.h
-	$(CC) $(CCFLAGS) $< -c
+-include $(DEPENDFILE)
 
-udp.o: udp.c udp.h
-	$(CC) $(CCFLAGS) $< -c
+uanytun: $(OBJ)
+	$(LD) $(OBJ) -o $@ $(LDFLAGS)
 
-plain_packet.o: plain_packet.c plain_packet.h
-	$(CC) $(CCFLAGS) $< -c
+%.o: %.c
+	$(CC) $(CFLAGS) -c $<
 
-encrypted_packet.o: encrypted_packet.c encrypted_packet.h
-	$(CC) $(CCFLAGS) $< -c
-
-seq_window.o: seq_window.c seq_window.h
-	$(CC) $(CCFLAGS) $< -c
-
-key_derivation.o: key_derivation.c key_derivation.h
-	$(CC) $(CCFLAGS) $< -c
-
-cipher.o: cipher.c cipher.h
-	$(CC) $(CCFLAGS) $< -c
-
-auth_algo.o: auth_algo.c auth_algo.h
-	$(CC) $(CCFLAGS) $< -c
 
 distclean: clean
 	find . -name *.o -exec rm -f {} \;
 	find . -name "*.\~*" -exec rm -rf {} \;
+	rm -f include.mk
 	rm -f tun.c
 
 clean:
 	rm -f *.o
+	rm -f $(DEPENDFILE)
 	rm -f $(EXECUTABLE)
-
-ctags:
-	ctags -R --c++-kinds=+p --fields=+iaS --extra=+q .
-
