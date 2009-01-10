@@ -42,6 +42,15 @@ CRYPTO_LIB='gcrypt'
 ANYTUN_02_COMPAT=0
 V4_MAPPED=1
 
+print_usage() {
+  echo "configure --help                    print this"
+  echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
+  echo "          --disable-crypto          disable crypto at all (only NULL cipher)"
+  echo "          --enable-anytun02-compat  enable compatiblity mode for anytun 0.2"
+  echo "          --disable-v4-mapped       disable V4-Mapped addresses (until now this means"
+  echo "                                    to disable IPv6 as outer protocol)"
+}
+
 for arg
 do
   case $arg in
@@ -57,8 +66,13 @@ do
   --disable-v4-mapped)
     V4_MAPPED=0 
   ;; 
+  --help)
+    print_usage
+    exit 0
+  ;;
   *)
     echo "Unknown argument: $arg"
+    print_usage
     exit 1
   ;;
   esac
