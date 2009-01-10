@@ -78,7 +78,7 @@ case $TARGET in
     echo "loading BSD specific TUN Device"
     CFLAGS=$CFLAGS' -I/usr/local/include'
     LDFLAGS=$LDFLAGS' -L/usr/local/lib'
-    if [ '$TARGET' == 'OpenBSD' ]; then
+    if [ "$TARGET" == 'OpenBSD' ]; then
       V4_MAPPED=0
     fi
 	;;
@@ -101,6 +101,7 @@ case $CRYPTO_LIB in
   ;;
   none)
     CFLAGS=$CFLAGS' -DNO_CRYPT'
+    echo "NO_CRYPT_OBJ = 1" >> include.mk
     echo "Disabling crypto"
   ;;
 esac

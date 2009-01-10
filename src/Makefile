@@ -38,7 +38,7 @@ DEPENDFILE = .depend
 EXECUTABLE = uanytun
 
 CRYPT_OBJ = key_derivation.o \
-             auth_algo.o
+            auth_algo.o
 OBJ = log.o \
       signal.o \
       options.o \
@@ -50,7 +50,10 @@ OBJ = log.o \
       cipher.o \
       uanytun.o
 
+
+ifndef NO_CRYPT_OBJ
 OBJ += $(CRYPT_OBJ)
+endif
 
 SRC = $(OBJ:%.o=%.c)
 
