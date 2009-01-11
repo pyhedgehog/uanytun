@@ -1,4 +1,4 @@
-2009.01.?? -- Version 0.2svn??
+2009.01.11 -- Version 0.2svn85
 
 * added crypto support using libgcrypt or openssl
 * added new passphrase option to generate master key and or salt

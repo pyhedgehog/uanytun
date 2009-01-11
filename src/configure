@@ -47,7 +47,7 @@ print_usage() {
   echo "configure --help                    print this"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --disable-crypto          disable crypto at all (only NULL cipher)"
-  echo "          --enable-anytun02-compat  enable compatiblity mode for anytun 0.2"
+  echo "          --enable-anytun02-compat  enable compatiblity mode for anytun 0.2.x and prior"
   echo "          --disable-passphrase      disable master key and salt passphrase"
   echo "          --disable-v4-mapped       disable V4-Mapped addresses (until now this means"
   echo "                                    to disable IPv6 as outer protocol)"
@@ -127,7 +127,7 @@ esac
 
 if [ $ANYTUN_02_COMPAT -eq 1 ]; then
   CFLAGS=$CFLAGS' -DANYTUN_02_COMPAT'
-  echo "enabling anytun 0.2 crypto compatiblity mode"
+  echo "enabling anytun 0.2.x crypto compatiblity mode"
 fi
 
 if [ $PASSPHRASE -eq 0 ]; then
