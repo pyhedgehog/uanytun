@@ -196,7 +196,7 @@ void seq_win_print(seq_win_t* win)
 
   seq_win_element_t* ptr = win->first_;
   while(ptr) {
-    printf(" [%u]: (%u)-", ptr->sender_id_, ptr->max_, ptr->pos_);
+    printf(" [%u]: (%u)-", ptr->sender_id_, ptr->max_);
     window_size_t i = ptr->pos_;
     while(1) {
       if(ptr->window_[i])
