@@ -176,6 +176,7 @@ void auth_algo_sha1_close(auth_algo_t* aa)
 
 void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
 {
+  encrypted_packet_add_auth_tag(packet);
   if(!encrypted_packet_get_auth_tag_length(packet))
     return;
 
@@ -206,8 +207,6 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
     HMAC_Init_ex(&params->ctx_, NULL, 0, NULL, NULL);
 #endif
   }
-
-  encrypted_packet_add_auth_tag(packet);
 
 #ifndef USE_SSL_CRYPTO
   gcry_md_reset(params->handle_);
