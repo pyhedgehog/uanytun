@@ -120,7 +120,6 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
     auth_algo_close(aa);
     return ret;
   }
-
 #endif
 
   ret = seq_win_init(seq_win, opt->seq_window_size_);

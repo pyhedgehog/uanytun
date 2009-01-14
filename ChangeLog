@@ -1,3 +1,8 @@
+2009.01.14 -- Version 0.2.1svn91
+
+* fixed bug which prevents the daemon from using the right cipher
+  key when using a key derivation rate other than 1
+	
 2009.01.11 -- Version 0.2svn85
 
 * added crypto support using libgcrypt or openssl

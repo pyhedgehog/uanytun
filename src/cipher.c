@@ -293,28 +293,19 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t d
   if(ret < 0)
     return ret;
   
-  if(ret) { // a new key got generated
 #ifdef USE_SSL_CRYPTO
-    ret = AES_set_encrypt_key(c->key_.buf_, c->key_length_, &params->aes_key_);
-    if(ret) {
-      log_printf(ERR, "failed to set cipher ssl aes-key (code: %d)", ret);
-      return -1;
-    }
-#else
-    gcry_error_t err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
-    if(err) {
-      log_printf(ERR, "failed to set cipher key: %s", gcry_strerror(err));
-      return -1;
-    }
-  } // no new key got generated
-  else {
-    gcry_error_t err = gcry_cipher_reset(params->handle_);
-    if(err) {
-      log_printf(ERR, "failed to reset cipher: %s", gcry_strerror(err));
-      return -1;
-    }
-#endif
+  ret = AES_set_encrypt_key(c->key_.buf_, c->key_length_, &params->aes_key_);
+  if(ret) {
+    log_printf(ERR, "failed to set cipher ssl aes-key (code: %d)", ret);
+    return -1;
   }
+#else
+  gcry_error_t err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
+  if(err) {
+    log_printf(ERR, "failed to set cipher key: %s", gcry_strerror(err));
+    return -1;
+  }
+#endif
 
   ret = cipher_aesctr_calc_ctr(c, kd, dir, seq_nr, sender_id, mux);
   if(ret < 0) {
@@ -323,7 +314,7 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t d
   }
   
 #ifndef USE_SSL_CRYPTO
-  gcry_error_t err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
+  err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
   if(err) {
     log_printf(ERR, "failed to set cipher CTR: %s", gcry_strerror(err));
     return -1;
