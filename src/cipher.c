@@ -340,8 +340,8 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
     return -1;
   }
   u_int32_t num = 0;
-  memset(params->ecount_buf, 0, AES_BLOCK_SIZE);
-  AES_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_, params->ecount_buf, &num);
+  memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
+  AES_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
 #endif
 
   return (ilen < olen) ? ilen : olen;  

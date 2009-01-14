@@ -95,7 +95,7 @@ struct cipher_aesctr_param_struct {
   gcry_cipher_hd_t handle_;
 #else
   AES_KEY aes_key_;
-  u_int8_t ecount_buf[AES_BLOCK_SIZE];
+  u_int8_t ecount_buf_[AES_BLOCK_SIZE];
 #endif
   cipher_aesctr_ctr_t ctr_;
 };
