@@ -176,6 +176,9 @@ void auth_algo_sha1_close(auth_algo_t* aa)
 
 void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
 {
+  if(!encrypted_packet_get_auth_tag_length(packet))
+    return;
+
   if(!aa || !aa->params_) {
     log_printf(ERR, "auth algo not initialized");
     return;
@@ -230,6 +233,9 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
 
 int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
 {
+  if(!encrypted_packet_get_auth_tag_length(packet))
+    return 1;
+
   if(!aa || !aa->params_) {
     log_printf(ERR, "auth algo not initialized");
     return 0;
@@ -248,7 +254,7 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
     gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
     if(err) {
       log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
-      return;
+      return -1;
     } 
 #else 
     HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
