@@ -110,7 +110,7 @@ void cipher_close(cipher_t* c)
 }
 
 
-int cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+int cipher_encrypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
   if(!c) 
     return -1;
@@ -121,7 +121,7 @@ int cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encryp
                             encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
 #ifndef NO_CRYPT
   else if(c->type_ == c_aes_ctr)
-    len = cipher_aesctr_crypt(c, kd, plain_packet_get_packet(in), plain_packet_get_length(in),
+    len = cipher_aesctr_crypt(c, kd, dir, plain_packet_get_packet(in), plain_packet_get_length(in),
                               encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out),
                               seq_nr, sender_id, mux);
 #endif
@@ -142,7 +142,7 @@ int cipher_encrypt(cipher_t* c, key_derivation_t* kd, plain_packet_t* in, encryp
   return 0;
 }
 
-int cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, plain_packet_t* out)
+int cipher_decrypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* in, plain_packet_t* out)
 {
   if(!c) 
     return -1;
@@ -153,7 +153,7 @@ int cipher_decrypt(cipher_t* c, key_derivation_t* kd, encrypted_packet_t* in, pl
                             plain_packet_get_packet(out), plain_packet_get_length(out));
 #ifndef NO_CRYPT
   else if(c->type_ == c_aes_ctr)
-    len = cipher_aesctr_crypt(c, kd, encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
+    len = cipher_aesctr_crypt(c, kd, dir, encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                               plain_packet_get_packet(out), plain_packet_get_length(out),
                               encrypted_packet_get_seq_nr(in), encrypted_packet_get_sender_id(in),
                               encrypted_packet_get_mux(in));
@@ -250,14 +250,14 @@ void cipher_aesctr_close(cipher_t* c)
   }
 }
 
-int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
   if(!c || !c->params_)
     return -1;
   
   cipher_aesctr_param_t* params = c->params_;
 
-  int ret = key_derivation_generate(kd, LABEL_SATP_SALT, seq_nr, c->salt_.buf_, C_AESCTR_SALT_LENGTH);
+  int ret = key_derivation_generate(kd, dir, LABEL_SATP_SALT, seq_nr, c->salt_.buf_, C_AESCTR_SALT_LENGTH);
   if(ret < 0)
     return ret;
 
@@ -275,7 +275,7 @@ int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, seq_nr_t seq_nr, s
   return 0;
 }
 
-int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
+int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
   if(!c || !c->params_) {
     log_printf(ERR, "cipher not initialized");
@@ -289,7 +289,7 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
 
   cipher_aesctr_param_t* params = c->params_;
 
-  int ret = key_derivation_generate(kd, LABEL_SATP_ENCRYPTION, seq_nr, c->key_.buf_, c->key_.length_);
+  int ret = key_derivation_generate(kd, dir, LABEL_SATP_ENCRYPTION, seq_nr, c->key_.buf_, c->key_.length_);
   if(ret < 0)
     return ret;
   
@@ -316,7 +316,7 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, u_int8_t* in, u_i
 #endif
   }
 
-  ret = cipher_aesctr_calc_ctr(c, kd, seq_nr, sender_id, mux);
+  ret = cipher_aesctr_calc_ctr(c, kd, dir, seq_nr, sender_id, mux);
   if(ret < 0) {
     log_printf(ERR, "failed to calculate cipher CTR");
     return ret;

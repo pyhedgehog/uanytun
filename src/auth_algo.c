@@ -85,7 +85,7 @@ void auth_algo_close(auth_algo_t* aa)
     free(aa->key_.buf_);
 }
 
-void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
+void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
 {
   if(!aa) 
     return;
@@ -94,14 +94,14 @@ void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_
   if(aa->type_ == aa_null)
     return;
   else if(aa->type_ == aa_sha1)
-    auth_algo_sha1_generate(aa, kd, packet);
+    auth_algo_sha1_generate(aa, kd, dir, packet);
   else {
     log_printf(ERR, "unknown auth algo type");
     return;
   }
 }
 
-int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
+int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
 {
   if(!aa) 
     return;
@@ -110,7 +110,7 @@ int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_
   if(aa->type_ == aa_null)
     return 1;
   else if(aa->type_ == aa_sha1)
-    return auth_algo_sha1_check_tag(aa, kd, packet);
+    return auth_algo_sha1_check_tag(aa, kd, dir, packet);
   else {
     log_printf(ERR, "unknown auth algo type");
     return;
@@ -174,7 +174,7 @@ void auth_algo_sha1_close(auth_algo_t* aa)
 
 }
 
-void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
+void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
 {
   encrypted_packet_add_auth_tag(packet);
   if(!encrypted_packet_get_auth_tag_length(packet))
@@ -190,7 +190,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
   }
   auth_algo_sha1_param_t* params = aa->params_;
 
-  int ret = key_derivation_generate(kd, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
+  int ret = key_derivation_generate(kd, dir, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
   if(ret < 0)
     return;
   if(ret) { // a new key got generated
@@ -230,7 +230,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
 }
 
 
-int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_packet_t* packet)
+int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
 {
   if(!encrypted_packet_get_auth_tag_length(packet))
     return 1;
@@ -245,7 +245,7 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, encrypted_pa
   }
   auth_algo_sha1_param_t* params = aa->params_;
 
-  int ret = key_derivation_generate(kd, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
+  int ret = key_derivation_generate(kd, dir, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
   if(ret < 0)
     return 0;
   if(ret) { // a new key got generated

@@ -78,11 +78,13 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, c
 
   kd->params_ = NULL;
 
-  int i;
-  for(i = 0; i<KD_LABEL_COUNT; ++i) {
-    kd->key_store_[i].key_.buf_ = NULL;
-    kd->key_store_[i].key_.length_ = 0;
-    kd->key_store_[i].r_ = 0;
+  int d, i;
+  for(d = 0; d<2; ++d) {
+    for(i = 0; i<KD_LABEL_COUNT; ++i) {
+      kd->key_store_[d][i].key_.buf_ = NULL;
+      kd->key_store_[d][i].key_.length_ = 0;
+      kd->key_store_[d][i].r_ = 0;
+    }
   }
 
   if(!key) {
@@ -248,14 +250,16 @@ void key_derivation_close(key_derivation_t* kd)
   if(kd->master_salt_.buf_)
     free(kd->master_salt_.buf_);
 
-  int i;
-  for(i = 0; i<KD_LABEL_COUNT; ++i) {
-    if(kd->key_store_[i].key_.buf_)
-      free(kd->key_store_[i].key_.buf_);
+  int d, i;
+  for(d = 0; d<2; ++d) {
+    for(i = 0; i<KD_LABEL_COUNT; ++i) {
+      if(kd->key_store_[d][i].key_.buf_)
+        free(kd->key_store_[d][i].key_.buf_);
+    }
   }
 }
 
-int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
+int key_derivation_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
 {
   if(!kd || !key) 
     return -1;
@@ -269,7 +273,7 @@ int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr
   if(kd->type_ == kd_null)
     ret = key_derivation_null_generate(key, len);
   else if(kd->type_ == kd_aes_ctr)
-    ret = key_derivation_aesctr_generate(kd, label, seq_nr, key, len);
+    ret = key_derivation_aesctr_generate(kd, dir, label, seq_nr, key, len);
   else {
     log_printf(ERR, "unknown key derivation type");
     return -1;
@@ -365,7 +369,7 @@ void key_derivation_aesctr_close(key_derivation_t* kd)
   }
 }
 
-int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_label_t label, seq_nr_t seq_nr)
+int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_dir_t dir, seq_nr_t* r, satp_prf_label_t label, seq_nr_t seq_nr)
 {
   if(!kd || !kd->params_ || !r)
     return -1;
@@ -376,7 +380,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_l
   if(kd->ld_kdr_ >= 0)
     *r = seq_nr >> kd->ld_kdr_;
 
-  if(kd->key_store_[label].key_.buf_ && kd->key_store_[label].r_ == *r) {
+  if(kd->key_store_[dir][label].key_.buf_ && kd->key_store_[dir][label].r_ == *r) {
     if(!(*r) || (seq_nr % (*r)))
       return 0;
   }
@@ -398,7 +402,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_l
   return 1;
 }
 
-int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
+int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
 {
   if(!kd || !kd->params_ || !kd->master_key_.buf_ || !kd->master_salt_.buf_) {
     log_printf(ERR, "key derivation not initialized or no key or salt set");
@@ -408,18 +412,18 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
   key_derivation_aesctr_param_t* params = kd->params_;
 
   seq_nr_t r;
-  int ret = key_derivation_aesctr_calc_ctr(kd, &r, label, seq_nr);
+  int ret = key_derivation_aesctr_calc_ctr(kd, dir, &r, label, seq_nr);
   if(ret < 0) {
     log_printf(ERR, "failed to calculate key derivation CTR");
     return -1;
   }
   else if(!ret) {
-    if(len > kd->key_store_[label].key_.length_) {
+    if(len > kd->key_store_[dir][label].key_.length_) {
       log_printf(WARNING, "stored (old) key for label 0x%02X is too short, filling with zeros", label);
       memset(key, 0, len);
-      len = kd->key_store_[label].key_.length_;
+      len = kd->key_store_[dir][label].key_.length_;
     }
-    memcpy(key, kd->key_store_[label].key_.buf_, len);
+    memcpy(key, kd->key_store_[dir][label].key_.buf_, len);
     return 0;
   }
 
@@ -456,25 +460,25 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label,
   if(!kd->ld_kdr_)
     return 1;
 
-  if(!kd->key_store_[label].key_.buf_) {
-    kd->key_store_[label].key_.length_ = 0;
-    kd->key_store_[label].key_.buf_ = malloc(len);
-    if(!kd->key_store_[label].key_.buf_)
+  if(!kd->key_store_[dir][label].key_.buf_) {
+    kd->key_store_[dir][label].key_.length_ = 0;
+    kd->key_store_[dir][label].key_.buf_ = malloc(len);
+    if(!kd->key_store_[dir][label].key_.buf_)
       return -2;
 
-    kd->key_store_[label].key_.length_ = len;
+    kd->key_store_[dir][label].key_.length_ = len;
   }
-  else if(kd->key_store_[label].key_.length_ < len) {
-    u_int8_t* tmp = realloc(kd->key_store_[label].key_.buf_, len);
+  else if(kd->key_store_[dir][label].key_.length_ < len) {
+    u_int8_t* tmp = realloc(kd->key_store_[dir][label].key_.buf_, len);
     if(!tmp)
       return -2;
 
-    kd->key_store_[label].key_.buf_ = tmp;
-    kd->key_store_[label].key_.length_ = len;
+    kd->key_store_[dir][label].key_.buf_ = tmp;
+    kd->key_store_[dir][label].key_.length_ = len;
   }
 
-  memcpy(kd->key_store_[label].key_.buf_, key, len);
-  kd->key_store_[label].r_ = r;
+  memcpy(kd->key_store_[dir][label].key_.buf_, key, len);
+  kd->key_store_[dir][label].r_ = r;
 
   return 1;
 }

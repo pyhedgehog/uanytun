@@ -51,6 +51,8 @@ typedef enum satp_prf_label_enum satp_prf_label_t;
 
 enum key_derivation_type_enum { kd_unknown, kd_null, kd_aes_ctr };
 typedef enum key_derivation_type_enum key_derivation_type_t;
+enum key_store_dir_enum { kd_inbound = 0, kd_outbound = 1 };
+typedef enum key_store_dir_enum key_store_dir_t;
 
 struct key_store_struct {
   buffer_t key_;
@@ -64,7 +66,7 @@ struct key_derivation_struct {
   int8_t ld_kdr_;
   buffer_t master_key_;
   buffer_t master_salt_;
-  key_store_t key_store_[KD_LABEL_COUNT];
+  key_store_t key_store_[2][KD_LABEL_COUNT];
   void* params_;
 };
 typedef struct key_derivation_struct key_derivation_t;
@@ -75,7 +77,7 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
 int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passphrase, u_int16_t salt_length);
 #endif
 void key_derivation_close(key_derivation_t* kd);
-int key_derivation_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
+int key_derivation_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
 
 int key_derivation_null_generate(u_int8_t* key, u_int32_t len);
 
@@ -122,7 +124,7 @@ typedef struct key_derivation_aesctr_param_struct key_derivation_aesctr_param_t;
 
 int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase);
 void key_derivation_aesctr_close(key_derivation_t* kd);
-int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, seq_nr_t* r, satp_prf_label_t label, seq_nr_t seq_nr);
-int key_derivation_aesctr_generate(key_derivation_t* kd, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
+int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_dir_t dir, seq_nr_t* r, satp_prf_label_t label, seq_nr_t seq_nr);
+int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
 
 #endif

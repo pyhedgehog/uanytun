@@ -97,7 +97,7 @@ int init_libgcrypt()
 typedef u_int8_t auth_algo_t;
 #endif
 
-int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_t* kd_in, key_derivation_t* kd_out, seq_win_t* seq_win)
+int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
   int ret = cipher_init(c, opt->cipher_);
   if(ret) {
@@ -113,22 +113,14 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
     return ret;
   }
 
-  ret = key_derivation_init(kd_in, opt->kd_prf_, opt->ld_kdr_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
+  ret = key_derivation_init(kd, opt->kd_prf_, opt->ld_kdr_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
-    log_printf(ERR, "could not initialize inbound key derivation of type %s", opt->kd_prf_);
+    log_printf(ERR, "could not initialize key derivation of type %s", opt->kd_prf_);
     cipher_close(c);
     auth_algo_close(aa);
     return ret;
   }
 
-  ret = key_derivation_init(kd_out, opt->kd_prf_, opt->ld_kdr_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
-  if(ret) {
-    log_printf(ERR, "could not initialize outbound key derivation of type %s", opt->kd_prf_);
-    cipher_close(c);
-    auth_algo_close(aa);
-    key_derivation_close(kd_in);
-    return ret;
-  }
 #endif
 
   ret = seq_win_init(seq_win, opt->seq_window_size_);
@@ -137,8 +129,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
     cipher_close(c);
 #ifndef NO_CRYPT
     auth_algo_close(aa);
-    key_derivation_close(kd_in);
-    key_derivation_close(kd_out);
+    key_derivation_close(kd);
 #endif
     return ret;
   }
@@ -146,7 +137,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
 }
 
 int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
-                     cipher_t* c, auth_algo_t* aa, key_derivation_t* kd_out, seq_nr_t seq_nr)
+                     cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_nr_t seq_nr)
 {
   plain_packet_set_payload_length(plain_packet, -1);
   encrypted_packet_set_length(encrypted_packet, -1);
@@ -166,10 +157,10 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
   else
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_UNKNOWN);
   
-  cipher_encrypt(c, kd_out, plain_packet, encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
+  cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
   
 #ifndef NO_CRYPT
-  auth_algo_generate(aa, kd_out, encrypted_packet);
+  auth_algo_generate(aa, kd, kd_outbound, encrypted_packet);
 #endif
   
   len = udp_write(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet));
@@ -180,7 +171,7 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
 }
 
 int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
-                      cipher_t* c, auth_algo_t* aa, key_derivation_t* kd_in, seq_win_t* seq_win)
+                      cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
   plain_packet_set_payload_length(plain_packet, -1);
   encrypted_packet_set_length(encrypted_packet, -1);
@@ -196,7 +187,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
   encrypted_packet_set_length(encrypted_packet, len);
   
 #ifndef NO_CRYPT
-  if(!auth_algo_check_tag(aa, kd_in, encrypted_packet)) {
+  if(!auth_algo_check_tag(aa, kd, kd_inbound, encrypted_packet)) {
     log_printf(WARNING, "wrong authentication tag, discarding packet");
     return 0;
   }
@@ -224,7 +215,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
     free(addrstring);
   }
   
-  int ret = cipher_decrypt(c, kd_in, encrypted_packet, plain_packet); 
+  int ret = cipher_decrypt(c, kd, kd_inbound, encrypted_packet, plain_packet); 
   if(ret) 
     return ret;
  
@@ -249,10 +240,10 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 
   cipher_t c;
   auth_algo_t aa;
-  key_derivation_t kd_in, kd_out;
+  key_derivation_t kd;
   seq_win_t seq_win;
 
-  int ret = init_main_loop(opt, &c, &aa, &kd_in, &kd_out, &seq_win);
+  int ret = init_main_loop(opt, &c, &aa, &kd, &seq_win);
   if(ret)
     return ret;
 
@@ -278,14 +269,14 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
     }
 
     if(FD_ISSET(dev->fd_, &readfds)) {
-      return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd_out, seq_nr);
+      return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, seq_nr);
       seq_nr++;
       if(return_value)
         break;
     }
 
     if(FD_ISSET(sock->fd_, &readfds)) {
-      return_value = process_sock_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd_in, &seq_win); 
+      return_value = process_sock_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win); 
       if(return_value)
         break;
     }
@@ -294,8 +285,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   cipher_close(&c);
 #ifndef NO_CRYPT
   auth_algo_close(&aa);
-  key_derivation_close(&kd_out);
-  key_derivation_close(&kd_in);
+  key_derivation_close(&kd);
 #endif
   seq_win_clear(&seq_win);
 
