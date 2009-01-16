@@ -47,6 +47,11 @@ void encrypted_packet_init(encrypted_packet_t* packet)
   memset (packet, 0, sizeof(*packet));
 }
 
+u_int32_t encrypted_packet_get_header_length()
+{
+  return sizeof(encrypted_packet_header_t);
+}
+
 u_int8_t* encrypted_packet_get_packet(encrypted_packet_t* packet)
 {
   if(!packet)

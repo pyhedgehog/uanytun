@@ -256,6 +256,9 @@ int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
   if(!dev || dev->fd_ < 0)
     return -1;
 
+  if(!buf)
+    return 0;
+
   if(dev->with_pi_)
   {
     struct iovec iov[2];

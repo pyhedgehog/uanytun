@@ -182,9 +182,12 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
     log_printf(ERR, "error on receiving udp packet: %m");
     return 0;
   }
-  
+  else if(len < encrypted_packet_get_header_length()) {
+    log_printf(WARNING, "received packet is to short");
+    return 0;
+  }
   encrypted_packet_set_length(encrypted_packet, len);
-  
+
 #ifndef NO_CRYPT
   if(!auth_algo_check_tag(aa, kd, kd_inbound, encrypted_packet)) {
     log_printf(WARNING, "wrong authentication tag, discarding packet");
@@ -213,7 +216,12 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
     log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
     free(addrstring);
   }
-  
+
+  if(encrypted_packet_get_payload_length(encrypted_packet) <= plain_packet_get_header_length()) {
+    log_printf(WARNING, "ignoring packet with zero length payload");
+    return 0;
+  }
+
   int ret = cipher_decrypt(c, kd, kd_inbound, encrypted_packet, plain_packet); 
   if(ret) 
     return ret;

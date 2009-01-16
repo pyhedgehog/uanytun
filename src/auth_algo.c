@@ -226,7 +226,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_di
 int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
 {
   if(!encrypted_packet_get_auth_tag_length(packet))
-    return 1;
+    return 0;
 
   if(!aa || !aa->params_) {
     log_printf(ERR, "auth algo not initialized");

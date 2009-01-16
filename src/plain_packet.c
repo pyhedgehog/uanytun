@@ -50,6 +50,11 @@ void plain_packet_init(plain_packet_t* packet)
   memset (packet, 0, sizeof(*packet));
 }
 
+u_int32_t plain_packet_get_header_length()
+{
+  return sizeof(payload_type_t);
+}
+
 u_int8_t* plain_packet_get_packet(plain_packet_t* packet)
 {
   if(!packet)

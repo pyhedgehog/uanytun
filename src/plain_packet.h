@@ -54,6 +54,8 @@ typedef struct plain_packet_struct plain_packet_t;
 
 void plain_packet_init(plain_packet_t* packet);
 
+u_int32_t plain_packet_get_header_length();
+
 u_int8_t* plain_packet_get_packet(plain_packet_t* packet);
 u_int32_t plain_packet_get_length(plain_packet_t* packet);
 void plain_packet_set_length(plain_packet_t* packet, u_int32_t len);

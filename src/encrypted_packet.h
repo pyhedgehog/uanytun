@@ -62,6 +62,8 @@ typedef struct encrypted_packet_struct encrypted_packet_t;
 
 void encrypted_packet_init(encrypted_packet_t* packet);
 
+u_int32_t encrypted_packet_get_header_length();
+
 u_int8_t* encrypted_packet_get_packet(encrypted_packet_t* packet);
 u_int32_t encrypted_packet_get_length(encrypted_packet_t* packet);
 void encrypted_packet_set_length(encrypted_packet_t* packet, u_int32_t len);
