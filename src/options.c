@@ -112,7 +112,6 @@
     {                                                    \
       if(argc < 1 || argv[i+1][0] == '-')                \
         return i;                                        \
-      if(VALUE.buf_) free(VALUE.buf_);                   \
       int ret;                                           \
       ret = options_parse_hex_string(argv[i+1], &VALUE); \
       if(ret > 0)                                        \

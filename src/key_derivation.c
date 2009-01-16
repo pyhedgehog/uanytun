@@ -385,11 +385,6 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_dir_t dir, se
       return 0;
   }
 
-#ifdef ANYTUN_02_COMPAT
-  if(!kd->master_salt_.buf_[0])
-    kd->master_salt_.buf_[0] = 1;
-#endif
-
   if(kd->master_salt_.length_ != KD_AESCTR_SALT_LENGTH) {
     log_printf(ERR, "master salt has the wrong length");
     return -1;
