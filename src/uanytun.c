@@ -254,6 +254,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   if(ret)
     return ret;
 
+  signal_init();
   int return_value = 0;
   while(!return_value) {
     FD_ZERO(&readfds);
@@ -320,7 +321,6 @@ int main(int argc, char* argv[])
 {
   log_init("uanytun", DAEMON);
   log_printf(NOTICE, "just started...");
-  signal_init();
 
   options_t opt;
   int ret = options_parse(&opt, argc, argv);
@@ -351,7 +351,6 @@ int main(int argc, char* argv[])
   }
 #endif
 #endif
-
 
   tun_device_t dev;
   ret = tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_local_, opt.ifconfig_param_remote_netmask_);
