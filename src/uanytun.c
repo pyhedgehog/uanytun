@@ -149,9 +149,9 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
   
   plain_packet_set_payload_length(plain_packet, len);
   
-  if(dev->type_ = TYPE_TUN)
+  if(dev->type_ == TYPE_TUN)
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TUN);
-  else if(dev->type_ = TYPE_TAP)
+  else if(dev->type_ == TYPE_TAP)
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TAP);    
   else
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_UNKNOWN);

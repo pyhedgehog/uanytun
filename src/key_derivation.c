@@ -447,9 +447,9 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, sa
     return -1;
   }
   u_int32_t num = 0;
-  memset(params->ecount_buf, 0, AES_BLOCK_SIZE);
+  memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
   memset(key, 0, len);
-  AES_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf, &num);
+  AES_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
 #endif
   
   if(!kd->ld_kdr_)

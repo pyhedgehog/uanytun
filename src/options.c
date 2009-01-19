@@ -312,7 +312,6 @@ void options_print_usage()
 {
   printf("USAGE:\n");
   printf("uanytun [-h|--help]                         prints this...\n");
-//  printf("       [-f|--config] <file>                the config file\n");
   printf("        [-D|--nodaemonize]                  don't run in background\n");
   printf("        [-C|--chroot]                       chroot and drop privileges\n");
   printf("        [-u|--username] <username>          if chroot change to this user\n");
@@ -336,7 +335,7 @@ void options_print_usage()
   printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
   printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
 #ifndef NO_PASSPHRASE
-  printf("        [-E|--passphrase <pass phrase>      a passprhase to generate master key and salt from\n");
+  printf("        [-E|--passphrase] <pass phrase>     a passprhase to generate master key and salt from\n");
 #endif
   printf("        [-K|--key] <master key>             master key to use for encryption\n");
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
