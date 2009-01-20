@@ -211,6 +211,12 @@ int options_parse(options_t* opt, int argc, char* argv[])
   }
 
 #ifndef NO_CRYPT
+  if(!strcmp(opt->cipher_, "null") && !strcmp(opt->auth_algo_, "null") && 
+     strcmp(opt->kd_prf_, "null")) {
+    if(opt->kd_prf_)
+      free(opt->kd_prf_);
+    opt->kd_prf_ = strdup("null");
+  }
   if((strcmp(opt->cipher_, "null") || strcmp(opt->auth_algo_, "null")) && 
      !strcmp(opt->kd_prf_, "null")) {
     log_printf(WARNING, "using NULL key derivation with encryption and or authentication enabled!");
