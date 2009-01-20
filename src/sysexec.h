@@ -56,11 +56,22 @@ int exec_script(const char* script, const char* ifname)
       if(dup(fd) == -1)   // stderr
         log_printf(WARNING,  "can't open stderr");
     }
-    return execl("/bin/sh", "/bin/sh", script, ifname, NULL);
+    execl("/bin/sh", "/bin/sh", script, ifname, NULL);
+        // if execl return, an error occurred
+    log_printf(ERR, "error on executing script: %m");
+    return -1;
   }
   int status = 0;
   waitpid(pid, &status, 0);
+  if(WIFEXITED(status))
+    log_printf(NOTICE, "script '%s' returned %d", script, WEXITSTATUS(status));  
+  else if(WIFSIGNALED(status))
+    log_printf(NOTICE, "script '%s' terminated after signal %d", script, WTERMSIG(status));
+  else
+    log_printf(ERR, "executing script: unkown error");
+
   return status;
+
 }
 
 #endif

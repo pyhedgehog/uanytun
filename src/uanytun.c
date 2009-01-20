@@ -362,8 +362,8 @@ int main(int argc, char* argv[])
   log_printf(NOTICE, "dev of type '%s' opened, actual name is '%s'", tun_get_type_string(&dev), dev.actual_name_);
 
   if(opt.post_up_script_) {
+    log_printf(NOTICE, "executing post-up script '%s'", opt.post_up_script_);
     int ret = exec_script(opt.post_up_script_, dev.actual_name_);
-    log_printf(NOTICE, "post-up script returned %d", ret);
   }
 
 
