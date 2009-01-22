@@ -90,7 +90,6 @@ void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t d
   if(!aa) 
     return;
 
-	u_int32_t len;
   if(aa->type_ == aa_null)
     return;
   else if(aa->type_ == aa_sha1)
@@ -104,16 +103,15 @@ void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t d
 int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
 {
   if(!aa) 
-    return;
+    return 0;
 
-	u_int32_t len;
   if(aa->type_ == aa_null)
     return 1;
   else if(aa->type_ == aa_sha1)
     return auth_algo_sha1_check_tag(aa, kd, dir, packet);
   else {
     log_printf(ERR, "unknown auth algo type");
-    return;
+    return 0;
   }
 }
 
