@@ -42,9 +42,9 @@ struct options_struct {
   char* username_;
   char* chroot_dir_;
   char* pid_file_;
-  sender_id_t sender_id_;
   char* local_addr_;
   char* local_port_;
+  sender_id_t sender_id_;
   char* remote_addr_;
   char* remote_port_;
   char* dev_name_;
@@ -52,6 +52,7 @@ struct options_struct {
   char* ifconfig_param_local_;
   char* ifconfig_param_remote_netmask_;
   char* post_up_script_;
+  mux_t mux_;
   window_size_t seq_window_size_;
   char* cipher_;
 #ifndef NO_CRYPT
@@ -60,7 +61,6 @@ struct options_struct {
   char* auth_algo_;
   char* passphrase_;
 #endif
-  mux_t mux_;
   buffer_t key_;
   buffer_t salt_;
 };

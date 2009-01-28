@@ -17,22 +17,21 @@ SYNOPSIS
 [ *-P|--write-pid* <filename> ]
 [ *-i|--interface* <ip-address> ]
 [ *-p|--port* <port> ]
+[ *-s|--sender-id* <sender id> ]
 [ *-r|--remote-host* <hostname|ip> ]
 [ *-o|--remote-port* <port> ]
 [ *-d|--dev* <name> ]
 [ *-t|--type* <tun|tap> ]
 [ *-n|--ifconfig* <local> <remote|netmask> ]
 [ *-x|--post-up-script* <script> ]
-[ *-s|--sender-id* <sender id> ]
-[ *-w|--window-size* <window size> ]
 [ *-m|--mux* <mux-id> ]
-[ *-c|--cipher* <cipher type> ]
-[ *-a|--auth-algo* <algo type> ]
+[ *-w|--window-size* <window size> ]
 [ *-k|--kd-prf* <kd-prf type> ]
-[ *-l|--ld-kdr* <ld-kdr> ]
 [ *-E|--passphrase <pass phrase> ]
 [ *-K|--key* <master key> ]
 [ *-A|--salt* <master salt> ]
+[ *-c|--cipher* <cipher type> ]
+[ *-a|--auth-algo* <algo type> ]
 
 DESCRIPTION
 -----------
@@ -97,6 +96,15 @@ The local UDP port that is used to send and receive the
 payload data. The two tunnel endpoints can use different
 ports. default: 4444
 
+-s|--sender-id  <sender id>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each anycast tunnel endpoint needs a uniqe sender id
+(1, 2, 3, ...). It is needed to distinguish the senders
+in case of replay attacks. As *uAnytun* does not support 
+synchronisation it can't be used as an anycast endpoint therefore 
+this option is quite useless. default: 0
+
 -r|--remote-host <hostname|ip>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -143,13 +151,14 @@ tunnels, tun for IP tunnels.
 *<remote|netmask>* the remote IP address (tun) or netmask (tap)
 
 In tap/Ethernet tunnel mode:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The local IP address and subnet mask of the tunnel
 interface, in ifconfig style. The remote tunnel endpoint
 has to use a different IP address in the same subnet.
 
 In tun/IP tunnel mode:
+^^^^^^^^^^^^^^^^^^^^^^
 
 The local IP address of the tunnel interface and the
 IP address of the tunnel interface on the remote tunnel
@@ -161,14 +170,10 @@ endpoint.
 This option instructs *uAnytun* to run this script after the interface 
 is created. By default no script will be executed.
 
--s|--sender-id  <sender id>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-m|--mux <mux-id>
+~~~~~~~~~~~~~~~~~
 
-Each anycast tunnel endpoint needs a uniqe sender id
-(1, 2, 3, ...). It is needed to distinguish the senders
-in case of replay attacks. As *uAnytun* does not support 
-synchronisation it can't be used as an anycast endpoint therefore 
-this option is quite useless. default: 0
+the multiplex id to use. default: 0
 
 -w|--window-size <window size>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -187,10 +192,48 @@ by filtering packets according to their secuence number.
 By default the sequence window is disabled and therefore a
 window size of 0 is used.
 
--m|--mux <mux-id>
-~~~~~~~~~~~~~~~~~
+-k|--kd--prf <kd-prf type>
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-the multiplex id to use. default: 0
+key derivation pseudo random function.
+
+The pseudo random function which is used for calculating the 
+session keys and session salt.
+
+Possible values:
+
+* *null* - no random function, keys and salt are set to 0..00
+* *aes-ctr* - AES in counter mode with 128 Bits, default value
+* *aes-ctr-128* - AES in counter mode with 128 Bits
+* *aes-ctr-192* - AES in counter mode with 192 Bits
+* *aes-ctr-256* - AES in counter mode with 256 Bits
+
+-E|--passphrase <pass phrase>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This passphrase is used to generate the master key and master salt.
+For the master key the last n bits of the SHA256 digest of the 
+passphrase (where n is the length of the master key in bits) is used. 
+The master salt gets generated with the SHA1 digest. 
+You may force a specific key and or salt by using *--key* and *--salt*.
+
+-K|--key <master key>
+~~~~~~~~~~~~~~~~~~~~~
+
+master key to use for key derivation
+
+Master key in hexadecimal notation, eg
+01a2b3c4d5e6f708a9b0cadbecfd0fa1, with a mandatory length
+of 32, 48 or 64 characters (128, 192 or 256 bits).
+
+-A|--salt <master salt>
+~~~~~~~~~~~~~~~~~~~~~~~
+
+master salt to use for key derivation
+
+Master salt in hexadecimal notation, eg
+01a2b3c4d5e6f708a9b0cadbecfd, with a mandatory length
+of 28 characters (14 bytes).
 
 -c|--cipher <cipher type>
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -222,59 +265,6 @@ Possible values:
 If HMAC-SHA1 is used, the packet length is increased by
 10 bytes. These 10 bytes contain the authentication data.
 
--k|--kd--prf <kd-prf type>
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-key derivation pseudo random function.
-
-The pseudo random function which is used for calculating the 
-session keys and session salt.
-
-Possible values:
-
-* *null* - no random function, keys and salt are set to 0..00
-* *aes-ctr* - AES in counter mode with 128 Bits, default value
-* *aes-ctr-128* - AES in counter mode with 128 Bits
-* *aes-ctr-192* - AES in counter mode with 192 Bits
-* *aes-ctr-256* - AES in counter mode with 256 Bits
-
--l|--ld-kdr <ld-kdr>
-~~~~~~~~~~~~~~~~~~~~
-
-The log2 of the key derivation rate. This is used by the key
-derivation to determine how ofen a new session key has to be
-generated. A value of -1 means to generate only one key and use
-it forever. The default is 0 which means to calculate a new key
-for every packet. A value of 1 would tell the key derivation
-to generate a new key after 2 packets, for 2 its 4 packets and 
-so on.
-
--E|--passphrase <pass phrase>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This passphrase is used to generate the master key and master salt.
-For the master key the last n bits of the SHA256 digest of the 
-passphrase (where n is the length of the master key in bits) is used. 
-The master salt gets generated with the SHA1 digest. 
-You may force a specific key and or salt by using *--key* and *--salt*.
-
--K|--key <master key>
-~~~~~~~~~~~~~~~~~~~~~
-
-master key to use for key derivation
-
-Master key in hexadecimal notation, eg
-01a2b3c4d5e6f708a9b0cadbecfd0fa1, with a mandatory length
-of 32, 48 or 64 characters (128, 192 or 256 bits).
-
--A|--salt <master salt>
-~~~~~~~~~~~~~~~~~~~~~~~
-
-master salt to use for key derivation
-
-Master salt in hexadecimal notation, eg
-01a2b3c4d5e6f708a9b0cadbecfd, with a mandatory length
-of 28 characters (14 bytes).
 
 EXAMPLES
 --------

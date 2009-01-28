@@ -43,6 +43,8 @@
 #endif
 #include "key_derivation.h"
 #else
+enum key_store_dir_enum { kd_inbound = 0, kd_outbound = 1 };
+typedef enum key_store_dir_enum key_store_dir_t;
 typedef u_int8_t key_derivation_t;
 #endif
 

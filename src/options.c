@@ -186,25 +186,25 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_STRING_PARAM("-P","--write-pid", opt->pid_file_)
     PARSE_STRING_PARAM("-i","--interface", opt->local_addr_)
     PARSE_STRING_PARAM("-p","--port", opt->local_port_)
+    PARSE_INT_PARAM("-s","--sender-id", opt->sender_id_)
     PARSE_STRING_PARAM("-r","--remote-host", opt->remote_addr_)
     PARSE_STRING_PARAM("-o","--remote-port", opt->remote_port_)
     PARSE_STRING_PARAM("-d","--dev", opt->dev_name_)
     PARSE_STRING_PARAM("-t","--type", opt->dev_type_)
     PARSE_STRING_PARAM2("-n","--ifconfig", opt->ifconfig_param_local_, opt->ifconfig_param_remote_netmask_)
     PARSE_STRING_PARAM("-x","--post-up-script", opt->post_up_script_)
-    PARSE_INT_PARAM("-s","--sender-id", opt->sender_id_)
     PARSE_INT_PARAM("-m","--mux", opt->mux_)
     PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
 #ifndef NO_CRYPT
-    PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
     PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
-    PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
-    PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
+//    PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
 #ifndef NO_PASSPHRASE
     PARSE_STRING_PARAM_SEC("-E","--passphrase", opt->passphrase_)
 #endif
     PARSE_HEXSTRING_PARAM_SEC("-K","--key", opt->key_)
     PARSE_HEXSTRING_PARAM_SEC("-A","--salt", opt->salt_)
+    PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
+    PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
 #endif
     else 
       return i;
@@ -240,9 +240,9 @@ void options_default(options_t* opt)
   opt->username_ = strdup("nobody");
   opt->chroot_dir_ = strdup("/var/run/uanytun");
   opt->pid_file_ = NULL;
-  opt->sender_id_ = 0;
   opt->local_addr_ = NULL;
   opt->local_port_ = strdup("4444");
+  opt->sender_id_ = 0;
   opt->remote_addr_ = NULL;
   opt->remote_port_ = strdup("4444");
   opt->dev_name_ = NULL;
@@ -250,17 +250,17 @@ void options_default(options_t* opt)
   opt->ifconfig_param_local_ = NULL;
   opt->ifconfig_param_remote_netmask_ = NULL;
   opt->post_up_script_ = NULL;
+  opt->mux_ = 0;
   opt->seq_window_size_ = 0;
 #ifndef NO_CRYPT
-  opt->cipher_ = strdup("aes-ctr");
   opt->kd_prf_ = strdup("aes-ctr");
   opt->ld_kdr_ = 0;
-  opt->auth_algo_ = strdup("sha1");
   opt->passphrase_ = NULL;
+  opt->cipher_ = strdup("aes-ctr");
+  opt->auth_algo_ = strdup("sha1");
 #else
   opt->cipher_ = strdup("null");
 #endif
-  opt->mux_ = 0;
   opt->key_.buf_ = NULL;
   opt->key_.length_ = 0;
   opt->salt_.buf_ = NULL;
@@ -301,10 +301,10 @@ void options_clear(options_t* opt)
   if(opt->cipher_)
     free(opt->cipher_);
 #ifndef NO_CRYPT
-  if(opt->kd_prf_)
-    free(opt->kd_prf_);
   if(opt->auth_algo_)
     free(opt->auth_algo_);
+  if(opt->kd_prf_)
+    free(opt->kd_prf_);
   if(opt->passphrase_)
     free(opt->passphrase_);
 #endif
@@ -325,6 +325,7 @@ void options_print_usage()
   printf("        [-P|--write-pid] <path>             write pid to this file\n");
   printf("        [-i|--interface] <ip-address>       local ip address to bind to\n");
   printf("        [-p|--port] <port>                  local port to bind to\n");
+  printf("        [-s|--sender-id ] <sender id>       the sender id to use\n");
   printf("        [-r|--remote-host] <hostname|ip>    remote host\n");
   printf("        [-o|--remote-port] <port>           remote port\n");
   printf("        [-d|--dev] <name>                   device name\n");
@@ -332,19 +333,18 @@ void options_print_usage()
   printf("        [-n|--ifconfig] <local>             the local address for the tun/tap device\n");
   printf("                        <remote|netmask>    the remote address(tun) or netmask(tap)\n");
   printf("        [-x|--post-up-script] <script>      script gets called after interface is created\n");
-  printf("        [-s|--sender-id ] <sender id>       the sender id to use\n");
-  printf("        [-w|--window-size] <window size>    seqence number window size\n");
   printf("        [-m|--mux] <mux-id>                 the multiplex id to use\n");
+  printf("        [-w|--window-size] <window size>    seqence number window size\n");
 #ifndef NO_CRYPT
-  printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
-  printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
   printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
-  printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
+//  printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
 #ifndef NO_PASSPHRASE
   printf("        [-E|--passphrase] <pass phrase>     a passprhase to generate master key and salt from\n");
 #endif
   printf("        [-K|--key] <master key>             master key to use for encryption\n");
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
+  printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
+  printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
 #endif
 }
 
@@ -358,6 +358,7 @@ void options_print(options_t* opt)
   printf("pid_file: '%s'\n", opt->pid_file_);
   printf("local_addr: '%s'\n", opt->local_addr_);
   printf("local_port: '%s'\n", opt->local_port_);
+  printf("sender_id: %d\n", opt->sender_id_);
   printf("remote_addr: '%s'\n", opt->remote_addr_);
   printf("remote_port: '%s'\n", opt->remote_port_);
   printf("dev_name: '%s'\n", opt->dev_name_);
@@ -365,7 +366,6 @@ void options_print(options_t* opt)
   printf("ifconfig_local: '%s'\n", opt->ifconfig_param_local_);
   printf("ifconfig_remote_netmask: '%s'\n", opt->ifconfig_param_remote_netmask_);
   printf("post_up_script: '%s'\n", opt->post_up_script_);
-  printf("sender_id: %d\n", opt->sender_id_);
   printf("mux: %d\n", opt->mux_);
   printf("seq_window_size: %d\n", opt->seq_window_size_);
   printf("cipher: '%s'\n", opt->cipher_);
