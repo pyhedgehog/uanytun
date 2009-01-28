@@ -56,6 +56,8 @@ endif
 
 SRC := $(OBJ:%.o=%.c)
 
+.PHONY: distclean clean
+
 all: $(EXECUTABLE)
 
 %.d: %.c
