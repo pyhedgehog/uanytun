@@ -11,9 +11,9 @@ SYNOPSIS
 *uanytun*
 [ *-h|--help* ]
 [ *-D|--nodaemonize* ]
-[ *-C|--chroot* ]
 [ *-u|--username* <username> ]
-[ *-H|--chroot-dir* <directory> ]
+[ *-g|--groupname* <groupname> ]
+[ *-C|--chroot* <path> ]
 [ *-P|--write-pid* <filename> ]
 [ *-i|--interface* <ip-address> ]
 [ *-p|--port* <port> ]
@@ -56,30 +56,32 @@ passed to the daemon:
 -D|--nodaemonize
 ~~~~~~~~~~~~~~~~
 
-This option instructs *uAnytun* to run in the foreground
+This option instructs *uAnytun* to run in foreground
 instead of becoming a daemon which is the default.
-
--C|--chroot
-~~~~~~~~~~~
-
-Instruct *uAnytun* to run in a chroot chail and drop privileges. The 
-default is not to run in chroot.
 
 -u|--username <username>
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-if chroot change to this user. default: nobody
+run as this user. If no group is specified (*-g*) the default group of 
+the user is used. The default is to not drop privileges.
 
--H|--chroot-dir <directory>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-g|--groupname <groupname>
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-chroot to this directory. default: /var/run/uanytun
+run as this group. If no username is specified (*-u*) this gets ignored.
+The default is to not drop privileges.
+
+-C|--chroot <path>
+~~~~~~~~~~~~~~~~~~
+
+Instruct *uAnytun* to run in a chroot jail. The default is 
+to not run in chroot.
 
 -P|--write-pid <filename>
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Instruct *uAnytun* to write it's pid to this file. The default is 
-not to create a pid file.
+to not create a pid file.
 
 -i|--interface <ip address>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

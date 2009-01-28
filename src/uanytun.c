@@ -341,6 +341,11 @@ int main(int argc, char* argv[])
     exit(ret);
   }
 
+  priv_info_t priv;
+  if(opt.username_)
+    if(priv_init(&priv, opt.username_, opt.groupname_))
+      exit(-1);
+
 #ifndef NO_CRYPT
 #ifndef USE_SSL_CRYPTO
   ret = init_libgcrypt();
@@ -395,8 +400,13 @@ int main(int argc, char* argv[])
     }
   }
 
-  if(opt.chroot_)
-    chrootAndDrop("/var/run/", "nobody");
+  if(opt.chroot_dir_)
+    if(do_chroot(opt.chroot_dir_))
+      exit(-1);
+  if(opt.username_)
+    if(priv_drop(&priv))
+      exit(-1);
+  
   if(opt.daemonize_) {
     pid_t oldpid = getpid();
     daemonize();

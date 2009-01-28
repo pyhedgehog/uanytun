@@ -180,9 +180,9 @@ int options_parse(options_t* opt, int argc, char* argv[])
     if(!strcmp(str,"-h") || !strcmp(str,"--help"))
       return -1;
     PARSE_INVERSE_BOOL_PARAM("-D","--nodaemonize", opt->daemonize_)
-    PARSE_BOOL_PARAM("-C","--chroot", opt->chroot_)
     PARSE_STRING_PARAM("-u","--username", opt->username_)
-    PARSE_STRING_PARAM("-H","--chroot-dir", opt->chroot_dir_)
+    PARSE_STRING_PARAM("-g","--groupname", opt->groupname_)
+    PARSE_STRING_PARAM("-C","--chroot", opt->chroot_dir_)
     PARSE_STRING_PARAM("-P","--write-pid", opt->pid_file_)
     PARSE_STRING_PARAM("-i","--interface", opt->local_addr_)
     PARSE_STRING_PARAM("-p","--port", opt->local_port_)
@@ -236,9 +236,9 @@ void options_default(options_t* opt)
 
   opt->progname_ = strdup("uanytun");
   opt->daemonize_ = 1;
-  opt->chroot_ = 0;
-  opt->username_ = strdup("nobody");
-  opt->chroot_dir_ = strdup("/var/run/uanytun");
+  opt->username_ = NULL;
+  opt->groupname_ = NULL;
+  opt->chroot_dir_ = NULL;
   opt->pid_file_ = NULL;
   opt->local_addr_ = NULL;
   opt->local_port_ = strdup("4444");
@@ -276,6 +276,8 @@ void options_clear(options_t* opt)
     free(opt->progname_);
   if(opt->username_)
     free(opt->username_);
+  if(opt->groupname_)
+    free(opt->groupname_);
   if(opt->chroot_dir_)
     free(opt->chroot_dir_);
   if(opt->pid_file_)
@@ -319,9 +321,9 @@ void options_print_usage()
   printf("USAGE:\n");
   printf("uanytun [-h|--help]                         prints this...\n");
   printf("        [-D|--nodaemonize]                  don't run in background\n");
-  printf("        [-C|--chroot]                       chroot and drop privileges\n");
-  printf("        [-u|--username] <username>          if chroot change to this user\n");
-  printf("        [-H|--chroot-dir] <path>            chroot to this directory\n");
+  printf("        [-u|--username] <username>          change to this user\n");
+  printf("        [-g|--groupname] <groupname>        change to this group\n");
+  printf("        [-C|--chroot] <path>                chroot to this directory\n");
   printf("        [-P|--write-pid] <path>             write pid to this file\n");
   printf("        [-i|--interface] <ip-address>       local ip address to bind to\n");
   printf("        [-p|--port] <port>                  local port to bind to\n");
@@ -352,8 +354,8 @@ void options_print(options_t* opt)
 {
   printf("progname: '%s'\n", opt->progname_);
   printf("daemonize: %d\n", opt->daemonize_);
-  printf("chroot: %d\n", opt->chroot_);
   printf("username: '%s'\n", opt->username_);
+  printf("groupname: '%s'\n", opt->groupname_);
   printf("chroot_dir: '%s'\n", opt->chroot_dir_);
   printf("pid_file: '%s'\n", opt->pid_file_);
   printf("local_addr: '%s'\n", opt->local_addr_);

@@ -38,8 +38,8 @@
 struct options_struct {
   char* progname_;
   int daemonize_;
-  int chroot_;
   char* username_;
+  char* groupname_;
   char* chroot_dir_;
   char* pid_file_;
   char* local_addr_;

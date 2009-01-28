@@ -43,38 +43,83 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-void chrootAndDrop(const char* chrootdir, const char* username)
+struct priv_info_struct {
+  struct passwd* pw_;
+  struct group* gr_;
+};
+typedef struct priv_info_struct priv_info_t;
+
+int priv_init(priv_info_t* priv, const char* username, const char* groupname)
 {
-  if (getuid() != 0)
-  {
-    fprintf(stderr, "this programm has to be run as root in order to run in a chroot\n");
-    exit(-1);
+  if(!priv)
+    return -1;
+
+  priv->pw_ = NULL;
+  priv->gr_ = NULL;
+
+  priv->pw_ = getpwnam(username);
+  if(!priv->pw_) {
+    log_printf(ERR, "unkown user %s", username);
+    return -1;
   }
 
-  struct passwd *pw = getpwnam(username);
-  if(pw) {
-    if(chroot(chrootdir))
-    {
-      fprintf(stderr, "can't chroot to %s\n", chrootdir);
-      exit(-1);
-    }
-    log_printf(NOTICE, "we are in chroot jail (%s) now\n", chrootdir);
-    if(chdir("/"))
-    {
-      fprintf(stderr, "can't change to /\n");
-      exit(-1);
-    }
-    if (initgroups(pw->pw_name, pw->pw_gid) || setgid(pw->pw_gid) || setuid(pw->pw_uid))
-    {
-      fprintf(stderr, "can't drop to user %s %d:%d\n", username, pw->pw_uid, pw->pw_gid);
-      exit(-1);
-    }
-    log_printf(NOTICE, "dropped user to %s %d:%d\n", username, pw->pw_uid, pw->pw_gid);
-  }
+  if(groupname)
+    priv->gr_ = getgrnam(groupname);
   else
-  {
-    fprintf(stderr, "unknown user %s\n", username);
-    exit(-1);
+    priv->gr_ = getgrgid(priv->pw_->pw_gid);
+
+  if(!priv->gr_) {
+    log_printf(ERR, "unkown group %s", groupname);
+    return -1;
+  }
+
+  return 0;
+}
+
+int priv_drop(priv_info_t* priv)
+{
+  if(!priv || !priv->pw_ || !priv->gr_) {
+    log_printf(ERR, "privileges not initialized properly");
+    return -1;
+  }
+
+  if(setgid(priv->gr_->gr_gid))  {
+    log_printf(ERR, "setgid('%s') failed: %m", priv->gr_->gr_name);
+    return -1;
+  }
+
+  gid_t gr_list[1];
+	gr_list[0] = priv->gr_->gr_gid;
+	if(setgroups (1, gr_list)) {
+    log_printf(ERR, "setgroups(['%s']) failed: %m", priv->gr_->gr_name);
+    return -1;
+  }
+
+  if(setuid(priv->pw_->pw_uid)) {
+    log_printf(ERR, "setuid('%s') failed: %m", priv->pw_->pw_name);
+    return -1;
+  }
+
+  log_printf(NOTICE, "dropped privileges to %s:%s", priv->pw_->pw_name, priv->gr_->gr_name);
+  return 0;
+}
+
+
+int do_chroot(const char* chrootdir)
+{
+  if(getuid() != 0) {
+    log_printf(ERR, "this programm has to be run as root in order to run in a chroot");
+    return -1;
+  }
+
+  if(chroot(chrootdir)) {
+    log_printf(ERR, "can't chroot to %s: %m", chrootdir);
+    return -1;
+  }
+  log_printf(NOTICE, "we are in chroot jail (%s) now", chrootdir);
+  if(chdir("/")) {
+    log_printf(ERR, "can't change to /: %m");
+    return -1;
   }
 }
 
