@@ -34,12 +34,11 @@
 
 include include.mk
 
-DEPENDFILE = .depend
-EXECUTABLE = uanytun
+EXECUTABLE := uanytun
 
-CRYPT_OBJ = key_derivation.o \
+CRYPT_OBJ := key_derivation.o \
             auth_algo.o
-OBJ = log.o \
+OBJ := log.o \
       signal.o \
       options.o \
       tun.o \
@@ -55,16 +54,17 @@ ifndef NO_CRYPT_OBJ
 OBJ += $(CRYPT_OBJ)
 endif
 
-SRC = $(OBJ:%.o=%.c)
+SRC := $(OBJ:%.o=%.c)
 
-.PHONY: dep distclean clean
+all: $(EXECUTABLE)
 
-all: dep $(EXECUTABLE)
+%.d: %.c
+	@set -e; rm -f $@; \
+	 $(CC) -MM $(CFLAGS) $< > $@.$$$$; \
+   sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+   rm -f $@.$$$$; echo '(re)building $@'
 
-dep: $(SRC)
-	$(CC) -MM $(SRC) > $(DEPENDFILE)
-
--include $(DEPENDFILE)
+-include $(SRC:%.c=%.d)
 
 uanytun: $(OBJ)
 	$(LD) $(OBJ) -o $@ $(LDFLAGS)
@@ -81,5 +81,5 @@ distclean: clean
 
 clean:
 	rm -f *.o
-	rm -f $(DEPENDFILE)
+	rm -f *.d
 	rm -f $(EXECUTABLE)

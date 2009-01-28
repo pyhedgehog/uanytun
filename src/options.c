@@ -197,7 +197,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
 #ifndef NO_CRYPT
     PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
-//    PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
+    PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
 #ifndef NO_PASSPHRASE
     PARSE_STRING_PARAM_SEC("-E","--passphrase", opt->passphrase_)
 #endif
@@ -337,7 +337,7 @@ void options_print_usage()
   printf("        [-w|--window-size] <window size>    seqence number window size\n");
 #ifndef NO_CRYPT
   printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
-//  printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
+  printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
 #ifndef NO_PASSPHRASE
   printf("        [-E|--passphrase] <pass phrase>     a passprhase to generate master key and salt from\n");
 #endif
