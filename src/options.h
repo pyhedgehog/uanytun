@@ -35,6 +35,12 @@
 #ifndef _OPTIONS_H_
 #define _OPTIONS_H_
 
+struct ifconfig_param_struct {
+  char* net_addr_;
+  u_int16_t prefix_length_;
+};
+typedef struct ifconfig_param_struct ifconfig_param_t;
+
 struct options_struct {
   char* progname_;
   int daemonize_;
@@ -49,8 +55,7 @@ struct options_struct {
   char* remote_port_;
   char* dev_name_;
   char* dev_type_;
-  char* ifconfig_param_local_;
-  char* ifconfig_param_remote_netmask_;
+  ifconfig_param_t ifconfig_param_;
   char* post_up_script_;
   mux_t mux_;
   window_size_t seq_window_size_;
@@ -67,6 +72,7 @@ struct options_struct {
 typedef struct options_struct options_t;
 
 int options_parse_hex_string(const char* hex, buffer_t* buffer);
+int options_parse_ifconfig(const char* arg, ifconfig_param_t* ifcfg);
 
 int options_parse(options_t* opt, int argc, char* argv[]);
 void options_default(options_t* opt);

@@ -46,12 +46,12 @@ struct tun_device_struct {
   char* actual_name_;
   device_type_t type_;
   u_int16_t mtu_;
-  char* local_;
-  char* remote_netmask_;
+  char* net_addr_;
+  u_int16_t prefix_length_;
 };
 typedef struct tun_device_struct tun_device_t;
 
-int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp);
+int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix);
 int tun_init_post(tun_device_t* dev);
 void tun_do_ifconfig(tun_device_t* dev);
 void tun_close(tun_device_t* dev);
@@ -60,7 +60,7 @@ int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len);
 int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len);
 
 // in tun_helper.h
-void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp, u_int16_t mtu);
+void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix, u_int16_t mtu);
 int tun_fix_return(int ret, size_t pi_length);
 const char* tun_get_type_string(tun_device_t* dev);
 

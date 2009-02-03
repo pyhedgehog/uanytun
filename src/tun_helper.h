@@ -37,7 +37,7 @@
 
 #include <string.h>
 
-void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp, u_int16_t mtu)
+void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix, u_int16_t mtu)
 {
   if(!dev) return;
 
@@ -56,12 +56,12 @@ void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, con
       dev->type_ = TYPE_TAP;
   }
 
-  dev->local_ = NULL;
-  dev->remote_netmask_ = NULL;
-  if(ifcfg_lp)
-    dev->local_ = strdup(ifcfg_lp);
-  if(ifcfg_rnmp)
-    dev->remote_netmask_ = strdup(ifcfg_rnmp);
+  dev->net_addr_ = NULL;
+  dev->prefix_length_ = 0;
+  if(ifcfg_addr) {
+    dev->net_addr_ = strdup(ifcfg_addr);
+    dev->prefix_length_ = ifcfg_prefix;
+  }
 }
 
 

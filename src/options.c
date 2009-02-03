@@ -89,22 +89,19 @@
       i++;                                               \
     }
 
-#define PARSE_STRING_PARAM2(SHORT, LONG, VALUE1, VALUE2) \
+#define PARSE_IFCONFIG_PARAM(SHORT, LONG, VALUE)         \
     else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
     {                                                    \
-      if(argc < 2 ||                                     \
-         argv[i+1][0] == '-' || argv[i+2][0] == '-')     \
+      if(argc < 1 || argv[i+1][0] == '-')                \
         return i;                                        \
-      if(VALUE1) free(VALUE1);                           \
-      VALUE1 = strdup(argv[i+1]);                        \
-      if(!VALUE1)                                        \
-        return -2;                                       \
-      if(VALUE2) free(VALUE2);                           \
-      VALUE2 = strdup(argv[i+2]);                        \
-      if(!VALUE2)                                        \
-        return -2;                                       \
-      argc-=2;                                           \
-      i+=2;                                              \
+      int ret;                                           \
+      ret = options_parse_ifconfig(argv[i+1], &VALUE);   \
+      if(ret > 0)                                        \
+        return i+1;                                      \
+      if(ret < 0)                                        \
+        return ret;                                      \
+      argc--;                                            \
+      i++;                                               \
     }
 
 #define PARSE_HEXSTRING_PARAM_SEC(SHORT, LONG, VALUE)    \
@@ -156,6 +153,43 @@ int options_parse_hex_string(const char* hex, buffer_t* buffer)
   return 0;
 }
 
+int options_parse_ifconfig(const char* arg, ifconfig_param_t* ifcfg)
+{
+  char* str = strdup(arg);
+  if(!str)
+    return -2;
+
+  char* ptr = str;
+  for(;*ptr;++ptr) {
+    if(*ptr == '/') {
+      *ptr = 0;
+      ptr++;
+      if(!(*ptr)) {
+        free(str);
+        return 1;
+      }
+      
+      ifcfg->prefix_length_ = atoi(ptr);
+      ifcfg->net_addr_ = strdup(str);
+      free(str);
+
+      if(!ifcfg->net_addr_)
+        return -2;
+
+      return 0;
+    }
+    if(!isdigit(*ptr) && *ptr != '.') {
+      free(str);
+      return 1;
+    }
+  }
+
+  printf("no / found\n");
+  free(str);
+  return 1;
+}
+
+
 int options_parse(options_t* opt, int argc, char* argv[])
 {
   if(!opt)
@@ -191,7 +225,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_STRING_PARAM("-o","--remote-port", opt->remote_port_)
     PARSE_STRING_PARAM("-d","--dev", opt->dev_name_)
     PARSE_STRING_PARAM("-t","--type", opt->dev_type_)
-    PARSE_STRING_PARAM2("-n","--ifconfig", opt->ifconfig_param_local_, opt->ifconfig_param_remote_netmask_)
+    PARSE_IFCONFIG_PARAM("-n","--ifconfig", opt->ifconfig_param_)
     PARSE_STRING_PARAM("-x","--post-up-script", opt->post_up_script_)
     PARSE_INT_PARAM("-m","--mux", opt->mux_)
     PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
@@ -247,8 +281,8 @@ void options_default(options_t* opt)
   opt->remote_port_ = strdup("4444");
   opt->dev_name_ = NULL;
   opt->dev_type_ = NULL;
-  opt->ifconfig_param_local_ = NULL;
-  opt->ifconfig_param_remote_netmask_ = NULL;
+  opt->ifconfig_param_.net_addr_ = NULL;
+  opt->ifconfig_param_.prefix_length_ = 0;
   opt->post_up_script_ = NULL;
   opt->mux_ = 0;
   opt->seq_window_size_ = 0;
@@ -294,10 +328,8 @@ void options_clear(options_t* opt)
     free(opt->dev_name_);
   if(opt->dev_type_)
     free(opt->dev_type_);
-  if(opt->ifconfig_param_local_)
-    free(opt->ifconfig_param_local_);
-  if(opt->ifconfig_param_remote_netmask_)
-    free(opt->ifconfig_param_remote_netmask_);
+  if(opt->ifconfig_param_.net_addr_)
+    free(opt->ifconfig_param_.net_addr_);
   if(opt->post_up_script_)
     free(opt->post_up_script_);
   if(opt->cipher_)
@@ -332,8 +364,8 @@ void options_print_usage()
   printf("        [-o|--remote-port] <port>           remote port\n");
   printf("        [-d|--dev] <name>                   device name\n");
   printf("        [-t|--type] <tun|tap>               device type\n");
-  printf("        [-n|--ifconfig] <local>             the local address for the tun/tap device\n");
-  printf("                        <remote|netmask>    the remote address(tun) or netmask(tap)\n");
+
+  printf("        [-n|--ifconfig] <local>/<prefix>    the local address for the tun/tap device and the used prefix length\n");
   printf("        [-x|--post-up-script] <script>      script gets called after interface is created\n");
   printf("        [-m|--mux] <mux-id>                 the multiplex id to use\n");
   printf("        [-w|--window-size] <window size>    seqence number window size\n");
@@ -365,8 +397,8 @@ void options_print(options_t* opt)
   printf("remote_port: '%s'\n", opt->remote_port_);
   printf("dev_name: '%s'\n", opt->dev_name_);
   printf("dev_type: '%s'\n", opt->dev_type_);
-  printf("ifconfig_local: '%s'\n", opt->ifconfig_param_local_);
-  printf("ifconfig_remote_netmask: '%s'\n", opt->ifconfig_param_remote_netmask_);
+  printf("ifconfig_net_addr: '%s'\n", opt->ifconfig_param_.net_addr_);
+  printf("ifconfig_prefix_length: %d\n", opt->ifconfig_param_.prefix_length_);
   printf("post_up_script: '%s'\n", opt->post_up_script_);
   printf("mux: %d\n", opt->mux_);
   printf("seq_window_size: %d\n", opt->seq_window_size_);

@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
 #endif
 
   tun_device_t dev;
-  ret = tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_local_, opt.ifconfig_param_remote_netmask_);
+  ret = tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_.net_addr_, opt.ifconfig_param_.prefix_length_);
   if(ret) {
     log_printf(ERR, "error on tun_init, exitting");
     options_clear(&opt);
