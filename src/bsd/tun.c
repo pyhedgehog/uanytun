@@ -55,12 +55,12 @@
 #include <netinet/ip.h>
 #define DEVICE_FILE_MAX 255
 
-int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_lp, const char* ifcfg_rnmp)
+int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix)
 {
   if(!dev) 
     return;
  
-  tun_conf(dev, dev_name, dev_type, ifcfg_lp, ifcfg_rnmp, 1400);
+  tun_conf(dev, dev_name, dev_type, ifcfg_addr, ifcfg_prefix, 1400);
   dev->actual_name_ = NULL;
 
   char* device_file = NULL;
@@ -137,7 +137,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
   if(ret) 
     return ret;
 
-  if(ifcfg_lp && ifcfg_rnmp)
+  if(ifcfg_addr)
     tun_do_ifconfig(dev);
 
   return 0;
@@ -224,11 +224,8 @@ void tun_close(tun_device_t* dev)
   if(dev->actual_name_)
     free(dev->actual_name_);
 
-  if(dev->local_)
-    free(dev->local_);
-
-  if(dev->remote_netmask_)
-    free(dev->remote_netmask_);
+  if(dev->net_addr_)
+    free(dev->net_addr_);
 }
 
 int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
@@ -283,42 +280,42 @@ int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
 
 void tun_do_ifconfig(tun_device_t* dev)
 {
-  if(!dev || !dev->actual_name_ || !dev->local_ || !dev->remote_netmask_)
+  if(!dev || !dev->actual_name_ || !dev->net_addr_)
     return;
 
 
-  char* command = NULL;
-  char* netmask;
-  char* end;
-  if(dev->type_ == TYPE_TAP) {
-    netmask = "netmask ";
-#if defined(__GNUC__) && defined(__OpenBSD__)
-    end = " link0";
-#elif defined(__GNUC__) && defined(__FreeBSD__)
-    end = " up";
-#elif defined(__GNUC__) && defined(__NetBSD__)
-    end = "";
-#else
- #error This Device works just for OpenBSD, FreeBSD or NetBSD
-#endif
-  }
-  else {
-    netmask = "";
-    end = " netmask 255.255.255.255 up";
-  }
+/*   char* command = NULL; */
+/*   char* netmask; */
+/*   char* end; */
+/*   if(dev->type_ == TYPE_TAP) { */
+/*     netmask = "netmask "; */
+/* #if defined(__GNUC__) && defined(__OpenBSD__) */
+/*     end = " link0"; */
+/* #elif defined(__GNUC__) && defined(__FreeBSD__) */
+/*     end = " up"; */
+/* #elif defined(__GNUC__) && defined(__NetBSD__) */
+/*     end = ""; */
+/* #else */
+/*  #error This Device works just for OpenBSD, FreeBSD or NetBSD */
+/* #endif */
+/*   } */
+/*   else { */
+/*     netmask = ""; */
+/*     end = " netmask 255.255.255.255 up"; */
+/*   } */
 
-  asprintf(&command, "/sbin/ifconfig %s %s %s%s mtu %d%s", dev->actual_name_, dev->local_ , netmask, 
-                                                           dev->remote_netmask_, dev->mtu_, end);
-  if(!command) {
-    log_printf(ERR, "Execution of ifconfig failed");
-    return;
-  }
+/*   asprintf(&command, "/sbin/ifconfig %s %s %s%s mtu %d%s", dev->actual_name_, dev->local_ , netmask,  */
+/*                                                            dev->remote_netmask_, dev->mtu_, end); */
+/*   if(!command) { */
+/*     log_printf(ERR, "Execution of ifconfig failed"); */
+/*     return; */
+/*   } */
 
-  int result = system(command);
-  if(result == -1)
-    log_printf(ERR, "Execution of ifconfig failed");
-  else
-    log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
+/*   int result = system(command); */
+/*   if(result == -1) */
+/*     log_printf(ERR, "Execution of ifconfig failed"); */
+/*   else */
+/*     log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result)); */
 
-  free(command);
+/*   free(command); */
 }
