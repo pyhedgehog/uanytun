@@ -47,6 +47,7 @@ struct tun_device_struct {
   device_type_t type_;
   u_int16_t mtu_;
   char* net_addr_;
+  char* net_mask_;
   u_int16_t prefix_length_;
 };
 typedef struct tun_device_struct tun_device_t;

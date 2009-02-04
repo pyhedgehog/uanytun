@@ -36,6 +36,9 @@
 #define _TUN_HELPER_H_
 
 #include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix, u_int16_t mtu)
 {
@@ -57,10 +60,21 @@ void tun_conf(tun_device_t* dev, const char* dev_name, const char* dev_type, con
   }
 
   dev->net_addr_ = NULL;
+  dev->net_mask_ = NULL;
   dev->prefix_length_ = 0;
   if(ifcfg_addr) {
     dev->net_addr_ = strdup(ifcfg_addr);
     dev->prefix_length_ = ifcfg_prefix;
+
+    u_int32_t mask = 0;
+    u_int16_t i = 0;
+    for(i = 0; i < ifcfg_prefix; ++i) {
+      mask = mask >> 1;
+      mask |= 0x80000000L;
+    }
+    struct in_addr addr;
+    addr.s_addr = ntohl(mask);
+    dev->net_mask_ = strdup(inet_ntoa(addr));
   }
 }
 

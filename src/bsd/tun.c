@@ -226,6 +226,9 @@ void tun_close(tun_device_t* dev)
 
   if(dev->net_addr_)
     free(dev->net_addr_);
+
+  if(dev->net_mask_)
+    free(dev->net_mask_);
 }
 
 int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
@@ -280,7 +283,7 @@ int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
 
 void tun_do_ifconfig(tun_device_t* dev)
 {
-  if(!dev || !dev->actual_name_ || !dev->net_addr_)
+  if(!dev || !dev->actual_name_ || !dev->net_addr_ || !dev->net_mask_)
     return;
 
 

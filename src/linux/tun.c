@@ -32,6 +32,8 @@
  *  along with µAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+
 #include "datatypes.h"
 
 #include "tun.h"
@@ -126,6 +128,9 @@ void tun_close(tun_device_t* dev)
 
   if(dev->net_addr_)
     free(dev->net_addr_);
+
+  if(dev->net_mask_)
+    free(dev->net_mask_);
 }
 
 int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
@@ -180,25 +185,21 @@ int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
 
 void tun_do_ifconfig(tun_device_t* dev)
 {
-  if(!dev || !dev->actual_name_ || !dev->net_addr_)
+  if(!dev || !dev->actual_name_ || !dev->net_addr_ || !dev->net_mask_)
     return;
 
-/*   char* command = NULL; */
-/*   if(dev->type_ == TYPE_TUN) */
-/*     asprintf(&command, "/sbin/ifconfig %s %s pointopoint %s mtu %d", dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_); */
-/*   else */
-/*     asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d", dev->actual_name_, dev->local_, dev->remote_netmask_, dev->mtu_); */
+  char* command = NULL;
+  asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d", dev->actual_name_, dev->net_addr_, dev->net_mask_, dev->mtu_);
+  if(!command) {
+    log_printf(ERR, "Execution of ifconfig failed");
+    return;
+  }
 
-/*   if(!command) { */
-/*     log_printf(ERR, "Execution of ifconfig failed"); */
-/*     return; */
-/*   } */
+  int result = system(command);
+  if(result == -1)
+    log_printf(ERR, "Execution of ifconfig failed");
+  else
+    log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
 
-/*   int result = system(command); */
-/*   if(result == -1) */
-/*     log_printf(ERR, "Execution of ifconfig failed"); */
-/*   else */
-/*     log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result)); */
-
-/*   free(command); */
+  free(command);
 }
