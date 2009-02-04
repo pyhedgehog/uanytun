@@ -34,8 +34,6 @@
 
 include include.mk
 
-LD := $(CC)
-
 EXECUTABLE := uanytun
 
 CRYPT_OBJ := key_derivation.o \
@@ -71,7 +69,7 @@ all: $(EXECUTABLE)
 -include $(SRC:%.c=%.d)
 
 uanytun: $(OBJ)
-	$(LD) $(OBJ) -o $@ $(LDFLAGS)
+	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
