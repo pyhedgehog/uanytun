@@ -148,7 +148,6 @@ cat >> include.mk <<EOF
 TARGET := $TARGET
 CC := gcc
 CFLAGS := $CFLAGS
-LD := gcc
 LDFLAGS := $LDFLAGS
 EOF
 

@@ -34,6 +34,8 @@
 
 include include.mk
 
+LD := $(CC)
+
 EXECUTABLE := uanytun
 
 CRYPT_OBJ := key_derivation.o \
