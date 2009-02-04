@@ -163,6 +163,8 @@ int tun_init_post(tun_device_t* dev)
   }  
 
   ti.flags |= IFF_MULTICAST;
+  if(dev->type_ == TYPE_TUN)
+    ti.flags &= ~IFF_POINTOPOINT;
   
   if (ioctl(dev->fd_, TUNSIFINFO, &ti) < 0) {
     log_printf(ERR, "can't enable multicast for interface");
@@ -172,7 +174,7 @@ int tun_init_post(tun_device_t* dev)
 }
 
 #elif defined(__GNUC__) && defined(__FreeBSD__)
-
+ #warning this device has never been tested on FreeBSD and might not work
 int tun_init_post(tun_device_t* dev)
 {
   if(!dev)
@@ -191,7 +193,7 @@ int tun_init_post(tun_device_t* dev)
 }
 
 #elif defined(__GNUC__) && defined(__NetBSD__)
-
+ #warning this device has never been tested on NetBSD and might not work
 int tun_init_post(tun_device_t* dev)
 {
   if(!dev)
@@ -287,38 +289,35 @@ void tun_do_ifconfig(tun_device_t* dev)
     return;
 
 
-/*   char* command = NULL; */
-/*   char* netmask; */
-/*   char* end; */
-/*   if(dev->type_ == TYPE_TAP) { */
-/*     netmask = "netmask "; */
-/* #if defined(__GNUC__) && defined(__OpenBSD__) */
-/*     end = " link0"; */
-/* #elif defined(__GNUC__) && defined(__FreeBSD__) */
-/*     end = " up"; */
-/* #elif defined(__GNUC__) && defined(__NetBSD__) */
-/*     end = ""; */
-/* #else */
-/*  #error This Device works just for OpenBSD, FreeBSD or NetBSD */
-/* #endif */
-/*   } */
-/*   else { */
-/*     netmask = ""; */
-/*     end = " netmask 255.255.255.255 up"; */
-/*   } */
+  char* command = NULL;
+  char* netmask;
+  char* end;
+  if(dev->type_ == TYPE_TAP) {
+#if defined(__GNUC__) && defined(__OpenBSD__)
+    end = " link0";
+#elif defined(__GNUC__) && defined(__FreeBSD__)
+    end = " up";
+#elif defined(__GNUC__) && defined(__NetBSD__)
+    end = "";
+#else
+ #error This Device works just for OpenBSD, FreeBSD or NetBSD
+#endif
+  }
+  else
+    end = " up";
 
-/*   asprintf(&command, "/sbin/ifconfig %s %s %s%s mtu %d%s", dev->actual_name_, dev->local_ , netmask,  */
-/*                                                            dev->remote_netmask_, dev->mtu_, end); */
-/*   if(!command) { */
-/*     log_printf(ERR, "Execution of ifconfig failed"); */
-/*     return; */
-/*   } */
+  asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d%s", dev->actual_name_, dev->net_addr_,
+                                                                 dev->net_mask_, dev->mtu_, end);
+  if(!command) {
+    log_printf(ERR, "Execution of ifconfig failed");
+    return;
+  }
 
-/*   int result = system(command); */
-/*   if(result == -1) */
-/*     log_printf(ERR, "Execution of ifconfig failed"); */
-/*   else */
-/*     log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result)); */
+  int result = system(command);
+  if(result == -1)
+    log_printf(ERR, "Execution of ifconfig failed");
+  else
+    log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
 
-/*   free(command); */
+  free(command);
 }
