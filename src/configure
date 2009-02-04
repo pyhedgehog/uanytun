@@ -45,6 +45,7 @@ V4_MAPPED=1
 
 print_usage() {
   echo "configure --help                    print this"
+  echo "          --target=<TARGET>         build target i.e. Linux"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --disable-crypto          disable crypto at all (only NULL cipher)"
   echo "          --enable-anytun02-compat  enable compatiblity mode for anytun 0.2.x and prior"
@@ -56,6 +57,9 @@ print_usage() {
 for arg
 do
   case $arg in
+  --target=*)
+    TARGET=${arg#--target=}
+  ;;
   --use-ssl-crypto)
     CRYPTO_LIB='ssl'
   ;;
