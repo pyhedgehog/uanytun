@@ -51,6 +51,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
   sock->fd_ = 0;
   memset(&(sock->local_end_), 0, sizeof(sock->local_end_));
   memset(&(sock->remote_end_), 0, sizeof(sock->local_end_));
+  sock->remote_end_set_ = 0;
 
   struct addrinfo hints, *res;
 
@@ -116,6 +117,7 @@ void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* por
     return;
   }
   memcpy(&(sock->remote_end_), res->ai_addr, sizeof(*(res->ai_addr)));
+  sock->remote_end_set_ = 1;
   freeaddrinfo(res);
 }
 
@@ -172,7 +174,7 @@ char* udp_get_local_end_string(udp_socket_t* sock)
 
 char* udp_get_remote_end_string(udp_socket_t* sock)
 {
-  if(!sock)
+  if(!sock || !sock->remote_end_set_)
     return "";
 
   return udp_endpoint_to_string(sock->remote_end_);

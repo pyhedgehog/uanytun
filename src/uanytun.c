@@ -155,6 +155,9 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TAP);    
   else
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_UNKNOWN);
+
+  if(!sock->remote_end_set_)
+    return 0;
   
   cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
   
@@ -212,6 +215,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
    
   if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) {
     memcpy(&(sock->remote_end_), &remote, sizeof(remote));
+    sock->remote_end_set_ = 1;
     char* addrstring = udp_endpoint_to_string(remote);
     log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
     free(addrstring);

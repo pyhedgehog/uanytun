@@ -49,6 +49,7 @@ struct udp_socket_struct {
   int fd_;
   udp_endpoint_t local_end_;
   udp_endpoint_t remote_end_;
+  int remote_end_set_;
 };
 typedef struct udp_socket_struct udp_socket_t;
 
