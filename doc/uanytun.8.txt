@@ -22,7 +22,7 @@ SYNOPSIS
 [ *-o|--remote-port* <port> ]
 [ *-d|--dev* <name> ]
 [ *-t|--type* <tun|tap> ]
-[ *-n|--ifconfig* <local> <remote|netmask> ]
+[ *-n|--ifconfig* <local>/<prefix> ]
 [ *-x|--post-up-script* <script> ]
 [ *-m|--mux* <mux-id> ]
 [ *-w|--window-size* <window size> ]
@@ -102,11 +102,12 @@ ports. default: 4444
 -s|--sender-id  <sender id>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Each anycast tunnel endpoint needs a uniqe sender id
+Each anycast tunnel endpoint needs a unique sender id
 (1, 2, 3, ...). It is needed to distinguish the senders
 in case of replay attacks. As *uAnytun* does not support 
 synchronisation it can't be used as an anycast endpoint therefore 
-this option is quite useless. default: 0
+this option is quite useless but implemented for compability 
+reasons. default: 0
 
 -r|--remote-host <hostname|ip>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,26 +147,15 @@ device type
 Type of the tunnels to create. Use tap for Ethernet
 tunnels, tun for IP tunnels.
 
--n|--ifconfig <local> <remote|netmask>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-n|--ifconfig <local>/<prefix>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *<local>* the local IP address for the tun/tap device
 
-*<remote|netmask>* the remote IP address (tun) or netmask (tap)
+*<prefix>* the prefix length of the network
 
-In tap/Ethernet tunnel mode:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The local IP address and subnet mask of the tunnel
-interface, in ifconfig style. The remote tunnel endpoint
+The local IP address and prefix length. The remote tunnel endpoint
 has to use a different IP address in the same subnet.
-
-In tun/IP tunnel mode:
-^^^^^^^^^^^^^^^^^^^^^^
-
-The local IP address of the tunnel interface and the
-IP address of the tunnel interface on the remote tunnel
-endpoint.
 
 -x|--post-up-script <script>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
