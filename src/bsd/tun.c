@@ -70,6 +70,12 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
     asprintf(&device_file, "/dev/%s", dev_name);
     dynamic = 0;
   }
+#if defined(__GNUC__) && defined(__OpenBSD__)
+  else if(dev->type_ == TYPE_TUN || dev->type_ == TYPE_TAP) {
+    asprintf(&device_file, "/dev/tun");
+    actual_name_start = "tun";
+  }
+#else
   else if(dev->type_ == TYPE_TUN) {
     asprintf(&device_file, "/dev/tun");
     actual_name_start = "tun";
@@ -78,6 +84,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
     asprintf(&device_file, "/dev/tap");
     actual_name_start = "tap";
   }
+#endif
   else {
     log_printf(ERR, "unable to recognize type of device (tun or tap)");
     tun_close(dev);
