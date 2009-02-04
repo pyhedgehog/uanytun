@@ -56,7 +56,9 @@
 #include "key_derivation.h"
 #include "auth_algo.h"
 
+#ifndef USE_SSL_CRYPTO
 #include <gcrypt.h>
+#endif
 #endif
 
 
