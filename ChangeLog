@@ -1,3 +1,13 @@
+2009.??.?? -- Version 0.3 svn??
+
+* changed -n|--ifconfig parameter to new behavior
+  tun and tap devices now use the same syntax
+* improved tap device handling on OpenBSD
+* fixed packet length errors
+* fixed device type detection bug
+* dropping privileges is now possible wihtout chroot
+* some code cleanup
+
 2009.01.14 -- Version 0.2.1svn91
 
 * fixed bug which prevents the daemon from using the right cipher
