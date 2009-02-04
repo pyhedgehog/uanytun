@@ -27,7 +27,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/uanytun
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-tun
+  DEPENDS:=+kmod-tun +libopenssl
   TITLE:=micro anycast tunneling daemon
   URL:=http://www.anytun.org/
   MAINTAINER:=Christian Pointner <equinox@anytun.org>
@@ -46,10 +46,9 @@ define Build/Compile
 	mkdir -p $(PKG_INSTALL_DIR)	
 	$(MAKE) -C $(PKG_BUILD_DIR)/src \
 		$(TARGET_CONFIGURE_OPTS) \
-		NO_CRYPT_OBJ=1 \
 		TARGET=Linux \
-		CFLAGS="$(TARGET_CFLAGS) -DNO_CRYPT" \
-		LDFLAGS="$(TARGET_LDFLAGS) -ldl" 
+		CFLAGS="$(TARGET_CFLAGS) -DUSE_SSL_CRYPTO -I$(STAGING_DIR)/usr/include" \
+		LDFLAGS="$(TARGET_LDFLAGS) -ldl -lcrypto" 
 	$(STRIP) $(PKG_BUILD_DIR)/src/uanytun
 endef
 
