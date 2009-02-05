@@ -18,7 +18,7 @@ PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.anytun.org/~equinox/
-PKG_MD5SUM:=4ada32936048fce0e615f550e7b12a85
+PKG_MD5SUM:=97854b33081f7685ff174db4c7083d8e
 
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
@@ -53,8 +53,13 @@ define Build/Compile
 endef
 
 define Package/uanytun/install
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DATA) ./files/uanytun.config $(1)/etc/config/uanytun
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/uanytun $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/uanytun.init $(1)/etc/init.d/uanytun
+
 endef
 
 $(eval $(call BuildPackage,uanytun))
