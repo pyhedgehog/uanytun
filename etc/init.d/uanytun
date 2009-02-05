@@ -1,0 +1,135 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          uanytun
+# Required-Start:    $network $named $syslog
+# Required-Stop:     
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start anycast tunneling daemon at boot time
+# Description:       Enables networking over vpn tunnel interfaces
+### END INIT INFO
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/uanytun
+CHROOTDIR='/var/run/uanytun'
+# DAEMONOPTS="--username nobody --groupname nogroup --chroot $CHROOTDIR"
+NAME=uanytun
+DESC=uanytun
+CONFIG_DIR=/etc/uanytun
+
+test -x $DAEMON || exit 0
+
+# Include uanytun defaults if available
+if [ -f /etc/default/uanytun ] ; then
+  . /etc/default/uanytun
+fi
+
+start_vpn () {
+  STATUS="OK"
+  if [ -f $CONFIG_DIR/$NAME/config ] ; then
+    POSTUP=''
+    test -f  $CONFIG_DIR/$NAME/post-up.sh && POSTUP="-x $CONFIG_DIR/$NAME/post-up.sh"
+    DAEMONARG=`sed 's/#.*//'  <  $CONFIG_DIR/$NAME/config | grep -e '\w' | sed  's/^/ --/' | sed 's/passphrase\s*\(.*\)/passphrase "\1"/' | xargs echo`
+    $DAEMON --write-pid /var/run/uanytun.$NAME.pid $POSTUP \
+      $DAEMONOPTS $DAEMONARG || STATUS="FAILED"
+  else
+    STATUS="no config found"
+  fi
+  echo -n "($STATUS)"
+}
+stop_vpn () {
+  kill `cat $PIDFILE` || true
+  rm $PIDFILE
+}
+
+set -e
+case "$1" in
+  start)
+  echo -n "Starting $DESC:"
+  test -d $CHROOTDIR || mkdir -p $CHROOTDIR
+  if test -z "$2" ; then
+    if [ -f $CONFIG_DIR/autostart ] ; then
+      for NAME in `sed 's/#.*//'  <  $CONFIG_DIR/autostart | grep -e '\w'`; do
+        echo -n " $NAME"
+        start_vpn
+      done
+    else
+      echo " no config found"
+      exit 1;
+    fi
+  else
+    while shift ; do
+      [ -z "$1" ] && break
+      NAME=$1
+      echo -n " $NAME"
+      start_vpn
+    done
+  fi
+  echo "."
+  ;;
+  stop)
+  echo -n "Stoping $DESC:"
+  if test -z "$2" ; then
+    for PIDFILE in `ls /var/run/uanytun.*.pid 2> /dev/null`; do
+      NAME=`echo $PIDFILE | cut -c18-`
+      NAME=${NAME%%.pid}
+      echo -n " $NAME"
+      stop_vpn
+    done
+  else
+    while shift ; do
+      [ -z "$1" ] && break
+      if test -e /var/run/uanytun.$1.pid ; then
+        PIDFILE=`ls /var/run/uanytun.$1.pid 2> /dev/null`
+        NAME=`echo $PIDFILE | cut -c18-`
+        NAME=${NAME%%.pid}
+        echo -n " $NAME"
+        stop_vpn
+      else
+        echo -n " (failure: No such tunnel is running: $1)"
+      fi
+    done
+  fi
+  echo "."
+  ;;
+  reload)
+  echo -n "Reloading $DESC:"
+  if test -z "$2" ; then
+    for PIDFILE in `ls /var/run/uanytun.*.pid 2> /dev/null`; do
+      NAME=`echo $PIDFILE | cut -c18-`
+      NAME=${NAME%%.pid}
+      echo -n " $NAME"
+      stop_vpn
+      start_vpn
+    done
+  else
+    while shift ; do
+      [ -z "$1" ] && break
+      if test -e /var/run/uanytun.$1.pid ; then
+        PIDFILE=`ls /var/run/uanytun.$1.pid 2> /dev/null`
+        NAME=`echo $PIDFILE | cut -c18-`
+        NAME=${NAME%%.pid}
+        echo -n " $NAME"
+        stop_vpn
+        start_vpn
+      else
+        echo -n " (failure: No such tunnel is running: $1)"
+      fi
+    done
+  fi
+  echo "."
+  ;;
+  restart)
+    SCRIPT=$0
+    shift
+    $SCRIPT stop $*
+    sleep 1
+    $SCRIPT start $*
+  ;;
+  *)
+  N=/etc/init.d/$NAME
+  echo "Usage: $N {start|stop|restart|reload}" >&2
+  exit 1
+  ;;
+esac
+
+exit 0

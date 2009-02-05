@@ -1,0 +1,80 @@
+###----------------------------------------###
+### Global Parameters                      ###
+###----------------------------------------###
+
+## don't run in background
+#nodaemonize
+
+## change user and group after init
+username nobody
+groupname nogroup
+
+## chroot to /var/run/anytun
+#chroot /var/run/uanytun
+
+## local anycast(data) ip address to bind to
+#interface <ip-address>
+
+## local anycast(data) port to bind to
+#port 4444
+
+## the sender id to use (has to be unique for multible anycast servers)
+#sender-id 1
+
+## payload encryption algorithm
+# cipher null
+# cipher aes-ctr-128
+# cipher aes-ctr-192
+# cipher aes-ctr-256
+cipher aes-ctr
+
+## message authentication algorithm
+# auth-algo null
+auth-algo sha1
+
+
+## Device name
+#dev anytun0
+
+# device type tun = ip/ipv6, tap = ethernet
+type tun
+
+## Automaticaly configure the interface and set a route
+ifconfig 192.168.123.3/24
+
+
+###----------------------------------------###
+### Connection Parameters                  ###
+###----------------------------------------###
+
+## remote host
+remote-host example.com
+
+## remote port
+remote-port 4444
+
+##seqence number window size
+## 0 turns off replay protection (for manualk keying)
+window-size 0
+
+## the multiplex id to use
+mux 1
+
+## key derivation pseudo random function
+#kd-prf null
+#kd-prf aes-ctr
+#kd-prf aes-ctr-128
+#kd-prf aes-ctr-192
+#kd-prf aes-ctr-256
+
+## log2 of key derivation rate
+#ld-kdr 0
+
+## master key to use for encryption
+#key 3123456789ABCDEF0123456789ABCDEF
+
+## master salt to use for encryption
+#salt 3123456789ABCD0123456789ABCD
+
+## derive master key and or salt from passphrase
+passphrase hello-world-three
