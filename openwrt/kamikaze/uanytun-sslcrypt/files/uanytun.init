@@ -1,0 +1,74 @@
+#!/bin/sh /etc/rc.common
+START=50
+
+BIN=uanytun
+DESC=uanytun
+RUN_D=/var/run
+
+uanytun() {
+ local name
+ name=${2%%.pid}
+ name=${name##/var/run/uanytun.}
+ echo "$name" > $2
+}
+
+option_cb() {
+  local varname="$1"
+  local value="$2"
+
+  if ! echo "$CONFIG_OPTIONS" | grep " $varname " > /dev/null; then
+    CONFIG_OPTIONS="$CONFIG_OPTIONS $varname "
+  fi
+}
+
+foreach_config() {
+  local cfg="$1"
+  local name
+  local option
+  local value
+  local DAEMONARGS=""
+
+  config_get name "$cfg" TYPE
+  for option in $CONFIG_OPTIONS
+  do
+    config_get value "$cfg" "$option"
+    if [ "x$option" == "xdisabled" ]; then
+      if [ $value -eq 1 ]; then
+        echo -n " $name(disabled)"
+        return
+      fi
+      continue
+    fi
+
+    option=`echo $option | tr '_' '-'`
+    if [ -n "$value" ]; then
+      DAEMONARGS="$DAEMONARGS --$option $value"
+    fi
+  done
+  echo -n " $name"
+  local status="OK"
+  $BIN --write-pid "$RUN_D/$BIN.$name.pid" $DAEMONARGS || status="failed"
+  echo -n "($status)"
+}
+
+start() {
+  echo -n "Starting $DESC:"
+  config_load uanytun  
+  config_foreach foreach_config ""
+  echo "."
+}
+
+stop() {
+  echo -n "Stopping $DESC:"
+  local name
+  local pidfile
+
+  for pidfile in `ls $RUN_D/$BIN.*.pid 2> /dev/null`; do
+    name=${pidfile%%.pid}
+    name=${name##$RUN_D/$BIN.}
+    echo -n " $name"
+    kill `cat $pidfile` || true
+    rm -f $pidfile
+  done
+  echo "."
+}
