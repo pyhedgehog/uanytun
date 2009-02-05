@@ -28,7 +28,7 @@ start_vpn () {
   if [ -f $CONFIG_DIR/$NAME/config ] ; then
     POSTUP=''
     test -f  $CONFIG_DIR/$NAME/post-up.sh && POSTUP="-x $CONFIG_DIR/$NAME/post-up.sh"
-    DAEMONARG=`sed 's/#.*//'  <  $CONFIG_DIR/$NAME/config | grep -e '\w' | sed  's/^/ --/' | sed 's/passphrase\s*\(.*\)/passphrase "\1"/' | xargs echo`
+    DAEMONARG=`sed 's/#.*//'  <  $CONFIG_DIR/$NAME/config | grep -e '\w' | sed  's/^/--/' | tr '\n' ' '`
     $DAEMON --write-pid /var/run/uanytun.$NAME.pid $POSTUP \
       $DAEMONOPTS $DAEMONARG || STATUS="FAILED"
   else
