@@ -11,10 +11,9 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/sbin/uanytun
 CHROOTDIR='/var/run/uanytun'
-# DAEMONOPTS="--username nobody --groupname nogroup --chroot $CHROOTDIR"
+CONFIG_DIR=/etc/uanytun
 NAME=uanytun
 DESC=uanytun
-CONFIG_DIR=/etc/uanytun
 
 test -x $DAEMON || exit 0
 
@@ -29,8 +28,7 @@ start_vpn () {
     POSTUP=''
     test -f  $CONFIG_DIR/$NAME/post-up.sh && POSTUP="-x $CONFIG_DIR/$NAME/post-up.sh"
     DAEMONARG=`sed 's/#.*//'  <  $CONFIG_DIR/$NAME/config | grep -e '\w' | sed  's/^/--/' | tr '\n' ' '`
-    $DAEMON --write-pid /var/run/uanytun.$NAME.pid $POSTUP \
-      $DAEMONOPTS $DAEMONARG || STATUS="FAILED"
+    $DAEMON --write-pid /var/run/uanytun.$NAME.pid $POSTUP $DAEMONARG || STATUS="FAILED"
   else
     STATUS="no config found"
   fi

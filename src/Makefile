@@ -56,7 +56,7 @@ endif
 
 SRC := $(OBJ:%.o=%.c)
 
-.PHONY: distclean clean
+.PHONY: clean distclean manpage install install-bin install-etc install-man remove purge
 
 all: $(EXECUTABLE)
 
@@ -85,3 +85,48 @@ clean:
 	rm -f *.o
 	rm -f *.d
 	rm -f $(EXECUTABLE)
+
+manpage:
+	$(MAKE) --directory="../doc/" manpage
+
+install: install-bin install-etc install-man
+
+install-bin: $(EXECUTABLE)
+	mkdir -p $(DESTDIR)$(SBINDIR)
+	install -m 755 $(EXECUTABLE) $(DESTDIR)$(SBINDIR)
+	$(STRIP) $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
+
+install-etc:
+	mkdir -p $(DESTDIR)$(ETCDIR)/uanytun
+	install -m 644 ../etc/uanytun/autostart $(DESTDIR)$(ETCDIR)/uanytun/autostart
+	@( cd '../etc/uanytun/' ;                                                         \
+     for dir in `ls`; do                                                            \
+       if [ -d $$dir ]; then                                                        \
+         echo "install $$dir configuration" ;                                       \
+         cd $$dir ;                                                                 \
+         mkdir -p $(DESTDIR)$(ETCDIR)/uanytun/$$dir ;                               \
+         install -m 600 config $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;           \
+         if [ -e 'post-up.sh' ]; then                                               \
+           install -m 755 post-up.sh $(DESTDIR)$(ETCDIR)/uanytun/$$dir/post-up.sh ; \
+         fi ;                                                                       \
+         cd .. ;                                                                    \
+       fi ;                                                                         \
+     done                                                                           \
+   )
+	mkdir -p $(DESTDIR)$(ETCDIR)/init.d
+	install -m 755 ../etc/init.d/uanytun $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+	@ sed -i 's#DAEMON=/usr/sbin/uanytun#DAEMON=$(SBINDIR)/$(EXECUTABLE)#' $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+	@ sed -i 's#CONFIG_DIR=/etc/uanytun#CONFIG_DIR=$(ETCDIR)/uanytun#' $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+
+install-man: manpage
+	mkdir -p $(DESTDIR)$(MANDIR)/man8/
+	cp ../doc/uanytun.8 $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
+	gzip $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
+
+remove:
+	rm -f $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
+	rm -f $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8.gz
+	rm -f $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+
+purge: remove
+	rm -rf $(DESTDIR)$(ETCDIR)/uanytun/
