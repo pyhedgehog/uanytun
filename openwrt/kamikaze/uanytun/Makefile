@@ -35,30 +35,30 @@ define Package/uanytun
 endef
 
 define Build/Configure
-	(cd $(PKG_BUILD_DIR)/src; \
-		touch include.mk; \
+  (cd $(PKG_BUILD_DIR)/src; \
+    touch include.mk; \
     ln -s linux/tun.c . \
-	)
+  )
 endef
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)	
-	$(MAKE) -C $(PKG_BUILD_DIR)/src \
-		$(TARGET_CONFIGURE_OPTS) \
-		TARGET=Linux \
-		CFLAGS="$(TARGET_CFLAGS) -DUSE_SSL_CRYPTO -I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="$(TARGET_LDFLAGS) -ldl -lcrypto" 
-	$(STRIP) $(PKG_BUILD_DIR)/src/uanytun
+  rm -rf $(PKG_INSTALL_DIR)
+  mkdir -p $(PKG_INSTALL_DIR) 
+  $(MAKE) -C $(PKG_BUILD_DIR)/src \
+    $(TARGET_CONFIGURE_OPTS) \
+    TARGET=Linux \
+    CFLAGS="$(TARGET_CFLAGS) -DUSE_SSL_CRYPTO -I$(STAGING_DIR)/usr/include" \
+    LDFLAGS="$(TARGET_LDFLAGS) -ldl -lcrypto" 
+  $(STRIP) $(PKG_BUILD_DIR)/src/uanytun
 endef
 
 define Package/uanytun/install
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/uanytun.config $(1)/etc/config/uanytun
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/uanytun $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/uanytun.init $(1)/etc/init.d/uanytun
+  $(INSTALL_DIR) $(1)/etc/config
+  $(INSTALL_DATA) ./files/uanytun.config $(1)/etc/config/uanytun
+  $(INSTALL_DIR) $(1)/usr/sbin
+  $(INSTALL_BIN) $(PKG_BUILD_DIR)/src/uanytun $(1)/usr/sbin/
+  $(INSTALL_DIR) $(1)/etc/init.d
+  $(INSTALL_BIN) ./files/uanytun.init $(1)/etc/init.d/uanytun
 
 endef
 
