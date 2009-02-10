@@ -3,7 +3,7 @@ START=50
 
 BIN=uanytun
 DAEMON=/usr/sbin/$BIN
-DESC=uanytun
+DESC=$BIN
 RUN_D=/var/run
 
 
@@ -71,7 +71,7 @@ stop_vpn() {
 
 start() {
   echo -n "Starting $DESC:"
-  config_load uanytun  
+  config_load $BIN  
   if [ $# -gt 0 ]; then
     while [ $# -gt 0 ]; do
       config_foreach foreach_config_forced "$1"
