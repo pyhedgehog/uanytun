@@ -128,10 +128,30 @@ void daemonize()
   pid_t pid;
 
   pid = fork();
+  if(pid < 0) {
+    log_printf(WARNING, "daemonizing failed at fork(): %m, exitting");
+    exit(-1);
+  }
   if(pid) exit(0);
-  setsid();
+
+  umask(0);
+
+  if(setsid() < 0) {
+    log_printf(WARNING, "daemonizing failed at setsid(): %m, exitting");
+    exit(-1);
+  }
+
   pid = fork();
+  if(pid < 0) {
+    log_printf(WARNING, "daemonizing failed at fork(): %m, exitting");
+    exit(-1);
+  }
   if(pid) exit(0);
+
+  if ((chdir("/")) < 0) {
+    log_printf(WARNING, "daemonizing failed at chdir(): %m, exitting");
+    exit(-1);
+  }
 
   int fd;
   for (fd=0;fd<=2;fd++) // close all file descriptors
