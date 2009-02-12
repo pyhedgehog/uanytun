@@ -129,7 +129,7 @@ void daemonize()
 
   pid = fork();
   if(pid < 0) {
-    log_printf(WARNING, "daemonizing failed at fork(): %m, exitting");
+    log_printf(ERR, "daemonizing failed at fork(): %m, exitting");
     exit(-1);
   }
   if(pid) exit(0);
@@ -137,19 +137,19 @@ void daemonize()
   umask(0);
 
   if(setsid() < 0) {
-    log_printf(WARNING, "daemonizing failed at setsid(): %m, exitting");
+    log_printf(ERR, "daemonizing failed at setsid(): %m, exitting");
     exit(-1);
   }
 
   pid = fork();
   if(pid < 0) {
-    log_printf(WARNING, "daemonizing failed at fork(): %m, exitting");
+    log_printf(ERR, "daemonizing failed at fork(): %m, exitting");
     exit(-1);
   }
   if(pid) exit(0);
 
   if ((chdir("/")) < 0) {
-    log_printf(WARNING, "daemonizing failed at chdir(): %m, exitting");
+    log_printf(ERR, "daemonizing failed at chdir(): %m, exitting");
     exit(-1);
   }
 
