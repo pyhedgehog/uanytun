@@ -66,6 +66,7 @@ struct options_struct {
   char* auth_algo_;
   char* passphrase_;
 #endif
+  int anytun02_compat_;
   buffer_t key_;
   buffer_t salt_;
 };

@@ -232,6 +232,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
 #ifndef NO_CRYPT
     PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
     PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
+    PARSE_BOOL_PARAM("-O","--anytun02-compat", opt->anytun02_compat_)
 #ifndef NO_PASSPHRASE
     PARSE_STRING_PARAM_SEC("-E","--passphrase", opt->passphrase_)
 #endif
@@ -295,6 +296,7 @@ void options_default(options_t* opt)
 #else
   opt->cipher_ = strdup("null");
 #endif
+  opt->anytun02_compat_ = 0;
   opt->key_.buf_ = NULL;
   opt->key_.length_ = 0;
   opt->salt_.buf_ = NULL;
@@ -372,6 +374,7 @@ void options_print_usage()
 #ifndef NO_CRYPT
   printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
   printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
+  printf("        [-O|--anytun02-compat]              enable compatiblity mode for anytun 0.2.x and prior\n");
 #ifndef NO_PASSPHRASE
   printf("        [-E|--passphrase] <pass phrase>     a passprhase to generate master key and salt from\n");
 #endif
@@ -409,6 +412,7 @@ void options_print(options_t* opt)
   printf("ld_kdr: %d\n", opt->ld_kdr_);
   printf("passphrase: '%s'\n", opt->passphrase_);
 #endif
+  printf("anytun02_compat: %d\n", opt->anytun02_compat_);
 
   u_int32_t i;
   printf("key_[%d]: '", opt->key_.length_);

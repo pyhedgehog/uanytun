@@ -44,11 +44,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-int cipher_init(cipher_t* c, const char* type)
+int cipher_init(cipher_t* c, const char* type, int8_t anytun02_compat)
 {
   if(!c) 
     return -1;
 
+  c->anytun02_compat_ = anytun02_compat;
   c->key_length_ = 0;
 
   c->type_ = c_unknown;
@@ -261,10 +262,10 @@ int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, key_store_dir_t di
   if(ret < 0)
     return ret;
 
-#ifdef ANYTUN_02_COMPAT
-  if(!c->salt_.buf_[0])
-    c->salt_.buf_[0] = 1;
-#endif
+  if(c->anytun02_compat_) {
+    if(!c->salt_.buf_[0])
+      c->salt_.buf_[0] = 1;
+  }
 
   memcpy(params->ctr_.salt_.buf_, c->salt_.buf_, C_AESCTR_SALT_LENGTH);
   params->ctr_.salt_.zero_ = 0;

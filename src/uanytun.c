@@ -101,7 +101,7 @@ typedef u_int8_t auth_algo_t;
 
 int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
-  int ret = cipher_init(c, opt->cipher_);
+  int ret = cipher_init(c, opt->cipher_, opt->anytun02_compat_);
   if(ret) {
     log_printf(ERR, "could not initialize cipher of type %s", opt->cipher_);
     return ret;
@@ -115,7 +115,9 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
     return ret;
   }
 
-  ret = key_derivation_init(kd, opt->kd_prf_, opt->ld_kdr_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
+  if(opt->anytun02_compat_)
+    log_printf(ERR, "enabling anytun 0.2.x crypto compatiblity mode");
+  ret = key_derivation_init(kd, opt->kd_prf_, opt->ld_kdr_, opt->anytun02_compat_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
     log_printf(ERR, "could not initialize key derivation of type %s", opt->kd_prf_);
     cipher_close(c);

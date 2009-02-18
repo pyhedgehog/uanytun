@@ -54,13 +54,14 @@ typedef enum cipher_type_enum cipher_type_t;
 struct cipher_struct {
   cipher_type_t type_;
   u_int16_t key_length_;
+  int8_t anytun02_compat_;
   buffer_t key_;
   buffer_t salt_;
   void* params_;
 };
 typedef struct cipher_struct cipher_t;
 
-int cipher_init(cipher_t* c, const char* type);
+int cipher_init(cipher_t* c, const char* type, int8_t anytun02_compat);
 void cipher_close(cipher_t* c);
 
 int cipher_encrypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);

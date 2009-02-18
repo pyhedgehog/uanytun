@@ -39,7 +39,6 @@ CFLAGS='-g -O2'
 LDFLAGS='-g -Wall -O2'
 
 CRYPTO_LIB='gcrypt'
-ANYTUN_02_COMPAT=0
 PASSPHRASE=1
 V4_MAPPED=1
 
@@ -51,7 +50,6 @@ print_usage() {
   echo "          --prefix=<PREFIX>         the installation prefix (default: /usr/local)"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --disable-crypto          disable crypto at all (only NULL cipher)"
-  echo "          --enable-anytun02-compat  enable compatiblity mode for anytun 0.2.x and prior"
   echo "          --disable-passphrase      disable master key and salt passphrase"
   echo "          --disable-v4-mapped       disable V4-Mapped addresses (until now this means"
   echo "                                    to disable IPv6 as outer protocol)"
@@ -72,9 +70,6 @@ do
   --disable-crypto)
     CRYPTO_LIB='none'
   ;; 
-  --enable-anytun02-compat)
-    ANYTUN_02_COMPAT=1
-  ;;
   --disable-passphrase)
     PASSPHRASE=0
   ;;
@@ -134,11 +129,6 @@ case $CRYPTO_LIB in
     echo "disabling crypto"
   ;;
 esac
-
-if [ $ANYTUN_02_COMPAT -eq 1 ]; then
-  CFLAGS=$CFLAGS' -DANYTUN_02_COMPAT'
-  echo "enabling anytun 0.2.x crypto compatiblity mode"
-fi
 
 if [ $PASSPHRASE -eq 0 ]; then
   CFLAGS=$CFLAGS' -DNO_PASSPHRASE'
