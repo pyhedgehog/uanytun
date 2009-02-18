@@ -28,6 +28,7 @@ SYNOPSIS
 [ *-w|--window-size* <window size> ]
 [ *-k|--kd-prf* <kd-prf type> ]
 [ *-l|--ld-kdr* <ld-kdr> ]
+[ *-O|--anytun02-compat* ]
 [ *-E|--passphrase <pass phrase> ]
 [ *-K|--key* <master key> ]
 [ *-A|--salt* <master salt> ]
@@ -211,6 +212,12 @@ it forever. The default is 0 which means to calculate a new key
 for every packet. A value of 1 would tell the key derivation
 to generate a new key after 2 packets, for 2 its 4 packets and 
 so on.
+
+-O|--anytun02-compat
+~~~~~~~~~~~~~~~~~~~~
+
+Enable compatibility mode with version of anytun 0.2.x and prior. 
+This is for backwards compaitbility to old internet draft of satp.
 
 -E|--passphrase <pass phrase>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
