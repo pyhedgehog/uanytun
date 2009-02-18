@@ -116,7 +116,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
   }
 
   if(opt->anytun02_compat_)
-    log_printf(ERR, "enabling anytun 0.2.x crypto compatiblity mode");
+    log_printf(NOTICE, "enabling anytun 0.2.x crypto compatiblity mode");
   ret = key_derivation_init(kd, opt->kd_prf_, opt->ld_kdr_, opt->anytun02_compat_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
     log_printf(ERR, "could not initialize key derivation of type %s", opt->kd_prf_);
