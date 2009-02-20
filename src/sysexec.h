@@ -38,7 +38,7 @@
 int exec_script(const char* script, const char* ifname)
 {
   if(!script || !ifname)
-    return;
+    return -1;
 
   pid_t pid;
   pid = fork();

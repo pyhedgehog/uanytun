@@ -58,7 +58,7 @@
 int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix)
 {
   if(!dev) 
-    return;
+    return -1;
  
   tun_conf(dev, dev_name, dev_type, ifcfg_addr, ifcfg_prefix, 1400);
   dev->actual_name_ = NULL;

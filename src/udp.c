@@ -39,14 +39,18 @@
 #include "log.h"
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 
 int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
 {
   if(!sock || !port) 
-    return;
+    return -1;
  
   sock->fd_ = 0;
   memset(&(sock->local_end_), 0, sizeof(sock->local_end_));
@@ -185,7 +189,7 @@ int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* r
   if(!sock || !remote_end)
     return -1;
 
-  int socklen = sizeof(*remote_end);
+  socklen_t socklen = sizeof(*remote_end);
   return recvfrom(sock->fd_, buf, len, 0, (struct sockaddr *)remote_end, &socklen);
 }
 
