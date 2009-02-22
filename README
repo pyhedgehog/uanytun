@@ -34,7 +34,7 @@ Installation
 
 Getting the source via subversion:
 ----------------------------------
-svn co https://svn.chaos-at-home.org/uanytun
+svn co https://svn.chaos-at-home.org/uanytun/trunk uanytun
 
 Building from source
 --------------------

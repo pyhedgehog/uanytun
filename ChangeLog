@@ -1,4 +1,4 @@
-2009.??.?? -- Version 0.3 svn??
+2009.??.?? -- Version 0.3
 
 * changed -n|--ifconfig parameter to new behavior
   tun and tap devices now use the same syntax
@@ -9,12 +9,12 @@
 * dropping privileges is now possible wihtout chroot
 * some code cleanup
 
-2009.01.14 -- Version 0.2.1svn91
+2009.01.14 -- Version 0.2.1
 
 * fixed bug which prevents the daemon from using the right cipher
   key when using a key derivation rate other than 1
 	
-2009.01.11 -- Version 0.2svn85
+2009.01.11 -- Version 0.2
 
 * added crypto support using libgcrypt or openssl
 * added new passphrase option to generate master key and or salt
@@ -22,7 +22,7 @@
 * some code cleanup
 
 
-2008.12.31 -- Version 0.1svn37
+2008.12.31 -- Version 0.1
 
 * Initial release.
 * IPv4, IPv6 and Ethernet tunnel over UDP, without crypto.
