@@ -15,6 +15,7 @@ SYNOPSIS
 [ *-g|--groupname* <groupname> ]
 [ *-C|--chroot* <path> ]
 [ *-P|--write-pid* <filename> ]
+[ *-L|--log* <target>:<level>[,<param1>[,<param2>[..]]] ]
 [ *-i|--interface* <ip-address> ]
 [ *-p|--port* <port> ]
 [ *-s|--sender-id* <sender id> ]
@@ -83,6 +84,28 @@ to not run in chroot.
 
 Instruct *uAnytun* to write it's pid to this file. The default is 
 to not create a pid file.
+
+-L|--log <target>:<level>[,<param1>[,<param2>[..]]]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+add log target to logging system. This can be invoked several times
+in order to log to different targets at the same time. Every target 
+hast its own log level which is a number between 0 and 5. Where 0 means
+disabling log and 5 means debug messages are enabled.
+
+The following targets are supported:
+
+* *syslog* - log to syslog daemon, parameters <level>[,<logname>[,<facility>]]
+* *file* - log to file, parameters <level>[,<path>]
+* *stdout* - log to standard output, parameters <level>
+* *stderr* - log to standard error, parameters <level> 
+
+The file target can be used more the once with different levels.
+If no target is provided at the command line a single target with the 
+following config is added:
+
+*syslog:3,uanytun,daemon*
+
 
 -i|--interface <ip address>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
