@@ -79,13 +79,13 @@ int init_libgcrypt()
 
   gcry_error_t err = gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
   if(err) {
-    log_printf(ERR, "failed to disable secure memory: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to disable secure memory: %s", gcry_strerror(err));
     return -1;
   }
 
   err = gcry_control(GCRYCTL_INITIALIZATION_FINISHED);
   if(err) {
-    log_printf(ERR, "failed to finish libgcrypt initialization: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to finish libgcrypt initialization: %s", gcry_strerror(err));
     return -1;
   }
 
@@ -103,14 +103,14 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
 {
   int ret = cipher_init(c, opt->cipher_, opt->anytun02_compat_);
   if(ret) {
-    log_printf(ERR, "could not initialize cipher of type %s", opt->cipher_);
+    log_printf(ERROR, "could not initialize cipher of type %s", opt->cipher_);
     return ret;
   }
   
 #ifndef NO_CRYPT
   ret = auth_algo_init(aa, opt->auth_algo_);
   if(ret) {
-    log_printf(ERR, "could not initialize auth algo of type %s", opt->auth_algo_);
+    log_printf(ERROR, "could not initialize auth algo of type %s", opt->auth_algo_);
     cipher_close(c);
     return ret;
   }
@@ -119,7 +119,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
     log_printf(NOTICE, "enabling anytun 0.2.x crypto compatiblity mode");
   ret = key_derivation_init(kd, opt->kd_prf_, opt->ld_kdr_, opt->anytun02_compat_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
-    log_printf(ERR, "could not initialize key derivation of type %s", opt->kd_prf_);
+    log_printf(ERROR, "could not initialize key derivation of type %s", opt->kd_prf_);
     cipher_close(c);
     auth_algo_close(aa);
     return ret;
@@ -147,7 +147,7 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
 
   int len = tun_read(dev, plain_packet_get_payload(plain_packet), plain_packet_get_payload_length(plain_packet));
   if(len == -1) {
-    log_printf(ERR, "error on reading from device: %m");
+    log_printf(ERROR, "error on reading from device: %m");
     return 0;
   }
   
@@ -171,7 +171,7 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
   
   len = udp_write(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet));
   if(len == -1)
-    log_printf(ERR, "error on sending udp packet: %m");
+    log_printf(ERROR, "error on sending udp packet: %m");
 
   return 0;
 }
@@ -186,7 +186,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
   memset(&remote, 0, sizeof(udp_endpoint_t));
   int len = udp_read(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet), &remote);
   if(len == -1) {
-    log_printf(ERR, "error on receiving udp packet: %m");
+    log_printf(ERROR, "error on receiving udp packet: %m");
     return 0;
   }
   else if(len < encrypted_packet_get_header_length()) {
@@ -213,7 +213,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
     return 0;
   }
   else if(result < 0) {
-    log_printf(ERR, "memory error at sequence window");
+    log_printf(ERROR, "memory error at sequence window");
     return -2;
   }
    
@@ -236,7 +236,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
  
   len = tun_write(dev, plain_packet_get_payload(plain_packet), plain_packet_get_payload_length(plain_packet));
   if(len == -1)
-    log_printf(ERR, "error on writing to device: %m");
+    log_printf(ERROR, "error on writing to device: %m");
   
   return 0;
 }
@@ -272,7 +272,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 
     int ret = select(nfds, &readfds, NULL, NULL, NULL);
     if(ret == -1 && errno != EINTR) {
-      log_printf(ERR, "select returned with error: %m");
+      log_printf(ERROR, "select returned with error: %m");
       return_value = -1;
       break;
     }
@@ -327,7 +327,8 @@ void print_hex_dump(const u_int8_t* buf, u_int32_t len)
 
 int main(int argc, char* argv[])
 {
-  log_init("uanytun", DAEMON);
+  log_init();
+  log_add_target("syslog:3,uanytun,daemon");
   log_printf(NOTICE, "just started...");
 
   options_t opt;
@@ -336,11 +337,11 @@ int main(int argc, char* argv[])
     options_clear(&opt);
     if(ret > 0) {
       fprintf(stderr, "syntax error near: %s\n\n", argv[ret]);
-      log_printf(ERR, "syntax error, exitting");
+      log_printf(ERROR, "syntax error, exitting");
     }
     if(ret == -2) {
       fprintf(stderr, "memory error on options_parse, exitting\n");
-      log_printf(ERR, "memory error on options_parse, exitting");
+      log_printf(ERROR, "memory error on options_parse, exitting");
     }
 
     if(ret == -1 || ret > 0) 
@@ -358,7 +359,7 @@ int main(int argc, char* argv[])
 #ifndef USE_SSL_CRYPTO
   ret = init_libgcrypt();
   if(ret) {
-    log_printf(ERR, "error on libgcrpyt initialization, exitting");
+    log_printf(ERROR, "error on libgcrpyt initialization, exitting");
     options_clear(&opt);
     exit(ret);
   }
@@ -368,7 +369,7 @@ int main(int argc, char* argv[])
   tun_device_t dev;
   ret = tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_.net_addr_, opt.ifconfig_param_.prefix_length_);
   if(ret) {
-    log_printf(ERR, "error on tun_init, exitting");
+    log_printf(ERROR, "error on tun_init, exitting");
     options_clear(&opt);
     exit(ret);
   }
@@ -383,7 +384,7 @@ int main(int argc, char* argv[])
   udp_socket_t sock;
   ret = udp_init(&sock, opt.local_addr_, opt.local_port_);
   if(ret) {
-    log_printf(ERR, "error on udp_init, exitting");
+    log_printf(ERROR, "error on udp_init, exitting");
     options_clear(&opt);
     tun_close(&dev);
     exit(ret);
@@ -439,6 +440,8 @@ int main(int argc, char* argv[])
     log_printf(NOTICE, "shutdown after error");
   else
     log_printf(NOTICE, "shutdown after signal");
+
+  log_close();
 
   return ret;
 }

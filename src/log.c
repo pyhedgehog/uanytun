@@ -34,22 +34,160 @@
 
 #include "datatypes.h"
 
+#include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#define SYSLOG_NAMES
+#include <syslog.h>
+
 #include "log.h"
 
-log_facility_t g_facility = DAEMON;
+log_t stdlog;
 
-void log_init(const char* name, log_facility_t facility)
+#include "log_targets.h"
+
+const char* log_prio_to_string(log_prio_t prio)
 {
-  g_facility = facility;
-  openlog(name, LOG_PID | LOG_NDELAY, facility);
+  switch(prio) {
+  case ERROR: return "ERROR";
+  case WARNING: return "WARNING";
+  case NOTICE: return "NOTICE";
+  case INFO: return "INFO";
+  case DEBUG: return "DEBUG";
+  }
+  return "UNKNOWN";
+}
+
+log_target_type_t log_target_parse_type(const char* conf)
+{
+  if(!conf)
+    return TARGET_UNKNOWN;
+
+  if(!strncmp(conf, "syslog", 6)) return TARGET_SYSLOG;
+  if(!strncmp(conf, "file", 4)) return TARGET_FILE;
+  if(!strncmp(conf, "stdout", 6)) return TARGET_STDOUT;
+  if(!strncmp(conf, "stderr", 6)) return TARGET_STDERR;
+
+  return TARGET_UNKNOWN;
+}
+
+int log_targets_add(log_targets_t* targets, const char* conf)
+{
+  if(!targets)
+    return -1;
+
+  log_target_t* new_target = NULL;
+  switch(log_target_parse_type(conf)) {
+  case TARGET_SYSLOG: new_target = log_target_syslog_new(); break;
+  case TARGET_FILE: new_target = log_target_file_new(); break;
+  case TARGET_STDOUT: new_target = log_target_stdout_new(); break;
+  case TARGET_STDERR: new_target = log_target_stderr_new(); break;
+  default: return -3;
+  }
+  if(!new_target)
+    return -2;
+  
+  const char* prioptr = strchr(conf, ':');
+  if(!prioptr || prioptr[1] == 0) {
+    free(new_target);
+    return -1;
+  }
+  prioptr++;
+  if(!isdigit(prioptr[0]) || (prioptr[1] != 0 && prioptr[1] != ',')) {
+    free(new_target);
+    return -1;
+  }
+  new_target->max_prio_ = prioptr[0] - '0';
+
+  if(new_target->init != NULL) {
+    const char* confptr = NULL;
+    if(prioptr[1] != 0)
+      confptr = prioptr+2;
+
+    int ret = (*new_target->init)(new_target, confptr);
+    if(ret) {
+      free(new_target);
+      return ret;
+    }
+  }
+
+  if(new_target->open != NULL)
+    (*new_target->open)(new_target);
+
+
+  if(!targets->first_) {
+    targets->first_ = new_target;
+  }
+  else {
+    log_target_t* tmp = targets->first_;
+    while(tmp->next_)
+      tmp = tmp->next_;
+    
+    tmp->next_ = new_target;
+  }
+  return 0;
+}
+
+void log_targets_log(log_targets_t* targets, log_prio_t prio, const char* msg)
+{
+  if(!targets)
+    return;
+
+  log_target_t* tmp = targets->first_;
+  while(tmp) {
+    if(tmp->log != NULL && tmp->enabled_ && tmp->max_prio_ >= prio)
+      (*tmp->log)(tmp, prio, msg);
+
+    tmp = tmp->next_;
+  }
+}
+
+void log_targets_clear(log_targets_t* targets)
+{
+  if(!targets)
+    return;
+
+  while(targets->first_) {
+    log_target_t* tmp = targets->first_;
+    targets->first_ = tmp->next_;
+    if(tmp->close != NULL)
+      (*tmp->close)(tmp);
+    if(tmp->clear != NULL)
+      (*tmp->clear)(tmp);
+    free(tmp);
+  }
+}
+
+
+void log_init()
+{
+  stdlog.targets_.first_ = NULL;
+}
+
+void log_close()
+{
+  log_targets_clear(&stdlog.targets_);
+}
+
+int log_add_target(const char* conf)
+{
+  if(!conf)
+    return -1;
+
+  return log_targets_add(&stdlog.targets_, conf);
 }
 
 void log_printf(log_prio_t prio, const char* fmt, ...)
 {
+  static char msg[MSG_LENGTH_MAX];
+
   va_list args;
 
   va_start(args, fmt);
-  vsyslog(prio | g_facility, fmt, args);
+  vsnprintf(msg, MSG_LENGTH_MAX, fmt, args);
   va_end(args);
+
+  log_targets_log(&stdlog.targets_, prio, msg);
 }

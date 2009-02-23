@@ -70,7 +70,7 @@ int cipher_init(cipher_t* c, const char* type, int8_t anytun02_compat)
   }
 #endif
   else {
-    log_printf(ERR, "unknown cipher type");
+    log_printf(ERROR, "unknown cipher type");
     return -1;
   }
 
@@ -127,7 +127,7 @@ int cipher_encrypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, plain
                               seq_nr, sender_id, mux);
 #endif
   else {
-    log_printf(ERR, "unknown cipher type");
+    log_printf(ERROR, "unknown cipher type");
     return -1;
   }
 
@@ -160,7 +160,7 @@ int cipher_decrypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, encry
                               encrypted_packet_get_mux(in));
 #endif
   else {
-    log_printf(ERR, "unknown cipher type");
+    log_printf(ERROR, "unknown cipher type");
     return -1;
   }
   
@@ -219,14 +219,14 @@ int cipher_aesctr_init(cipher_t* c)
   case 192: algo = GCRY_CIPHER_AES192; break;
   case 256: algo = GCRY_CIPHER_AES256; break;
   default: {
-    log_printf(ERR, "cipher key length of %d Bits is not supported", c->key_length_);
+    log_printf(ERROR, "cipher key length of %d Bits is not supported", c->key_length_);
     return -1;
   }
   }
 
   gcry_error_t err = gcry_cipher_open(&params->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
-    log_printf(ERR, "failed to open cipher: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to open cipher: %s", gcry_strerror(err));
     return -1;
   } 
 #endif
@@ -279,12 +279,12 @@ int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, key_store_dir_t di
 int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
   if(!c || !c->params_) {
-    log_printf(ERR, "cipher not initialized");
+    log_printf(ERROR, "cipher not initialized");
     return -1;
   }
 
   if(!kd) {
-    log_printf(ERR, "no key derivation supplied");
+    log_printf(ERROR, "no key derivation supplied");
     return -1;
   }
 
@@ -297,38 +297,38 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t d
 #ifdef USE_SSL_CRYPTO
   ret = AES_set_encrypt_key(c->key_.buf_, c->key_length_, &params->aes_key_);
   if(ret) {
-    log_printf(ERR, "failed to set cipher ssl aes-key (code: %d)", ret);
+    log_printf(ERROR, "failed to set cipher ssl aes-key (code: %d)", ret);
     return -1;
   }
 #else
   gcry_error_t err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
   if(err) {
-    log_printf(ERR, "failed to set cipher key: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to set cipher key: %s", gcry_strerror(err));
     return -1;
   }
 #endif
 
   ret = cipher_aesctr_calc_ctr(c, kd, dir, seq_nr, sender_id, mux);
   if(ret < 0) {
-    log_printf(ERR, "failed to calculate cipher CTR");
+    log_printf(ERROR, "failed to calculate cipher CTR");
     return ret;
   }
   
 #ifndef USE_SSL_CRYPTO
   err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
   if(err) {
-    log_printf(ERR, "failed to set cipher CTR: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to set cipher CTR: %s", gcry_strerror(err));
     return -1;
   }
 
   err = gcry_cipher_encrypt(params->handle_, out, olen, in, ilen);
   if(err) {
-    log_printf(ERR, "failed to de/encrypt packet: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to de/encrypt packet: %s", gcry_strerror(err));
     return -1;
   }
 #else
   if(C_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
-    log_printf(ERR, "failed to set cipher CTR: size don't fits");
+    log_printf(ERROR, "failed to set cipher CTR: size don't fits");
     return -1;
   }
   u_int32_t num = 0;

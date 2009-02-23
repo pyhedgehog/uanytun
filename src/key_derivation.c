@@ -69,7 +69,7 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, i
     }
   }
   else {
-    log_printf(ERR, "unknown key derivation type");
+    log_printf(ERROR, "unknown key derivation type");
     return -1;
   }
 
@@ -132,13 +132,13 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
     return -1;
 
   if(kd->master_key_.buf_) {
-    log_printf(ERR, "master key and passphrase provided, ignoring passphrase");
+    log_printf(ERROR, "master key and passphrase provided, ignoring passphrase");
     return 0;
   }    
   log_printf(NOTICE, "using passphrase to generate master key");
 
   if(!key_length || (key_length % 8)) {
-    log_printf(ERR, "bad master key length");
+    log_printf(ERROR, "bad master key length");
     return -1;
   }
 
@@ -147,7 +147,7 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
 #else
   if(key_length > (SHA256_DIGEST_LENGTH * 8)) {
 #endif
-    log_printf(ERR, "master key too long for passphrase algorithm");
+    log_printf(ERROR, "master key too long for passphrase algorithm");
     return -1;
   }
 
@@ -188,13 +188,13 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
     return -1;
 
   if(kd->master_salt_.buf_) {
-    log_printf(ERR, "master salt and passphrase provided, ignoring passphrase");
+    log_printf(ERROR, "master salt and passphrase provided, ignoring passphrase");
     return 0;
   }    
   log_printf(NOTICE, "using passphrase to generate master salt");
 
   if(!salt_length || (salt_length % 8)) {
-    log_printf(ERR, "bad master salt length");
+    log_printf(ERROR, "bad master salt length");
     return -1;
   }
 
@@ -203,7 +203,7 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
 #else
   if(salt_length > (SHA_DIGEST_LENGTH * 8)) {
 #endif
-    log_printf(ERR, "master salt too long for passphrase algorithm");
+    log_printf(ERROR, "master salt too long for passphrase algorithm");
     return -1;
   }
 
@@ -266,7 +266,7 @@ int key_derivation_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_
     return -1;
 
   if(label >= KD_LABEL_COUNT) {
-    log_printf(ERR, "label 0x%02X out of range", label);
+    log_printf(ERROR, "label 0x%02X out of range", label);
     return -1;
   }
 
@@ -276,7 +276,7 @@ int key_derivation_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_
   else if(kd->type_ == kd_aes_ctr)
     ret = key_derivation_aesctr_generate(kd, dir, label, seq_nr, key, len);
   else {
-    log_printf(ERR, "unknown key derivation type");
+    log_printf(ERROR, "unknown key derivation type");
     return -1;
   }
   return ret;
@@ -326,26 +326,26 @@ int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase)
   case 192: algo = GCRY_CIPHER_AES192; break;
   case 256: algo = GCRY_CIPHER_AES256; break;
   default: {
-    log_printf(ERR, "key derivation key length of %d Bits is not supported", kd->key_length_);
+    log_printf(ERROR, "key derivation key length of %d Bits is not supported", kd->key_length_);
     return -1;
   }
   }
 
   gcry_error_t err = gcry_cipher_open(&params->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
-    log_printf(ERR, "failed to open key derivation cipher: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to open key derivation cipher: %s", gcry_strerror(err));
     return -1;
   } 
 
   err = gcry_cipher_setkey(params->handle_, kd->master_key_.buf_, kd->master_key_.length_);
   if(err) {
-    log_printf(ERR, "failed to set key derivation key: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to set key derivation key: %s", gcry_strerror(err));
     return -1;
   }
 #else
   int ret = AES_set_encrypt_key(kd->master_key_.buf_, kd->master_key_.length_*8, &params->aes_key_);
   if(ret) {
-    log_printf(ERR, "failed to set key derivation ssl aes-key (code: %d)", ret);
+    log_printf(ERROR, "failed to set key derivation ssl aes-key (code: %d)", ret);
     return -1;
   }
 #endif
@@ -387,7 +387,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_dir_t dir, se
   }
 
   if(kd->master_salt_.length_ != KD_AESCTR_SALT_LENGTH) {
-    log_printf(ERR, "master salt has the wrong length");
+    log_printf(ERROR, "master salt has the wrong length");
     return -1;
   }
   memcpy(params->ctr_.salt_.buf_, kd->master_salt_.buf_, KD_AESCTR_SALT_LENGTH);
@@ -407,7 +407,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_dir_t dir, se
 int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
 {
   if(!kd || !kd->params_ || !kd->master_key_.buf_ || !kd->master_salt_.buf_) {
-    log_printf(ERR, "key derivation not initialized or no key or salt set");
+    log_printf(ERROR, "key derivation not initialized or no key or salt set");
     return -1;
   }
 
@@ -416,7 +416,7 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, sa
   seq_nr_t r;
   int ret = key_derivation_aesctr_calc_ctr(kd, dir, &r, label, seq_nr);
   if(ret < 0) {
-    log_printf(ERR, "failed to calculate key derivation CTR");
+    log_printf(ERROR, "failed to calculate key derivation CTR");
     return -1;
   }
   else if(!ret) {
@@ -432,25 +432,25 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, sa
 #ifndef USE_SSL_CRYPTO
   gcry_error_t err = gcry_cipher_reset(params->handle_);
   if(err) {
-    log_printf(ERR, "failed to reset key derivation cipher: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to reset key derivation cipher: %s", gcry_strerror(err));
     return -1;
   }
 
   err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, KD_AESCTR_CTR_LENGTH);
   if(err) {
-    log_printf(ERR, "failed to set key derivation CTR: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to set key derivation CTR: %s", gcry_strerror(err));
     return -1;
   }
 
   memset(key, 0, len);
   err = gcry_cipher_encrypt(params->handle_, key, len, NULL, 0);
   if(err) {
-    log_printf(ERR, "failed to generate key derivation bitstream: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to generate key derivation bitstream: %s", gcry_strerror(err));
     return -1;
   }
 #else
   if(KD_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
-    log_printf(ERR, "failed to set key derivation CTR: size don't fits");
+    log_printf(ERROR, "failed to set key derivation CTR: size don't fits");
     return -1;
   }
   u_int32_t num = 0;

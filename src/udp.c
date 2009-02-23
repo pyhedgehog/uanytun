@@ -71,7 +71,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
 
   int errcode = getaddrinfo(local_addr, port, &hints, &res);
   if (errcode != 0) {
-    log_printf(ERR, "Error resolving local address: %s", gai_strerror(errcode));
+    log_printf(ERROR, "Error resolving local address: %s", gai_strerror(errcode));
     udp_close(sock);
     return -1;
   }
@@ -80,7 +80,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
 
   sock->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
   if(sock->fd_ < 0) {
-    log_printf(ERR, "Error on opening udp socket: %m");
+    log_printf(ERROR, "Error on opening udp socket: %m");
     freeaddrinfo(res);
     udp_close(sock);
     return -1;
@@ -88,7 +88,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
 
   errcode = bind(sock->fd_, res->ai_addr, res->ai_addrlen);
   if(errcode) {
-    log_printf(ERR, "Error on binding udp socket: %m");
+    log_printf(ERROR, "Error on binding udp socket: %m");
     freeaddrinfo(res);
     udp_close(sock);
     return -1;
@@ -117,7 +117,7 @@ void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* por
 
   int errcode = getaddrinfo(remote_addr, port, &hints, &res);
   if (errcode != 0) {
-    log_printf(ERR, "Error resolving remote address: %s", gai_strerror(errcode));
+    log_printf(ERROR, "Error resolving remote address: %s", gai_strerror(errcode));
     return;
   }
   memcpy(&(sock->remote_end_), res->ai_addr, sizeof(*(res->ai_addr)));

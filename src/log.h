@@ -35,27 +35,51 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
-#include <syslog.h>
+#define MSG_LENGTH_MAX 150
 
-enum log_facility_enum { USER = LOG_USER, MAIL = LOG_MAIL,
-                         DAEMON = LOG_DAEMON, AUTH = LOG_AUTH,
-                         SYSLOG = LOG_SYSLOG, LPR = LOG_LPR,
-                         NEWS = LOG_NEWS, UUCP = LOG_UUCP,
-                         CRON = LOG_CRON, AUTHPRIV = LOG_AUTHPRIV,
-                         FTP = LOG_FTP, LOCAL0 = LOG_LOCAL0,
-                         LOCAL1 = LOG_LOCAL1, LOCAL2 = LOG_LOCAL2,
-                         LOCAL3 = LOG_LOCAL3, LOCAL4 = LOG_LOCAL4,
-                         LOCAL5 = LOG_LOCAL5, LOCAL6 = LOG_LOCAL6,
-                         LOCAL7 = LOG_LOCAL7 };
-typedef enum log_facility_enum log_facility_t;
-
-enum log_prio_enum { EMERG = LOG_EMERG, ALERT = LOG_ALERT,
-                     CRIT = LOG_CRIT, ERR = LOG_ERR,
-                     WARNING = LOG_WARNING, NOTICE = LOG_NOTICE,
-                     INFO = LOG_INFO, DEBUG = LOG_DEBUG };
+enum log_prio_enum { ERROR = 1, WARNING = 2, NOTICE = 3,
+                     INFO = 4, DEBUG = 5 };
 typedef enum log_prio_enum log_prio_t;
 
-void log_init(const char* name, log_facility_t facility);
+const char* log_prio_to_string(log_prio_t prio);
+
+enum log_target_type_enum { TARGET_SYSLOG , TARGET_STDOUT, TARGET_STDERR, TARGET_FILE , TARGET_UNKNOWN };
+typedef enum log_target_type_enum log_target_type_t;
+
+struct log_target_struct {
+  log_target_type_t type_;
+  int (*init)(struct log_target_struct* self, const char* conf);
+  void (*open)(struct log_target_struct* self);
+  void (*log)(struct log_target_struct* self, log_prio_t prio, const char* msg);
+  void (*close)(struct log_target_struct* self);
+  void (*clear)(struct log_target_struct* self);
+  int opened_;
+  int enabled_;
+  log_prio_t max_prio_;
+  void* param_;
+  struct log_target_struct* next_;
+};
+typedef struct log_target_struct log_target_t;
+
+
+struct log_targets_struct {
+  log_target_t* first_;
+};
+typedef struct log_targets_struct log_targets_t;
+
+int log_targets_add(log_targets_t* targets, const char* conf);
+void log_targets_log(log_targets_t* targets, log_prio_t prio, const char* msg);
+void log_targets_clear(log_targets_t* targets);
+
+
+struct log_struct {
+  log_targets_t targets_;
+};
+typedef struct log_struct log_t;
+
+void log_init();
+void log_close();
+int log_add_target(const char* conf);
 void log_printf(log_prio_t prio, const char* fmt, ...);
 
 #endif

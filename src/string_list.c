@@ -33,6 +33,7 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "string_list.h"
@@ -63,7 +64,7 @@ void string_list_clear(string_list_t* list)
 int string_list_add(string_list_t* list, const char* string)
 {
   if(!list)
-    return;
+    return -1;
 
   if(!list->first) {
     list->first = malloc(sizeof(string_list_element_t));

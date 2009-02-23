@@ -64,7 +64,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
 
 	dev->fd_ = open(DEFAULT_DEVICE, O_RDWR);
 	if(dev->fd_ < 0) {
-    log_printf(ERR, "can't open device file (%s): %m", DEFAULT_DEVICE);
+    log_printf(ERROR, "can't open device file (%s): %m", DEFAULT_DEVICE);
     tun_close(dev);
     return -1;
   }
@@ -81,7 +81,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
     dev->with_pi_ = 0;
   } 
   else {
-    log_printf(ERR, "unable to recognize type of device (tun or tap)");
+    log_printf(ERROR, "unable to recognize type of device (tun or tap)");
     tun_close(dev);
     return -1;
   }
@@ -94,13 +94,13 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
 	} else if(!ioctl(dev->fd_, (('T' << 8) | 202), &ifr)) {
 		dev->actual_name_ = strdup(ifr.ifr_name);
 	} else {
-    log_printf(ERR, "tun/tap device ioctl failed: %m");
+    log_printf(ERROR, "tun/tap device ioctl failed: %m");
     tun_close(dev);
     return -1;
   }
 
   if(!dev->actual_name_) {
-    log_printf(ERR, "can't open device file: memory error");
+    log_printf(ERROR, "can't open device file: memory error");
     tun_close(dev);
     return -2;
   }
@@ -192,13 +192,13 @@ void tun_do_ifconfig(tun_device_t* dev)
   char* command = NULL;
   asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d", dev->actual_name_, dev->net_addr_, dev->net_mask_, dev->mtu_);
   if(!command) {
-    log_printf(ERR, "Execution of ifconfig failed");
+    log_printf(ERROR, "Execution of ifconfig failed");
     return;
   }
 
   int result = system(command);
   if(result == -1)
-    log_printf(ERR, "Execution of ifconfig failed");
+    log_printf(ERROR, "Execution of ifconfig failed");
   else
     log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
 

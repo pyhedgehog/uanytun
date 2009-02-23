@@ -54,7 +54,7 @@ int auth_algo_init(auth_algo_t* aa, const char* type)
   else if(!strcmp(type, "sha1"))
     aa->type_ = aa_sha1;
   else {
-    log_printf(ERR, "unknown auth algo type");
+    log_printf(ERROR, "unknown auth algo type");
     return -1;
   }
 
@@ -95,7 +95,7 @@ void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t d
   else if(aa->type_ == aa_sha1)
     auth_algo_sha1_generate(aa, kd, dir, packet);
   else {
-    log_printf(ERR, "unknown auth algo type");
+    log_printf(ERROR, "unknown auth algo type");
     return;
   }
 }
@@ -110,7 +110,7 @@ int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t d
   else if(aa->type_ == aa_sha1)
     return auth_algo_sha1_check_tag(aa, kd, dir, packet);
   else {
-    log_printf(ERR, "unknown auth algo type");
+    log_printf(ERROR, "unknown auth algo type");
     return 0;
   }
 }
@@ -141,7 +141,7 @@ int auth_algo_sha1_init(auth_algo_t* aa)
 #ifndef USE_SSL_CRYPTO
   gcry_error_t err = gcry_md_open(&params->handle_, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
   if(err) {
-    log_printf(ERR, "failed to open message digest algo: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to open message digest algo: %s", gcry_strerror(err));
     return -1;
   } 
 #else
@@ -179,11 +179,11 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_di
     return;
 
   if(!aa || !aa->params_) {
-    log_printf(ERR, "auth algo not initialized");
+    log_printf(ERROR, "auth algo not initialized");
     return;
   }
   if(!kd) {
-    log_printf(ERR, "no key derivation supplied");
+    log_printf(ERROR, "no key derivation supplied");
     return;
   }
   auth_algo_sha1_param_t* params = aa->params_;
@@ -195,7 +195,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_di
 #ifndef USE_SSL_CRYPTO
   gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
   if(err) {
-    log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to set hmac key: %s", gcry_strerror(err));
     return;
   } 
   
@@ -227,11 +227,11 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_di
     return 0;
 
   if(!aa || !aa->params_) {
-    log_printf(ERR, "auth algo not initialized");
+    log_printf(ERROR, "auth algo not initialized");
     return 0;
   }
   if(!kd) {
-    log_printf(ERR, "no key derivation supplied");
+    log_printf(ERROR, "no key derivation supplied");
     return 0;
   }
   auth_algo_sha1_param_t* params = aa->params_;
@@ -243,7 +243,7 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_di
 #ifndef USE_SSL_CRYPTO
   gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
   if(err) {
-    log_printf(ERR, "failed to set hmac key: %s", gcry_strerror(err));
+    log_printf(ERROR, "failed to set hmac key: %s", gcry_strerror(err));
     return -1;
   } 
 

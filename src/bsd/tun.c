@@ -86,12 +86,12 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
   }
 #endif
   else {
-    log_printf(ERR, "unable to recognize type of device (tun or tap)");
+    log_printf(ERROR, "unable to recognize type of device (tun or tap)");
     tun_close(dev);
     return -1;
   }
   if(!device_file) {
-    log_printf(ERR, "can't open device file: memory error");
+    log_printf(ERROR, "can't open device file: memory error");
     tun_close(dev);
     return -2;
   }
@@ -103,7 +103,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
       asprintf(&device_file_tmp, "%s%d", device_file, dev_id);
 
       if(!device_file_tmp) {
-        log_printf(ERR, "can't open device file: memory error");
+        log_printf(ERROR, "can't open device file: memory error");
         free(device_file);
         tun_close(dev);
         return -2;
@@ -121,9 +121,9 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
 
   if(dev->fd_ < 0) {
     if(dynamic)
-      log_printf(ERR, "can't open device file dynamically: no unused node left");
+      log_printf(ERROR, "can't open device file dynamically: no unused node left");
     else
-      log_printf(ERR, "can't open device file (%s): %m", device_file);
+      log_printf(ERROR, "can't open device file (%s): %m", device_file);
     
     tun_close(dev);
     return -1;
@@ -135,7 +135,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
     dev->actual_name_ = strdup(dev_name);
 
   if(!dev->actual_name_) {
-    log_printf(ERR, "can't open device file: memory error");
+    log_printf(ERROR, "can't open device file: memory error");
     tun_close(dev);
     return -2;
   }
@@ -165,7 +165,7 @@ int tun_init_post(tun_device_t* dev)
   struct tuninfo ti;  
 
   if (ioctl(dev->fd_, TUNGIFINFO, &ti) < 0) {
-    log_printf(ERR, "can't enable multicast for interface");
+    log_printf(ERROR, "can't enable multicast for interface");
     return -1;
   }  
 
@@ -174,7 +174,7 @@ int tun_init_post(tun_device_t* dev)
     ti.flags &= ~IFF_POINTOPOINT;
   
   if (ioctl(dev->fd_, TUNSIFINFO, &ti) < 0) {
-    log_printf(ERR, "can't enable multicast for interface");
+    log_printf(ERROR, "can't enable multicast for interface");
     return -1;
   }
   return 0;
@@ -316,13 +316,13 @@ void tun_do_ifconfig(tun_device_t* dev)
   asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d%s", dev->actual_name_, dev->net_addr_,
                                                                  dev->net_mask_, dev->mtu_, end);
   if(!command) {
-    log_printf(ERR, "Execution of ifconfig failed");
+    log_printf(ERROR, "Execution of ifconfig failed");
     return;
   }
 
   int result = system(command);
   if(result == -1)
-    log_printf(ERR, "Execution of ifconfig failed");
+    log_printf(ERROR, "Execution of ifconfig failed");
   else
     log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
 
