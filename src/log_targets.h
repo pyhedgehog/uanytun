@@ -165,7 +165,7 @@ log_target_t* log_target_syslog_new()
   tmp->close = &log_target_syslog_close;
   tmp->clear = &log_target_syslog_clear;
   tmp->opened_ = 0;
-  tmp->enabled_ = 1;
+  tmp->enabled_ = 0;
   tmp->max_prio_ = NOTICE;
   tmp->param_ = NULL;
   tmp->next_ = NULL;
@@ -273,7 +273,7 @@ log_target_t* log_target_file_new()
   tmp->close = &log_target_file_close;
   tmp->clear = &log_target_file_clear;
   tmp->opened_ = 0;
-  tmp->enabled_ = 1;
+  tmp->enabled_ = 0;
   tmp->max_prio_ = NOTICE;
   tmp->param_ = NULL;
   tmp->next_ = NULL;
@@ -300,7 +300,7 @@ log_target_t* log_target_stdout_new()
   tmp->close = NULL;
   tmp->clear = NULL;
   tmp->opened_ = 0;
-  tmp->enabled_ = 1;
+  tmp->enabled_ = 0;
   tmp->max_prio_ = NOTICE;
   tmp->param_ = NULL;
   tmp->next_ = NULL;
@@ -327,7 +327,7 @@ log_target_t* log_target_stderr_new()
   tmp->close = NULL;
   tmp->clear = NULL;
   tmp->opened_ = 0;
-  tmp->enabled_ = 1;
+  tmp->enabled_ = 0;
   tmp->max_prio_ = NOTICE;
   tmp->param_ = NULL;
   tmp->next_ = NULL;

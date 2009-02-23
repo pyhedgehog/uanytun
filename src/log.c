@@ -120,6 +120,8 @@ int log_targets_add(log_targets_t* targets, const char* conf)
     return -1;
   }
   new_target->max_prio_ = prioptr[0] - '0';
+  if(new_target->max_prio_ > 0)
+    new_target->enabled_ = 1;
 
   if(new_target->init != NULL) {
     const char* confptr = NULL;
