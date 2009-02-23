@@ -374,8 +374,11 @@ int main(int argc, char* argv[])
 
   priv_info_t priv;
   if(opt.username_)
-    if(priv_init(&priv, opt.username_, opt.groupname_))
+    if(priv_init(&priv, opt.username_, opt.groupname_)) {
+      options_clear(&opt);
+      log_close();
       exit(-1);
+    }
 
 #ifndef NO_CRYPT
 #ifndef USE_SSL_CRYPTO
@@ -383,6 +386,7 @@ int main(int argc, char* argv[])
   if(ret) {
     log_printf(ERROR, "error on libgcrpyt initialization, exitting");
     options_clear(&opt);
+    log_close();
     exit(ret);
   }
 #endif
@@ -393,6 +397,7 @@ int main(int argc, char* argv[])
   if(ret) {
     log_printf(ERROR, "error on tun_init, exitting");
     options_clear(&opt);
+    log_close();
     exit(ret);
   }
   log_printf(NOTICE, "dev of type '%s' opened, actual name is '%s'", tun_get_type_string(&dev), dev.actual_name_);
@@ -407,8 +412,9 @@ int main(int argc, char* argv[])
   ret = udp_init(&sock, opt.local_addr_, opt.local_port_);
   if(ret) {
     log_printf(ERROR, "error on udp_init, exitting");
-    options_clear(&opt);
     tun_close(&dev);
+    options_clear(&opt);
+    log_close();
     exit(ret);
   }
   char* local_string = udp_get_local_end_string(&sock);
@@ -432,12 +438,22 @@ int main(int argc, char* argv[])
   }
 
   if(opt.chroot_dir_)
-    if(do_chroot(opt.chroot_dir_))
+    if(do_chroot(opt.chroot_dir_)) {
+      tun_close(&dev);
+      udp_close(&sock);
+      options_clear(&opt);
+      log_close();
       exit(-1);
+    }
   if(opt.username_)
-    if(priv_drop(&priv))
+    if(priv_drop(&priv)) {
+      tun_close(&dev);
+      udp_close(&sock);
+      options_clear(&opt);
+      log_close();
       exit(-1);
-  
+    }  
+
   if(opt.daemonize_) {
     pid_t oldpid = getpid();
     daemonize();
