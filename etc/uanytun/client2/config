@@ -12,6 +12,9 @@ groupname nogroup
 ## chroot to /var/run/anytun
 #chroot /var/run/uanytun
 
+## log to syslog with level of 3
+log syslog:3,uanytun-client2,daemon
+
 ## local anycast(data) ip address to bind to
 #interface <ip-address>
 
