@@ -123,6 +123,20 @@
       i++;                                               \
     }
 
+#define PARSE_STRING_LIST(SHORT, LONG, LIST)             \
+    else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
+    {                                                    \
+      if(argc < 1 || argv[i+1][0] == '-')                \
+        return i;                                        \
+      int ret = string_list_add(&LIST, argv[i+1]);       \
+      if(ret == -2)                                      \
+        return ret;                                      \
+      else if(ret)                                       \
+        return i+1;                                      \
+      argc--;                                            \
+      i++;                                               \
+    }
+
 int options_parse_hex_string(const char* hex, buffer_t* buffer)
 {
   if(!hex || !buffer)
@@ -185,7 +199,6 @@ int options_parse_ifconfig(const char* arg, ifconfig_param_t* ifcfg)
     }
   }
 
-  printf("no / found\n");
   free(str);
   return 1;
 }
@@ -222,6 +235,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_STRING_PARAM("-i","--interface", opt->local_addr_)
     PARSE_STRING_PARAM("-p","--port", opt->local_port_)
     PARSE_INT_PARAM("-s","--sender-id", opt->sender_id_)
+    PARSE_STRING_LIST("-L","--log", opt->log_targets_)
     PARSE_STRING_PARAM("-r","--remote-host", opt->remote_addr_)
     PARSE_STRING_PARAM("-o","--remote-port", opt->remote_port_)
     PARSE_STRING_PARAM("-d","--dev", opt->dev_name_)
@@ -246,6 +260,11 @@ int options_parse(options_t* opt, int argc, char* argv[])
       return i;
   }
 
+  return 0;
+}
+
+void options_parse_post(options_t* opt)
+{
 #ifndef NO_CRYPT
   if(!strcmp(opt->cipher_, "null") && !strcmp(opt->auth_algo_, "null") && 
      strcmp(opt->kd_prf_, "null")) {
@@ -261,8 +280,6 @@ int options_parse(options_t* opt, int argc, char* argv[])
 
   if(!(opt->dev_name_) && !(opt->dev_type_))
     opt->dev_type_ = strdup("tun");
-
-  return 0;
 }
 
 void options_default(options_t* opt)
@@ -276,6 +293,7 @@ void options_default(options_t* opt)
   opt->groupname_ = NULL;
   opt->chroot_dir_ = NULL;
   opt->pid_file_ = NULL;
+  string_list_init(&opt->log_targets_);
   opt->local_addr_ = NULL;
   opt->local_port_ = strdup("4444");
   opt->sender_id_ = 0;
@@ -319,6 +337,7 @@ void options_clear(options_t* opt)
     free(opt->chroot_dir_);
   if(opt->pid_file_)
     free(opt->pid_file_);
+  string_list_clear(&opt->log_targets_);
   if(opt->local_addr_)
     free(opt->local_addr_);
   if(opt->local_port_)
@@ -363,6 +382,9 @@ void options_print_usage()
   printf("        [-i|--interface] <ip-address>       local ip address to bind to\n");
   printf("        [-p|--port] <port>                  local port to bind to\n");
   printf("        [-s|--sender-id ] <sender id>       the sender id to use\n");
+  printf("        [-L|--log] <target>:<level>[,<param1>[,<param2>..]]\n");
+  printf("                                            add a log target, can be invoked several times\n");
+
   printf("        [-r|--remote-host] <hostname|ip>    remote host\n");
   printf("        [-o|--remote-port] <port>           remote port\n");
   printf("        [-d|--dev] <name>                   device name\n");
@@ -388,12 +410,17 @@ void options_print_usage()
 
 void options_print(options_t* opt)
 {
+  if(!opt)
+    return;
+
   printf("progname: '%s'\n", opt->progname_);
   printf("daemonize: %d\n", opt->daemonize_);
   printf("username: '%s'\n", opt->username_);
   printf("groupname: '%s'\n", opt->groupname_);
   printf("chroot_dir: '%s'\n", opt->chroot_dir_);
   printf("pid_file: '%s'\n", opt->pid_file_);
+  printf("log_targets: \n");
+  string_list_print(&opt->log_targets_, "  '", "'\n");
   printf("local_addr: '%s'\n", opt->local_addr_);
   printf("local_port: '%s'\n", opt->local_port_);
   printf("sender_id: %d\n", opt->sender_id_);

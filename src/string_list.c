@@ -43,7 +43,7 @@ void string_list_init(string_list_t* list)
   if(!list)
     return;
   
-  list->first = NULL;
+  list->first_ = NULL;
 }
 
 void string_list_clear(string_list_t* list)
@@ -51,12 +51,12 @@ void string_list_clear(string_list_t* list)
   if(!list)
     return;
 
-  while(list->first) {
+  while(list->first_) {
     string_list_element_t* tmp;
-    tmp = list->first;
-    list->first = tmp->next;
-    if(tmp->string)
-      free(tmp->string);
+    tmp = list->first_;
+    list->first_ = tmp->next_;
+    if(tmp->string_)
+      free(tmp->string_);
     free(tmp);
   }
 }
@@ -66,40 +66,47 @@ int string_list_add(string_list_t* list, const char* string)
   if(!list)
     return -1;
 
-  if(!list->first) {
-    list->first = malloc(sizeof(string_list_element_t));
-    if(!list->first)
+  if(!list->first_) {
+    list->first_ = malloc(sizeof(string_list_element_t));
+    if(!list->first_)
       return -2;
 
-    list->first->next = 0;
-    list->first->string = strdup(string);
-    if(!list->first)
+    list->first_->next_ = 0;
+    list->first_->string_ = strdup(string);
+    if(!list->first_->string_) {
+      free(list->first_);
+      list->first_ = NULL;
       return -2;
+    }
   }
   else {
-    string_list_element_t* tmp = list->first;
-    while(tmp->next)
-      tmp = tmp->next;
+    string_list_element_t* tmp = list->first_;
+    while(tmp->next_)
+      tmp = tmp->next_;
 
-    tmp->next  = malloc(sizeof(string_list_element_t));
-    if(!tmp->next)
+    tmp->next_  = malloc(sizeof(string_list_element_t));
+    if(!tmp->next_)
       return -2;
 
-    tmp->next->next = 0;
-    tmp->next->string = strdup(string);
-    if(!tmp->next)
+    tmp->next_->next_ = 0;
+    tmp->next_->string_ = strdup(string);
+    if(!tmp->next_->string_) {
+      free(list->first_);
+      list->first_ = NULL;
       return -2;
+    }
   }
+  return 0;
 }
 
-void string_list_print(string_list_t* list)
+void string_list_print(string_list_t* list, const char* head, const char* tail)
 {
   if(!list)
     return;
   
-  string_list_element_t* tmp = list->first;
+  string_list_element_t* tmp = list->first_;
   while(tmp) {
-    printf("%s\n",tmp->string);
-    tmp = tmp->next;
+    printf("%s%s%s", head, tmp->string_, tail);
+    tmp = tmp->next_;
   }
 }

@@ -36,13 +36,13 @@
 #define _STRING_LIST_H_
 
 struct string_list_element_struct {
-  char* string;
-  struct string_list_element_struct* next;
+  char* string_;
+  struct string_list_element_struct* next_;
 };
 typedef struct string_list_element_struct string_list_element_t;
 
 struct string_list_struct {
-  string_list_element_t* first;
+  string_list_element_t* first_;
 };
 typedef struct string_list_struct string_list_t;
 
@@ -50,6 +50,6 @@ void string_list_init(string_list_t* list);
 void string_list_clear(string_list_t* list);
 int string_list_add(string_list_t* list, const char* string);
 
-void string_list_print(string_list_t* list);
+void string_list_print(string_list_t* list, const char* head, const char* tail);
 
 #endif

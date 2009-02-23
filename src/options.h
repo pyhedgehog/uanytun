@@ -35,6 +35,8 @@
 #ifndef _OPTIONS_H_
 #define _OPTIONS_H_
 
+#include "string_list.h"
+
 struct ifconfig_param_struct {
   char* net_addr_;
   u_int16_t prefix_length_;
@@ -48,6 +50,7 @@ struct options_struct {
   char* groupname_;
   char* chroot_dir_;
   char* pid_file_;
+  string_list_t log_targets_;
   char* local_addr_;
   char* local_port_;
   sender_id_t sender_id_;
@@ -76,6 +79,7 @@ int options_parse_hex_string(const char* hex, buffer_t* buffer);
 int options_parse_ifconfig(const char* arg, ifconfig_param_t* ifcfg);
 
 int options_parse(options_t* opt, int argc, char* argv[]);
+void options_parse_post(options_t* opt);
 void options_default(options_t* opt);
 void options_clear(options_t* opt);
 void options_print_usage();

@@ -328,27 +328,49 @@ void print_hex_dump(const u_int8_t* buf, u_int32_t len)
 int main(int argc, char* argv[])
 {
   log_init();
-  log_add_target("syslog:3,uanytun,daemon");
-  log_printf(NOTICE, "just started...");
 
   options_t opt;
   int ret = options_parse(&opt, argc, argv);
   if(ret) {
-    options_clear(&opt);
     if(ret > 0) {
       fprintf(stderr, "syntax error near: %s\n\n", argv[ret]);
-      log_printf(ERROR, "syntax error, exitting");
     }
     if(ret == -2) {
       fprintf(stderr, "memory error on options_parse, exitting\n");
-      log_printf(ERROR, "memory error on options_parse, exitting");
     }
 
     if(ret == -1 || ret > 0) 
       options_print_usage();
 
+    options_clear(&opt);
+    log_close();
     exit(ret);
   }
+  string_list_element_t* tmp = opt.log_targets_.first_;
+  if(!tmp) {
+    log_add_target("syslog:3,uanytun,daemon");
+  }
+  else {
+    while(tmp) {
+      ret = log_add_target(tmp->string_);
+      if(ret) {
+        switch(ret) {
+        case -2: fprintf(stderr, "memory error on log_add_target, exitting\n"); break;
+        case -3: fprintf(stderr, "unknown log target: '%s', exitting\n", tmp->string_); break;
+        case -4: fprintf(stderr, "this log target is only allowed once: '%s', exitting\n", tmp->string_); break;
+        default: fprintf(stderr, "syntax error near: '%s', exitting\n", tmp->string_); break;
+        }
+        
+        options_clear(&opt);
+        log_close();
+        exit(ret);
+      }
+      tmp = tmp->next_;
+    }
+  }
+
+  log_printf(NOTICE, "just started...");
+  options_parse_post(&opt);
 
   priv_info_t priv;
   if(opt.username_)
