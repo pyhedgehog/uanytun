@@ -236,6 +236,7 @@ void log_target_file_log(log_target_t* self, log_prio_t prio, const char* msg)
     return;
 
   fprintf(((log_target_file_param_t*)(self->param_))->file_, "%s-%s\n", log_prio_to_string(prio), msg);
+  fflush(((log_target_file_param_t*)(self->param_))->file_);
 }
 
 void log_target_file_close(log_target_t* self)

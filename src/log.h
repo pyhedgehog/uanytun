@@ -67,6 +67,7 @@ struct log_targets_struct {
 };
 typedef struct log_targets_struct log_targets_t;
 
+int log_targets_target_exists(log_targets_t* targets, log_target_type_t type);
 int log_targets_add(log_targets_t* targets, const char* conf);
 void log_targets_log(log_targets_t* targets, log_prio_t prio, const char* msg);
 void log_targets_clear(log_targets_t* targets);

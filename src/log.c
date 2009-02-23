@@ -73,22 +73,42 @@ log_target_type_t log_target_parse_type(const char* conf)
   return TARGET_UNKNOWN;
 }
 
+int log_targets_target_exists(log_targets_t* targets, log_target_type_t type)
+{
+  if(!targets && !targets->first_)
+    return 0;
+
+  log_target_t* tmp = targets->first_;
+  while(tmp) {
+    if(tmp->type_ == type)
+      return 1;
+    tmp = tmp->next_;
+  }  
+  return 0;
+}
+
 int log_targets_add(log_targets_t* targets, const char* conf)
 {
   if(!targets)
     return -1;
 
   log_target_t* new_target = NULL;
+  int duplicates_allowed = 0;
   switch(log_target_parse_type(conf)) {
   case TARGET_SYSLOG: new_target = log_target_syslog_new(); break;
-  case TARGET_FILE: new_target = log_target_file_new(); break;
+  case TARGET_FILE: new_target = log_target_file_new(); duplicates_allowed = 1; break;
   case TARGET_STDOUT: new_target = log_target_stdout_new(); break;
   case TARGET_STDERR: new_target = log_target_stderr_new(); break;
   default: return -3;
   }
   if(!new_target)
     return -2;
-  
+
+  if(!duplicates_allowed && log_targets_target_exists(targets, new_target->type_)) {
+    free(new_target);
+    return -4;
+  }
+
   const char* prioptr = strchr(conf, ':');
   if(!prioptr || prioptr[1] == 0) {
     free(new_target);
