@@ -39,6 +39,7 @@ EXECUTABLE := uanytun
 CRYPT_OBJ := key_derivation.o \
             auth_algo.o
 OBJ := log.o \
+      string_list.o \
       signal.o \
       options.o \
       tun.o \
