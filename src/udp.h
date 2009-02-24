@@ -54,7 +54,7 @@ struct udp_socket_struct {
 typedef struct udp_socket_struct udp_socket_t;
 
 int udp_init(udp_socket_t* sock, const char* local_addr, const char* port);
-void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port);
+int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port);
 void udp_close(udp_socket_t* sock);
 
 char* udp_endpoint_to_string(udp_endpoint_t e);

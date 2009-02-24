@@ -418,14 +418,20 @@ int main(int argc, char* argv[])
     exit(ret);
   }
   char* local_string = udp_get_local_end_string(&sock);
-  log_printf(NOTICE, "listening on: %s", local_string);
-  free(local_string);
+  if(local_string) {
+    log_printf(NOTICE, "listening on: %s", local_string);
+    free(local_string);
+  }
+
 
   if(opt.remote_addr_) {
-    udp_set_remote(&sock, opt.remote_addr_, opt.remote_port_);
-    char* remote_string = udp_get_remote_end_string(&sock);
-    log_printf(NOTICE, "set remote end to: %s", remote_string);
-    free(remote_string);
+    if(!udp_set_remote(&sock, opt.remote_addr_, opt.remote_port_)) {
+      char* remote_string = udp_get_remote_end_string(&sock);
+      if(remote_string) {
+        log_printf(NOTICE, "set remote end to: %s", remote_string);
+        free(remote_string);
+      }
+    }
   }
 
 

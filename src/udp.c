@@ -59,6 +59,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
 
   struct addrinfo hints, *res;
 
+  res = NULL;
   memset (&hints, 0, sizeof (hints));
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_flags |= AI_PASSIVE;
@@ -71,8 +72,14 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
 
   int errcode = getaddrinfo(local_addr, port, &hints, &res);
   if (errcode != 0) {
-    log_printf(ERROR, "Error resolving local address: %s", gai_strerror(errcode));
+    log_printf(ERROR, "Error resolving local address (%s:%s): %s", (local_addr) ? local_addr : "*", port, gai_strerror(errcode));
     udp_close(sock);
+    return -1;
+  }
+
+  if(!res) {
+    udp_close(sock);
+    log_printf(ERROR, "getaddrinfo returned no address for %s:%s", local_addr, port);
     return -1;
   }
 
@@ -99,13 +106,14 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
   return 0;
 }
 
-void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port)
+int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port)
 {
   if(!sock || !remote_addr || !port) 
-    return;
+    return -1;
 
   struct addrinfo hints, *res;
 
+  res = NULL;
   memset (&hints, 0, sizeof (hints));
   hints.ai_socktype = SOCK_DGRAM;
 
@@ -117,12 +125,18 @@ void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* por
 
   int errcode = getaddrinfo(remote_addr, port, &hints, &res);
   if (errcode != 0) {
-    log_printf(ERROR, "Error resolving remote address: %s", gai_strerror(errcode));
-    return;
+    log_printf(ERROR, "Error resolving remote address (%s:%s): %s", (remote_addr) ? remote_addr : "*", port, gai_strerror(errcode));
+    return -1;
+  }
+  if(!res) {
+    log_printf(ERROR, "getaddrinfo returned no address for %s:%s", remote_addr, port);
+    return -1;
   }
   memcpy(&(sock->remote_end_), res->ai_addr, res->ai_addrlen);
   sock->remote_end_set_ = 1;
   freeaddrinfo(res);
+
+  return 0;
 }
 
 void udp_close(udp_socket_t* sock)
@@ -139,7 +153,8 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
   void* ptr;
   u_int16_t port;
   size_t addrstr_len = 0;
-  char* addrstr;
+  char* addrstr, *ret;
+  char addrport_sep = ':';
 
   switch (((struct sockaddr *)&e)->sa_family)
   {
@@ -147,23 +162,25 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
     ptr = &((struct sockaddr_in *)&e)->sin_addr;
     port = ntohs(((struct sockaddr_in *)&e)->sin_port);
     addrstr_len = INET_ADDRSTRLEN + 1;
+    addrport_sep = ':';
     break;
 #ifndef NO_UDPV6
   case AF_INET6:
     ptr = &((struct sockaddr_in6 *)&e)->sin6_addr;
     port = ntohs(((struct sockaddr_in6 *)&e)->sin6_port);
     addrstr_len = INET6_ADDRSTRLEN + 1;
+    addrport_sep = '.';
     break;
 #endif
   default:
-    return "";
+    asprintf(&ret, "unknown address type");
+    return ;
   }
   addrstr = malloc(addrstr_len);
   if(!addrstr)
     return NULL;
   inet_ntop (((struct sockaddr *)&e)->sa_family, ptr, addrstr, addrstr_len);
-  char* ret;
-  asprintf(&ret, "%s:%d", addrstr, port);
+  asprintf(&ret, "%s%c%d", addrstr, addrport_sep ,port);
   free(addrstr);
   return ret;
 }
@@ -171,7 +188,7 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
 char* udp_get_local_end_string(udp_socket_t* sock)
 {
   if(!sock)
-    return "";
+    return NULL;
 
   return udp_endpoint_to_string(sock->local_end_);
 }
@@ -179,7 +196,7 @@ char* udp_get_local_end_string(udp_socket_t* sock)
 char* udp_get_remote_end_string(udp_socket_t* sock)
 {
   if(!sock || !sock->remote_end_set_)
-    return "";
+    return NULL;
 
   return udp_endpoint_to_string(sock->remote_end_);
 }
