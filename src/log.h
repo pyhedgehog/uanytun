@@ -74,12 +74,14 @@ void log_targets_clear(log_targets_t* targets);
 
 
 struct log_struct {
+  log_prio_t max_prio_;
   log_targets_t targets_;
 };
 typedef struct log_struct log_t;
 
 void log_init();
 void log_close();
+void update_max_prio();
 int log_add_target(const char* conf);
 void log_printf(log_prio_t prio, const char* fmt, ...);
 

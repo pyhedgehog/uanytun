@@ -185,6 +185,7 @@ void log_targets_clear(log_targets_t* targets)
 
 void log_init()
 {
+  stdlog.max_prio_ = 0;
   stdlog.targets_.first_ = NULL;
 }
 
@@ -193,18 +194,33 @@ void log_close()
   log_targets_clear(&stdlog.targets_);
 }
 
+void update_max_prio()
+{
+  log_target_t* tmp = stdlog.targets_.first_;
+  while(tmp) {
+    if(tmp->enabled_ && tmp->max_prio_ > stdlog.max_prio_)
+      stdlog.max_prio_ = tmp->max_prio_;
+
+    tmp = tmp->next_;
+  }
+}
+
 int log_add_target(const char* conf)
 {
   if(!conf)
     return -1;
 
-  return log_targets_add(&stdlog.targets_, conf);
+  int ret = log_targets_add(&stdlog.targets_, conf);
+  if(!ret) update_max_prio();
+  return ret;
 }
 
 void log_printf(log_prio_t prio, const char* fmt, ...)
 {
-  static char msg[MSG_LENGTH_MAX];
+  if(stdlog.max_prio_ < prio)
+    return;
 
+  static char msg[MSG_LENGTH_MAX];
   va_list args;
 
   va_start(args, fmt);
