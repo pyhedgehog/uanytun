@@ -76,7 +76,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
     return -1;
   }
 
-  memcpy(&(sock->local_end_), res->ai_addr, sizeof(*(res->ai_addr)));
+  memcpy(&(sock->local_end_), res->ai_addr, res->ai_addrlen);
 
   sock->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
   if(sock->fd_ < 0) {
@@ -120,7 +120,7 @@ void udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* por
     log_printf(ERROR, "Error resolving remote address: %s", gai_strerror(errcode));
     return;
   }
-  memcpy(&(sock->remote_end_), res->ai_addr, sizeof(*(res->ai_addr)));
+  memcpy(&(sock->remote_end_), res->ai_addr, res->ai_addrlen);
   sock->remote_end_set_ = 1;
   freeaddrinfo(res);
 }
