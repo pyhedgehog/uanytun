@@ -5,6 +5,8 @@
   tun and tap devices now use the same syntax
 * improved tap device handling on OpenBSD
 * added runtime option for anytun 0.2 crypto compatibility mode
+* fixed name resolution bug
+* fixed ipv6 addrlen bug
 * fixed packet length errors
 * fixed device type detection bug
 * dropping privileges is now possible wihtout chroot
