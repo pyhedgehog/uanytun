@@ -220,7 +220,7 @@ int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* r
 
 int udp_write(udp_socket_t* sock, u_int8_t* buf, u_int32_t len)
 {
-  if(!sock)
+  if(!sock || !sock->remote_end_set_)
     return -1;
 
   socklen_t socklen = sizeof(sock->remote_end_);
