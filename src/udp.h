@@ -35,15 +35,12 @@
 #ifndef _UDP_H_
 #define _UDP_H_
 
+#include "options.h"
+
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#ifdef NO_UDPV6
-#include <netinet/in.h>
-typedef struct sockaddr_in udp_endpoint_t;
-#else
 typedef struct sockaddr_storage udp_endpoint_t;
-#endif
 
 struct udp_socket_struct {
   int fd_;
@@ -53,8 +50,8 @@ struct udp_socket_struct {
 };
 typedef struct udp_socket_struct udp_socket_t;
 
-int udp_init(udp_socket_t* sock, const char* local_addr, const char* port);
-int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port);
+int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type);
+int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type);
 void udp_close(udp_socket_t* sock);
 
 char* udp_endpoint_to_string(udp_endpoint_t e);

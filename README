@@ -1,6 +1,10 @@
 Dependencies
 ============
 
+uAnytun can be built by using either libgcrypt or the openssl-crypto library. 
+The latter is more performant in most cases but there are some license 
+issues when using this library. It also needs more space when installed.
+
 Linux
 -----
 
@@ -58,6 +62,3 @@ Notes:
     because openssl had no SHA256 implementation prior to this
     version
   - on OpenBSD you have to use gmake instead of make
-  - currently there is no support for using IPv6 as
-    outer Protocol on OpenBSD because it does not support
-    V4-Mapped adresses

@@ -51,8 +51,8 @@ print_usage() {
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --disable-crypto          disable crypto at all (only NULL cipher)"
   echo "          --disable-passphrase      disable master key and salt passphrase"
-  echo "          --disable-v4-mapped       disable V4-Mapped addresses (until now this means"
-  echo "                                    to disable IPv6 as outer protocol)"
+  echo "          --disable-v4-mapped       disable V4-Mapped addresses (this means to disable"
+  echo "                                    simultanious use of IPv4 and IPv6)"
 }
 
 for arg
@@ -136,8 +136,8 @@ if [ $PASSPHRASE -eq 0 ]; then
 fi
 
 if [ $V4_MAPPED -eq 0 ]; then
-  CFLAGS=$CFLAGS' -DNO_UDPV6'
-  echo "WARNING: disabling V4 mapped addresses, this prevents uanytun from using IPv6 as outer Protocol"
+  CFLAGS=$CFLAGS' -DNO_V4MAPPED'
+  echo "WARNING: disabling V4 mapped addresses, this prevents uanytun from using IPv6 and IPv4 Sockets at the same time"
 fi
 
 if [ "x$PREFIX" = "x/usr" ]; then

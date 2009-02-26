@@ -47,7 +47,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
+int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type)
 {
   if(!sock || !port) 
     return -1;
@@ -64,11 +64,11 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_flags |= AI_PASSIVE;
 
-#ifdef NO_UDPV6
-  hints.ai_family = PF_INET;
-#else
-  hints.ai_family = PF_UNSPEC;
-#endif
+  switch(resolv_type) {
+  case IPV4_ONLY: hints.ai_family = PF_INET; break;
+  case IPV6_ONLY: hints.ai_family = PF_INET6; break;
+  default: hints.ai_family = PF_UNSPEC; break;
+  }
 
   int errcode = getaddrinfo(local_addr, port, &hints, &res);
   if (errcode != 0) {
@@ -101,12 +101,20 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port)
     return -1;
   }
   
+#ifdef NO_V4MAPPED
+  if(res->ai_family == AF_INET6) {
+    log_printf(NOTICE, "disabling V4-Mapped addresses");
+    int on = 1;
+    if(setsockopt(sock->fd_, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)))
+      log_printf(ERROR, "Error on setting IPV6_V6ONLY socket option: %m");
+  }
+#endif
   freeaddrinfo(res);
 
   return 0;
 }
 
-int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port)
+int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
 {
   if(!sock || !remote_addr || !port) 
     return -1;
@@ -117,11 +125,11 @@ int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port
   memset (&hints, 0, sizeof (hints));
   hints.ai_socktype = SOCK_DGRAM;
 
-#ifdef NO_UDPV6
-  hints.ai_family = PF_INET;
-#else
-  hints.ai_family = PF_UNSPEC;
-#endif
+  switch(resolv_type) {
+  case IPV4_ONLY: hints.ai_family = PF_INET; break;
+  case IPV6_ONLY: hints.ai_family = PF_INET6; break;
+  default: hints.ai_family = PF_UNSPEC; break;
+  }
 
   int errcode = getaddrinfo(remote_addr, port, &hints, &res);
   if (errcode != 0) {
@@ -164,14 +172,12 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
     addrstr_len = INET_ADDRSTRLEN + 1;
     addrport_sep = ':';
     break;
-#ifndef NO_UDPV6
   case AF_INET6:
     ptr = &((struct sockaddr_in6 *)&e)->sin6_addr;
     port = ntohs(((struct sockaddr_in6 *)&e)->sin6_port);
     addrstr_len = INET6_ADDRSTRLEN + 1;
     addrport_sep = '.';
     break;
-#endif
   default:
     asprintf(&ret, "unknown address type");
     return ;

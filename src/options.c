@@ -277,7 +277,7 @@ void options_parse_post(options_t* opt)
     return;
 
 #ifdef NO_V4MAPPED
-  if(resolv_addr_type_ == any) {
+  if(opt->resolv_addr_type_ == ANY) {
     opt->resolv_addr_type_ = IPV4_ONLY;
     log_printf(WARNING, "No support for V4-mapped Adresses on this platform, defaulting to only use IPv4 addresses");
   }
