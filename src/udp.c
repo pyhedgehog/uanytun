@@ -222,6 +222,13 @@ int udp_write(udp_socket_t* sock, u_int8_t* buf, u_int32_t len)
   if(!sock)
     return -1;
 
-  return sendto(sock->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_), sizeof(sock->remote_end_));;
+  socklen_t socklen = sizeof(sock->remote_end_);
+#ifdef NO_V4MAPPED
+  if((((struct sockaddr *)&sock->local_end_)->sa_family) == AF_INET)
+    socklen = sizeof(struct sockaddr_in);
+  else if ((((struct sockaddr *)&sock->local_end_)->sa_family) == AF_INET6)
+    socklen = sizeof(struct sockaddr_in6);
+#endif
+  return sendto(sock->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_), socklen);;
 }
 
