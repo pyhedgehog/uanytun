@@ -84,19 +84,19 @@ int priv_drop(priv_info_t* priv)
   }
 
   if(setgid(priv->gr_->gr_gid))  {
-    log_printf(ERROR, "setgid('%s') failed: %m", priv->gr_->gr_name);
+    log_printf(ERROR, "setgid('%s') failed: %s", priv->gr_->gr_name, strerror(errno));
     return -1;
   }
 
   gid_t gr_list[1];
-	gr_list[0] = priv->gr_->gr_gid;
-	if(setgroups (1, gr_list)) {
-    log_printf(ERROR, "setgroups(['%s']) failed: %m", priv->gr_->gr_name);
+  gr_list[0] = priv->gr_->gr_gid;
+  if(setgroups (1, gr_list)) {
+    log_printf(ERROR, "setgroups(['%s']) failed: %s", priv->gr_->gr_name, strerror(errno));
     return -1;
   }
 
   if(setuid(priv->pw_->pw_uid)) {
-    log_printf(ERROR, "setuid('%s') failed: %m", priv->pw_->pw_name);
+    log_printf(ERROR, "setuid('%s') failed: %s", priv->pw_->pw_name, strerror(errno));
     return -1;
   }
 
@@ -113,12 +113,12 @@ int do_chroot(const char* chrootdir)
   }
 
   if(chroot(chrootdir)) {
-    log_printf(ERROR, "can't chroot to %s: %m", chrootdir);
+    log_printf(ERROR, "can't chroot to %s: %s", chrootdir, strerror(errno));
     return -1;
   }
   log_printf(NOTICE, "we are in chroot jail (%s) now", chrootdir);
   if(chdir("/")) {
-    log_printf(ERROR, "can't change to /: %m");
+    log_printf(ERROR, "can't change to /: %s", strerror(errno));
     return -1;
   }
 }
@@ -129,7 +129,7 @@ void daemonize()
 
   pid = fork();
   if(pid < 0) {
-    log_printf(ERROR, "daemonizing failed at fork(): %m, exitting");
+    log_printf(ERROR, "daemonizing failed at fork(): %s, exitting", strerror(errno));
     exit(-1);
   }
   if(pid) exit(0);
@@ -137,19 +137,19 @@ void daemonize()
   umask(0);
 
   if(setsid() < 0) {
-    log_printf(ERROR, "daemonizing failed at setsid(): %m, exitting");
+    log_printf(ERROR, "daemonizing failed at setsid(): %s, exitting", strerror(errno));
     exit(-1);
   }
 
   pid = fork();
   if(pid < 0) {
-    log_printf(ERROR, "daemonizing failed at fork(): %m, exitting");
+    log_printf(ERROR, "daemonizing failed at fork(): %s, exitting", strerror(errno));
     exit(-1);
   }
   if(pid) exit(0);
 
   if ((chdir("/")) < 0) {
-    log_printf(ERROR, "daemonizing failed at chdir(): %m, exitting");
+    log_printf(ERROR, "daemonizing failed at chdir(): %s, exitting", strerror(errno));
     exit(-1);
   }
 

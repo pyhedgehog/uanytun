@@ -58,7 +58,7 @@ int exec_script(const char* script, const char* ifname)
     }
     execl("/bin/sh", "/bin/sh", script, ifname, NULL);
         // if execl return, an error occurred
-    log_printf(ERROR, "error on executing script: %m");
+    log_printf(ERROR, "error on executing script: %s", strerror(errno));
     return -1;
   }
   int status = 0;

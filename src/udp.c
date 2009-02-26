@@ -38,6 +38,7 @@
 
 #include "log.h"
 
+#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -87,7 +88,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resol
 
   sock->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
   if(sock->fd_ < 0) {
-    log_printf(ERROR, "Error on opening udp socket: %m");
+    log_printf(ERROR, "Error on opening udp socket: %s", strerror(errno));
     freeaddrinfo(res);
     udp_close(sock);
     return -1;
@@ -95,7 +96,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resol
 
   errcode = bind(sock->fd_, res->ai_addr, res->ai_addrlen);
   if(errcode) {
-    log_printf(ERROR, "Error on binding udp socket: %m");
+    log_printf(ERROR, "Error on binding udp socket: %s", strerror(errno));
     freeaddrinfo(res);
     udp_close(sock);
     return -1;
@@ -106,7 +107,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resol
     log_printf(NOTICE, "disabling V4-Mapped addresses");
     int on = 1;
     if(setsockopt(sock->fd_, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)))
-      log_printf(ERROR, "Error on setting IPV6_V6ONLY socket option: %m");
+      log_printf(ERROR, "Error on setting IPV6_V6ONLY socket option: %s", strerror(errno));
   }
 #endif
   freeaddrinfo(res);

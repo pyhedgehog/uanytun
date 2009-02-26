@@ -147,7 +147,7 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
 
   int len = tun_read(dev, plain_packet_get_payload(plain_packet), plain_packet_get_payload_length(plain_packet));
   if(len == -1) {
-    log_printf(ERROR, "error on reading from device: %m");
+    log_printf(ERROR, "error on reading from device: %s", strerror(errno));
     return 0;
   }
   
@@ -171,7 +171,7 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
   
   len = udp_write(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet));
   if(len == -1)
-    log_printf(ERROR, "error on sending udp packet: %m");
+    log_printf(ERROR, "error on sending udp packet: %s", strerror(errno));
 
   return 0;
 }
@@ -186,7 +186,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
   memset(&remote, 0, sizeof(udp_endpoint_t));
   int len = udp_read(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet), &remote);
   if(len == -1) {
-    log_printf(ERROR, "error on receiving udp packet: %m");
+    log_printf(ERROR, "error on receiving udp packet: %s", strerror(errno));
     return 0;
   }
   else if(len < encrypted_packet_get_header_length()) {
@@ -236,7 +236,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
  
   len = tun_write(dev, plain_packet_get_payload(plain_packet), plain_packet_get_payload_length(plain_packet));
   if(len == -1)
-    log_printf(ERROR, "error on writing to device: %m");
+    log_printf(ERROR, "error on writing to device: %s", strerror(errno));
   
   return 0;
 }
@@ -272,7 +272,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 
     int ret = select(nfds, &readfds, NULL, NULL, NULL);
     if(ret == -1 && errno != EINTR) {
-      log_printf(ERROR, "select returned with error: %m");
+      log_printf(ERROR, "select returned with error: %s", strerror(errno));
       return_value = -1;
       break;
     }
@@ -442,7 +442,7 @@ int main(int argc, char* argv[])
   if(opt.pid_file_) {
     pid_file = fopen(opt.pid_file_, "w");
     if(!pid_file) {
-      log_printf(WARNING, "unable to open pid file: %m");
+      log_printf(WARNING, "unable to open pid file: %s", strerror(errno));
     }
   }
 

@@ -123,7 +123,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
     if(dynamic)
       log_printf(ERROR, "can't open device file dynamically: no unused node left");
     else
-      log_printf(ERROR, "can't open device file (%s): %m", device_file);
+      log_printf(ERROR, "can't open device file (%s): %s", device_file, strerror(errno));
     
     tun_close(dev);
     return -1;

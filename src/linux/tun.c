@@ -64,7 +64,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
 
 	dev->fd_ = open(DEFAULT_DEVICE, O_RDWR);
 	if(dev->fd_ < 0) {
-    log_printf(ERROR, "can't open device file (%s): %m", DEFAULT_DEVICE);
+    log_printf(ERROR, "can't open device file (%s): %s", DEFAULT_DEVICE, strerror(errno));
     tun_close(dev);
     return -1;
   }
@@ -94,7 +94,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
 	} else if(!ioctl(dev->fd_, (('T' << 8) | 202), &ifr)) {
 		dev->actual_name_ = strdup(ifr.ifr_name);
 	} else {
-    log_printf(ERROR, "tun/tap device ioctl failed: %m");
+    log_printf(ERROR, "tun/tap device ioctl failed: %s", strerror(errno));
     tun_close(dev);
     return -1;
   }
