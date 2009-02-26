@@ -338,8 +338,11 @@ int main(int argc, char* argv[])
     if(ret == -2) {
       fprintf(stderr, "memory error on options_parse, exitting\n");
     }
+    if(ret == -3) {
+      fprintf(stderr, "syntax error: -4 and -6 are mutual exclusive\n\n");
+    }
 
-    if(ret == -1 || ret > 0) 
+    if(ret != -2) 
       options_print_usage();
 
     options_clear(&opt);

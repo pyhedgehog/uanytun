@@ -219,7 +219,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
 
   argc--;
 
-  int i;
+  int i, ipv4_only = 0, ipv6_only = 0;
   for(i=1; argc > 0; ++i)
   {
     char* str = argv[i];
@@ -238,6 +238,8 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_STRING_LIST("-L","--log", opt->log_targets_)
     PARSE_STRING_PARAM("-r","--remote-host", opt->remote_addr_)
     PARSE_STRING_PARAM("-o","--remote-port", opt->remote_port_)
+    PARSE_BOOL_PARAM("-4","--ipv4-only", ipv4_only)
+    PARSE_BOOL_PARAM("-6","--ipv6-only", ipv6_only)
     PARSE_STRING_PARAM("-d","--dev", opt->dev_name_)
     PARSE_STRING_PARAM("-t","--type", opt->dev_type_)
     PARSE_IFCONFIG_PARAM("-n","--ifconfig", opt->ifconfig_param_)
@@ -259,12 +261,28 @@ int options_parse(options_t* opt, int argc, char* argv[])
     else 
       return i;
   }
+  if(ipv4_only && ipv6_only)
+    return -3;
+  if(ipv4_only)
+    opt->resolv_addr_type_ = IPV4_ONLY;
+  if(ipv6_only)
+    opt->resolv_addr_type_ = IPV6_ONLY;
 
   return 0;
 }
 
 void options_parse_post(options_t* opt)
 {
+  if(!opt)
+    return;
+
+#ifdef NO_V4MAPPED
+  if(resolv_addr_type_ == any) {
+    opt->resolv_addr_type_ = IPV4_ONLY;
+    log_printf(WARNING, "No support for V4-mapped Adresses on this platform, defaulting to only use IPv4 addresses");
+  }
+#endif
+
 #ifndef NO_CRYPT
   if(!strcmp(opt->cipher_, "null") && !strcmp(opt->auth_algo_, "null") && 
      strcmp(opt->kd_prf_, "null")) {
@@ -299,6 +317,7 @@ void options_default(options_t* opt)
   opt->sender_id_ = 0;
   opt->remote_addr_ = NULL;
   opt->remote_port_ = strdup("4444");
+  opt->resolv_addr_type_ = ANY;
   opt->dev_name_ = NULL;
   opt->dev_type_ = NULL;
   opt->ifconfig_param_.net_addr_ = NULL;
@@ -387,6 +406,8 @@ void options_print_usage()
 
   printf("        [-r|--remote-host] <hostname|ip>    remote host\n");
   printf("        [-o|--remote-port] <port>           remote port\n");
+  printf("        [-4|--ipv4-only]                    always resolv IPv4 addresses\n");
+  printf("        [-6|--ipv6-only]                    always resolv IPv6 addresses\n");
   printf("        [-d|--dev] <name>                   device name\n");
   printf("        [-t|--type] <tun|tap>               device type\n");
 
@@ -426,6 +447,13 @@ void options_print(options_t* opt)
   printf("sender_id: %d\n", opt->sender_id_);
   printf("remote_addr: '%s'\n", opt->remote_addr_);
   printf("remote_port: '%s'\n", opt->remote_port_);
+  printf("resolv_addr_type: ");
+  switch(opt->resolv_addr_type_) {
+  case ANY: printf("any\n"); break;
+  case IPV4_ONLY: printf("ipv4-only\n"); break;
+  case IPV6_ONLY: printf("ipv6-only\n"); break;
+  default: printf("??\n"); break;
+  }
   printf("dev_name: '%s'\n", opt->dev_name_);
   printf("dev_type: '%s'\n", opt->dev_type_);
   printf("ifconfig_net_addr: '%s'\n", opt->ifconfig_param_.net_addr_);

@@ -43,6 +43,9 @@ struct ifconfig_param_struct {
 };
 typedef struct ifconfig_param_struct ifconfig_param_t;
 
+enum resolv_addr_type_enum { ANY, IPV4_ONLY, IPV6_ONLY };
+typedef enum resolv_addr_type_enum resolv_addr_type_t;
+
 struct options_struct {
   char* progname_;
   int daemonize_;
@@ -56,6 +59,7 @@ struct options_struct {
   sender_id_t sender_id_;
   char* remote_addr_;
   char* remote_port_;
+  resolv_addr_type_t resolv_addr_type_;
   char* dev_name_;
   char* dev_type_;
   ifconfig_param_t ifconfig_param_;
