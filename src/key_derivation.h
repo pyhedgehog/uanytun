@@ -100,7 +100,7 @@ union __attribute__((__packed__)) key_derivation_aesctr_ctr_union {
     u_int16_t zero_;
   } params_;
   struct __attribute__((__packed__)) {
-    u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(u_int8_t) - 2 - sizeof(seq_nr_t)];
+    u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(u_int8_t) - 2*sizeof(u_int8_t) - sizeof(seq_nr_t)];
     u_int8_t label_;
     u_int8_t r_fill_[2];
     seq_nr_t r_;

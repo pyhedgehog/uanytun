@@ -83,7 +83,7 @@ union __attribute__((__packed__)) cipher_aesctr_ctr_union {
     u_int16_t zero_;
   } salt_;
   struct __attribute__((__packed__)) {
-    u_int8_t fill_[C_AESCTR_SALT_LENGTH - sizeof(mux_t) - sizeof(sender_id_t) - 2 - sizeof(seq_nr_t)];
+    u_int8_t fill_[C_AESCTR_SALT_LENGTH - sizeof(mux_t) - sizeof(sender_id_t) - 2*sizeof(u_int8_t) - sizeof(seq_nr_t)];
     mux_t mux_;
     sender_id_t sender_id_;
     u_int8_t empty_[2];
