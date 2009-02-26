@@ -102,14 +102,15 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resol
     return -1;
   }
   
-#ifdef NO_V4MAPPED
-  if(res->ai_family == AF_INET6) {
-    log_printf(NOTICE, "disabling V4-Mapped addresses");
-    int on = 1;
-    if(setsockopt(sock->fd_, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)))
-      log_printf(ERROR, "Error on setting IPV6_V6ONLY socket option: %s", strerror(errno));
-  }
-#endif
+/* this doesn't work on linux ?? */
+/* #ifdef NO_V4MAPPED */
+/*   if(res->ai_family == AF_INET6) { */
+/*     log_printf(NOTICE, "disabling V4-Mapped addresses"); */
+/*     int on = 1; */
+/*     if(setsockopt(sock->fd_, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on))) */
+/*       log_printf(ERROR, "Error on setting IPV6_V6ONLY socket option: %s", strerror(errno)); */
+/*   } */
+/* #endif */
   freeaddrinfo(res);
 
   return 0;
