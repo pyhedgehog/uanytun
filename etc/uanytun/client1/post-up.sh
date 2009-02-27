@@ -1,5 +1,12 @@
 #!/bin/sh
 
-ip addr add dev $1 fde5:30c9:1984::1/48
+ip link set dev $1 up
+ip link set dev $1 mtu 1400
+ip addr add dev $1 192.168.123.1/24
+ip addr add dev $1 fec0::1/128
+
+# disable ICMP redirects as they don't work within the tunnel
+echo 0 > /proc/sys/net/ipv4/conf/$1/send_redirects
+echo 0 > /proc/sys/net/ipv4/conf/$1/accept_redirects
 
 exit 0

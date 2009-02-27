@@ -1,67 +1,58 @@
-###----------------------------------------###
-### Global Parameters                      ###
-###----------------------------------------###
+#############################
+## Main options             #
+#############################
+
+## Client ID
+##  (has to be unique for each client)
+mux 3
+
+## device type tun = ip/ipv6, tap = ethernet
+type tun
+
+## payload encryption algorithm
+#cipher null
+#cipher aes-ctr-128
+#cipher aes-ctr-192
+#cipher aes-ctr-256
+cipher aes-ctr
+
+## message authentication algorithm
+#auth-algo null
+auth-algo sha1
+
+## Passphrase
+## this is used to generate the crypto-key and salt
+## this should be al least 30 characters
+passphrase Creating_VPN_Tunnels_With_Anytun_Is_Easy
+
+## The remote host and port
+remote-host example.com
+remote-port 4444
+
+#############################
+## Debug options            #
+#############################
 
 ## don't run in background
 #nodaemonize
+
+## additional log to standard output with a level of 5
+#log stdout:5
+
+
+#############################
+## Expert options           #
+#############################
+
+## log to syslog with a level of 3
+log syslog:3,uanytun-client3,daemon
 
 ## change user and group after init
 username nobody
 groupname nogroup
 
-## chroot to /var/run/anytun
+## chroot to /var/run/uanytun
 #chroot /var/run/uanytun
-
-## log to syslog with level of 3
-log syslog:3,uanytun-client3,daemon
-
-## local anycast(data) ip address to bind to
-#interface <ip-address>
-
-## local anycast(data) port to bind to
-#port 4444
-
-## the sender id to use (has to be unique for multible anycast servers)
-#sender-id 1
-
-## payload encryption algorithm
-# cipher null
-# cipher aes-ctr-128
-# cipher aes-ctr-192
-# cipher aes-ctr-256
-cipher aes-ctr
-
-## message authentication algorithm
-# auth-algo null
-auth-algo sha1
-
-
-## Device name
-#dev anytun0
-
-# device type tun = ip/ipv6, tap = ethernet
-type tun
-
-## Automaticaly configure the interface and set a route
-ifconfig 192.168.123.3/24
-
-
-###----------------------------------------###
-### Connection Parameters                  ###
-###----------------------------------------###
-
-## remote host
-remote-host example.com
-
-## remote port
-remote-port 4444
-
-##seqence number window size
-## 0 turns off replay protection (for manualk keying)
-window-size 0
-
-## the multiplex id to use
-mux 1
 
 ## key derivation pseudo random function
 #kd-prf null
@@ -70,14 +61,29 @@ mux 1
 #kd-prf aes-ctr-192
 #kd-prf aes-ctr-256
 
-## log2 of key derivation rate
-#ld-kdr 0
+## local ip address to bind to (for tunnel data)
+## (if you run an anycast cluster this has to be the anycast ip address)
+#interface <ip-address>
 
-## master key to use for encryption
+## local port to bind to (for tunnel data)
+## make sure to use a different port for every server and client!
+port 4444
+
+## Device name
+#dev uanytun0
+
+## Automaticaly configure the interface an set a route
+##
+## We highly recommend the use of the post up script to do this
+##
+## the address hast to be supplied in CIDR notation
+#ifconfig <local>/<prefix length>
+
+## Manually set encryption key and salt
+## (this replaces the passphrase)
 #key 3123456789ABCDEF0123456789ABCDEF
-
-## master salt to use for encryption
 #salt 3123456789ABCD0123456789ABCD
 
-## derive master key and or salt from passphrase
-passphrase hello-world-three
+## Setting a window size > 0 will enable replay protection
+## This most likely will only work with external rekeying
+#window-size 0
