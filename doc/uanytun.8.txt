@@ -21,6 +21,8 @@ SYNOPSIS
 [ *-s|--sender-id* <sender id> ]
 [ *-r|--remote-host* <hostname|ip> ]
 [ *-o|--remote-port* <port> ]
+[ *-4|--ipv4-only* ]
+[ *-6|--ipv6-only* ]
 [ *-d|--dev* <name> ]
 [ *-t|--type* <tun|tap> ]
 [ *-n|--ifconfig* <local>/<prefix> ]
@@ -153,6 +155,18 @@ The UDP port used for payload data by the remote host
 (specified with -p on the remote host). If you do not specify
 a port, it is automatically determined after receiving
 the first data packet.
+
+-4|--ipv4-only
+~~~~~~~~~~~~~~
+
+Resolv to IPv4 addresses only. The default is to resolv both
+IPv4 and IPv6 addresses.
+
+-6|--ipv6-only
+~~~~~~~~~~~~~~
+
+Resolv to IPv6 addresses only. The default is to resolv both
+IPv4 and IPv6 addresses.
 
 -d|--dev <name>
 ~~~~~~~~~~~~~~~
@@ -309,7 +323,7 @@ One unicast and one anycast tunnel endpoint:
 Unicast tunnel endpoint:
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-uanytun -r anycast.anytun.org -d anytun0 -t tun -n 192.0.2.2 192.0.2.1 -w 0 -c null
+uanytun -r anycast.anytun.org -d anytun0 -t tun -n 192.0.2.2/30
 
 
 BUGS
