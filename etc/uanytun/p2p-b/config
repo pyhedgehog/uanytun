@@ -2,12 +2,12 @@
 ## Main options             #
 #############################
 
-## Client ID
-##  (has to be unique for each client)
-mux 2
-
 ## device type tun = ip/ipv6, tap = ethernet
 type tun
+
+## Automaticaly configure the interface
+## the address hast to be supplied in CIDR notation
+ifconfig 192.168.223.2/30
 
 ## payload encryption algorithm
 #cipher null
@@ -23,10 +23,18 @@ auth-algo sha1
 ## Passphrase
 ## this is used to generate the crypto-key and salt
 ## this should be al least 30 characters
-passphrase Creating_VPN_Tunnels_With_Anytun_Is_Easy
+passphrase Creating_P2P_VPN_Tunnels_With_Anytun_Is_Easy
+
+## local ip address to bind to (for tunnel data)
+## (if you run an anycast cluster this has to be the anycast ip address)
+#interface <ip-address>
+
+## local port to bind to (for tunnel data)
+## make sure to use a different port for every server and client!
+port 4444
 
 ## The remote host and port
-remote-host example.com
+remote-host p2p-a.example.com
 remote-port 4444
 
 #############################
@@ -45,7 +53,7 @@ remote-port 4444
 #############################
 
 ## log to syslog with a level of 3
-log syslog:3,uanytun-client2,daemon
+log syslog:3,uanytun-p2p-b,daemon
 
 ## change user and group after init
 username nobody
@@ -61,28 +69,13 @@ groupname nogroup
 #kd-prf aes-ctr-192
 #kd-prf aes-ctr-256
 
-## local ip address to bind to (for tunnel data)
-## (if you run an anycast cluster this has to be the anycast ip address)
-#interface <ip-address>
-
-## local port to bind to (for tunnel data)
-## make sure to use a different port for every server and client!
-port 4444
-
 ## Device name
 #dev uanytun0
 
-## Automaticaly configure the interface
-##
-## We highly recommend the use of the post up script to do this
-##
-## the address hast to be supplied in CIDR notation
-#ifconfig <local>/<prefix length>
-
 ## Manually set encryption key and salt
 ## (this replaces the passphrase)
-#key 2123456789ABCDEF0123456789ABCDEF
-#salt 2123456789ABCD0123456789ABCD
+#key 0123456789ABCDEF0123456789ABCDEF
+#salt 0123456789ABCD0123456789ABCD
 
 ## Setting a window size > 0 will enable replay protection
 ## This most likely will only work with external rekeying

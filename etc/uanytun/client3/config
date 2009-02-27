@@ -72,7 +72,7 @@ port 4444
 ## Device name
 #dev uanytun0
 
-## Automaticaly configure the interface an set a route
+## Automaticaly configure the interface
 ##
 ## We highly recommend the use of the post up script to do this
 ##
