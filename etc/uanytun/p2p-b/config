@@ -31,11 +31,11 @@ passphrase Creating_P2P_VPN_Tunnels_With_Anytun_Is_Easy
 
 ## local port to bind to (for tunnel data)
 ## make sure to use a different port for every server and client!
-port 4444
+port 4445
 
 ## The remote host and port
 remote-host p2p-a.example.com
-remote-port 4444
+remote-port 4445
 
 #############################
 ## Debug options            #
