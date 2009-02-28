@@ -56,10 +56,10 @@ remote-port 4444
 log syslog:3,uanytun-p2p-a,daemon
 
 ## change user and group after init
-username nobody
-groupname nogroup
+username uanytun
+groupname uanytun
 
-## chroot to /var/run/uanytun
+## chroot to users home directory
 #chroot /var/run/uanytun
 
 ## key derivation pseudo random function

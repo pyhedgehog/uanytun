@@ -69,7 +69,9 @@ Installing
 
 # sudo make install
 
-This will install anytun under the $PREFIX defined with configure
+This will install anytun under the --prefix defined with configure.
+It also creates a user with name --username  with home --userhome 
+which can be changed by configure as well.
 
 Uninstalling
 ------------
@@ -80,4 +82,5 @@ This removes everytthing except for the config files
 
 # sudo make purge
 
-This also removes config files
+This also removes the config files and deletes the user and it's
+home directory.

@@ -91,7 +91,7 @@ clean:
 manpage:
 	$(MAKE) --directory="../doc/" manpage
 
-install: install-bin install-etc install-man
+install: install-bin install-etc install-man add-user
 
 install-bin: $(EXECUTABLE)
 	mkdir -p $(DESTDIR)$(SBINDIR)
@@ -101,19 +101,22 @@ install-bin: $(EXECUTABLE)
 install-etc:
 	mkdir -p $(DESTDIR)$(ETCDIR)/uanytun
 	install -m 644 ../etc/uanytun/autostart $(DESTDIR)$(ETCDIR)/uanytun/autostart
-	@( cd '../etc/uanytun/' ;                                                         \
-     for dir in `ls`; do                                                            \
-       if [ -d $$dir ]; then                                                        \
-         echo "install $$dir configuration" ;                                       \
-         cd $$dir ;                                                                 \
-         mkdir -p $(DESTDIR)$(ETCDIR)/uanytun/$$dir ;                               \
-         install -m 600 config $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;           \
-         if [ -e 'post-up.sh' ]; then                                               \
-           install -m 755 post-up.sh $(DESTDIR)$(ETCDIR)/uanytun/$$dir/post-up.sh ; \
-         fi ;                                                                       \
-         cd .. ;                                                                    \
-       fi ;                                                                         \
-     done                                                                           \
+	@( cd '../etc/uanytun/' ;                                                                                \
+     for dir in `ls`; do                                                                                   \
+       if [ -d $$dir ]; then                                                                               \
+         echo "install $$dir configuration" ;                                                              \
+         cd $$dir ;                                                                                        \
+         mkdir -p $(DESTDIR)$(ETCDIR)/uanytun/$$dir ;                                                      \
+         install -m 600 config $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;                                  \
+         sed -i 's#username uanytun#username $(USERNAME)#' $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;      \
+         sed -i 's#groupname uanytun#groupname $(USERNAME)#' $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;    \
+         sed -i 's#chroot /var/run/uanytun#chroot $(USERHOME)#' $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ; \
+         if [ -e 'post-up.sh' ]; then                                                                      \
+           install -m 755 post-up.sh $(DESTDIR)$(ETCDIR)/uanytun/$$dir/post-up.sh ;                        \
+         fi ;                                                                                              \
+         cd .. ;                                                                                           \
+       fi ;                                                                                                \
+     done                                                                                                  \
    )
 	mkdir -p $(DESTDIR)$(ETCDIR)/init.d
 	install -m 755 ../etc/init.d/uanytun $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
@@ -125,10 +128,17 @@ install-man: manpage
 	cp ../doc/uanytun.8 $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
 	gzip $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
 
+add-user:
+	@ adduser --system --group --home $(USERHOME) $(USERNAME)
+
+remove-user: 
+	@ deluser $(USERNAME)
+	@ rm -rf $(USERHOME)
+
 remove:
 	rm -f $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
 	rm -f $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8.gz
 	rm -f $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
 
-purge: remove
+purge: remove remove-user
 	rm -rf $(DESTDIR)$(ETCDIR)/uanytun/

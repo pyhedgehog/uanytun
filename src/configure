@@ -43,16 +43,22 @@ PASSPHRASE=1
 V4_MAPPED=1
 
 PREFIX='/usr/local'
+USERNAME='uanytun'
+USERHOME='/var/run/uanytun'
 
 print_usage() {
   echo "configure --help                    print this"
   echo "          --target=<TARGET>         build target i.e. Linux (default: autodetect)"
   echo "          --prefix=<PREFIX>         the installation prefix (default: /usr/local)"
+  echo "          --username=<USERNAME>     create this user when installing (default: uanytun)"
+  echo "          --userhome=<PATH>         the home directory of the user to be created  (default: /var/run/uanytun)"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
-  echo "          --disable-crypto          disable crypto at all (only NULL cipher)"
+  echo "          --no-crypto               disable crypto at all (only NULL cipher)"
   echo "          --disable-passphrase      disable master key and salt passphrase"
+  echo "          --enable-passphrase       enable master key and salt passphrase"
   echo "          --disable-v4-mapped       disable V4-Mapped addresses (this means to disable"
   echo "                                    simultanious use of IPv4 and IPv6)"
+  echo "          --enable-v4-mapped        enable V4-Mapped addresses"
 }
 
 for arg
@@ -64,17 +70,29 @@ do
   --prefix=*)
     PREFIX=${arg#--prefix=}
   ;;
+  --username=*)
+    USERNAME=${arg#--username=}
+  ;;
+  --userhome=*)
+    USERHOME=${arg#--userhome=}
+  ;;
   --use-ssl-crypto)
     CRYPTO_LIB='ssl'
   ;;
-  --disable-crypto)
+  --no-crypto)
     CRYPTO_LIB='none'
   ;; 
   --disable-passphrase)
     PASSPHRASE=0
   ;;
+  --enable-passphrase)
+    PASSPHRASE=1
+  ;;
   --disable-v4-mapped)
     V4_MAPPED=0 
+  ;; 
+  --enable-v4-mapped)
+    V4_MAPPED=1 
   ;; 
   --help)
     print_usage
@@ -159,6 +177,8 @@ LDFLAGS := $LDFLAGS
 SBINDIR := $PREFIX/sbin
 MANDIR := $PREFIX/share/man
 ETCDIR := $ETCDIR
+USERNAME := $USERNAME
+USERHOME := $USERHOME
 EOF
 
 exit 0
