@@ -62,3 +62,22 @@ Notes:
     because openssl had no SHA256 implementation prior to this
     version
   - on OpenBSD you have to use gmake instead of make
+
+
+Installing
+----------
+
+# sudo make install
+
+This will install anytun under the $PREFIX defined with configure
+
+Uninstalling
+------------
+
+# sudo make remove
+
+This removes everytthing except for the config files
+
+# sudo make purge
+
+This also removes config files
