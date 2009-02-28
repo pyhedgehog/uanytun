@@ -18,7 +18,6 @@ SYNOPSIS
 [ *-L|--log* <target>:<level>[,<param1>[,<param2>[..]]] ]
 [ *-i|--interface* <ip-address> ]
 [ *-p|--port* <port> ]
-[ *-s|--sender-id* <sender id> ]
 [ *-r|--remote-host* <hostname|ip> ]
 [ *-o|--remote-port* <port> ]
 [ *-4|--ipv4-only* ]
@@ -28,11 +27,12 @@ SYNOPSIS
 [ *-n|--ifconfig* <local>/<prefix> ]
 [ *-x|--post-up-script* <script> ]
 [ *-m|--mux* <mux-id> ]
+[ *-s|--sender-id* <sender id> ]
 [ *-w|--window-size* <window size> ]
 [ *-k|--kd-prf* <kd-prf type> ]
 [ *-l|--ld-kdr* <ld-kdr> ]
 [ *-O|--anytun02-compat* ]
-[ *-E|--passphrase <pass phrase> ]
+[ *-E|--passphrase* <pass phrase> ]
 [ *-K|--key* <master key> ]
 [ *-A|--salt* <master salt> ]
 [ *-c|--cipher* <cipher type> ]
@@ -125,16 +125,6 @@ The local UDP port that is used to send and receive the
 payload data. The two tunnel endpoints can use different
 ports. default: 4444
 
--s|--sender-id  <sender id>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Each anycast tunnel endpoint needs a unique sender id
-(1, 2, 3, ...). It is needed to distinguish the senders
-in case of replay attacks. As *uAnytun* does not support 
-synchronisation it can't be used as an anycast endpoint therefore 
-this option is quite useless but implemented for compability 
-reasons. default: 0
-
 -r|--remote-host <hostname|ip>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -205,6 +195,16 @@ is created. By default no script will be executed.
 ~~~~~~~~~~~~~~~~~
 
 the multiplex id to use. default: 0
+
+-s|--sender-id  <sender id>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each anycast tunnel endpoint needs a unique sender id
+(1, 2, 3, ...). It is needed to distinguish the senders
+in case of replay attacks. As *uAnytun* does not support 
+synchronisation it can't be used as an anycast endpoint therefore 
+this option is quite useless but implemented for compability 
+reasons. default: 0
 
 -w|--window-size <window size>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -317,13 +317,33 @@ If HMAC-SHA1 is used, the packet length is increased by
 EXAMPLES
 --------
 
+P2P Setup between two unicast enpoints:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Host A:
+^^^^^^^
+
+uanytun -r hostb.example.com -t tun -n 192.168.123.1/30 -c aes-ctr-256 -k aes-ctr-256 \
+        -E have_a_very_safe_and_productive_day
+
+Host B:
+^^^^^^^
+uanytun -r hosta.example.com -t tun -n 192.168.123.2/30 -c aes-ctr-256 -k aes-ctr-256 \
+        -E have_a_very_safe_and_productive_day
+
+
 One unicast and one anycast tunnel endpoint:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  
 Unicast tunnel endpoint:
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-uanytun -r anycast.anytun.org -d anytun0 -t tun -n 192.0.2.2/30
+uanytun -r anycast.anytun.org -d anytun0 -t tun -n 192.0.2.2/30 -a null -c null -w 0
+
+Anycast tunnel endpoints:
+^^^^^^^^^^^^^^^^^^^^^^^^^
+As *uAnytun* can't work as an anycast endpoint it can't be used for this purpose. You
+have to use *anytun* for that job.
 
 
 BUGS
