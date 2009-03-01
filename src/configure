@@ -108,26 +108,26 @@ done
 
 rm -f include.mk
 case $TARGET in 
-	Linux)
-		rm -rf tun.c
-		ln -sf linux/tun.c
+  Linux)
+    rm -rf tun.c
+    ln -sf linux/tun.c
     echo "loading Linux specific TUN Device"
     LDFLAGS=$LDFLAGS" -ldl"
-	;;
-	OpenBSD|FreeBSD|NetBSD)
-		rm -rf tun.c
-		ln -sf bsd/tun.c
+  ;;
+  OpenBSD|FreeBSD|NetBSD)
+    rm -rf tun.c
+    ln -sf bsd/tun.c
     echo "loading BSD specific TUN Device"
     CFLAGS=$CFLAGS' -I/usr/local/include'
     LDFLAGS=$LDFLAGS' -L/usr/local/lib'
     if [ "$TARGET" == 'OpenBSD' ]; then
       V4_MAPPED=0
     fi
-	;;
-	*)
-		echo "Plattform not supported"
+  ;;
+  *)
+    echo "Plattform not supported"
     exit 1;
-	;;
+  ;;
 esac
 
 
