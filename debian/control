@@ -1,0 +1,27 @@
+Source: uanytun
+Section: net
+Priority: extra
+Maintainer: Michael Prokop <mika@grml.org>
+Build-Depends: debhelper (>= 5), libgcrypt11-dev, asciidoc
+Standards-Version: 3.8.0
+Homepage: http://www.anytun.org/
+VCS-svn: https://svn.chaos-at-home.org/uanytun/
+VCS-Browser: https://svn.chaos-at-home.org/uanytun/
+
+Package: uanytun
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: tiny implementation of the secure anycast tunneling protocol
+ uAnytun is a tiny implementation of SATP. Unlike Anytun which is
+ a full featured implementation uAnytun has no support for
+ multiple connections or synchronisation. It is a small single
+ threaded implementation intended to act as a client on small
+ platforms.  The secure anycast tunneling protocol (satp) defines
+ a protocol used for communication between any combination of
+ unicast and anycast tunnel endpoints.  It has less protocol
+ overhead than IPSec in Tunnel mode and allows tunneling of every
+ ETHER TYPE protocol (e.g.  ethernet, ip, arp ...). satp directly
+ includes cryptography and message authentication based on the
+ methodes used by SRTP.  It is intended to deliver a generic,
+ scaleable and secure solution for tunneling and relaying of
+ packets of any protocol.

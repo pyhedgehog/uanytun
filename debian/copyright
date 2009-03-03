@@ -1,0 +1,29 @@
+This package was debianized by Michael Prokop <mika@grml.org> on
+Tue, 03 Mar 2009 11:09:43 +0100.
+
+It was downloaded from https://svn.chaos-at-home.org/uanytun/
+
+Upstream Author:
+
+    Christian Pointner <equinox@anytun.org>
+
+Copyright:
+
+    Copyright (C) 2007-2008 Christian Pointner <equinox@anytun.org>
+
+License:
+
+    uAnytun is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as
+    published by the Free Software Foundation.
+  
+    uAnytun is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+  
+    You should have received a copy of the GNU General Public License
+    along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
+
+The Debian packaging is copyright 2009, Michael Prokop <mika@grml.org> and
+is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
