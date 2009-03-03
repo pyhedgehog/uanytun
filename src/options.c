@@ -248,7 +248,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
 #ifndef NO_CRYPT
     PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
-    PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
+//    PARSE_INT_PARAM("-l","--ld-kdr", opt->ld_kdr_)
     PARSE_BOOL_PARAM("-O","--anytun02-compat", opt->anytun02_compat_)
 #ifndef NO_PASSPHRASE
     PARSE_STRING_PARAM_SEC("-E","--passphrase", opt->passphrase_)
