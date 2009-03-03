@@ -112,7 +112,6 @@ case $TARGET in
     rm -rf tun.c
     ln -sf linux/tun.c
     echo "loading Linux specific TUN Device"
-    LDFLAGS=$LDFLAGS" -ldl"
   ;;
   OpenBSD|FreeBSD|NetBSD)
     rm -rf tun.c
@@ -133,7 +132,7 @@ esac
 
 case $CRYPTO_LIB in
   gcrypt)
-    LDFLAGS=$LDFLAGS' -lgcrypt -lgpg-error'
+    LDFLAGS=$LDFLAGS' -lgcrypt'
     echo "using libgcrypt library"
   ;;
   ssl)
