@@ -417,7 +417,7 @@ void options_print_usage()
   printf("        [-w|--window-size] <window size>    seqence number window size\n");
 #ifndef NO_CRYPT
   printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
-  printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
+//  printf("        [-l|--ld-kdr] <ld-kdr>              log2 of key derivation rate\n");
   printf("        [-O|--anytun02-compat]              enable compatiblity mode for anytun 0.2.x and prior\n");
 #ifndef NO_PASSPHRASE
   printf("        [-E|--passphrase] <pass phrase>     a passprhase to generate master key and salt from\n");

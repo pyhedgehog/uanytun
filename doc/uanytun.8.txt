@@ -30,7 +30,6 @@ SYNOPSIS
 [ *-s|--sender-id* <sender id> ]
 [ *-w|--window-size* <window size> ]
 [ *-k|--kd-prf* <kd-prf type> ]
-[ *-l|--ld-kdr* <ld-kdr> ]
 [ *-O|--anytun02-compat* ]
 [ *-E|--passphrase* <pass phrase> ]
 [ *-K|--key* <master key> ]
@@ -238,17 +237,6 @@ Possible values:
 * *aes-ctr-128* - AES in counter mode with 128 Bits
 * *aes-ctr-192* - AES in counter mode with 192 Bits
 * *aes-ctr-256* - AES in counter mode with 256 Bits
-
--l|--ld-kdr <ld-kdr>
-~~~~~~~~~~~~~~~~~~~~
-
-The log2 of the key derivation rate. This is used by the key
-derivation to determine how often a new session key has to be
-generated. A value of -1 means to generate only one key and use
-it forever. The default is 0 which means to calculate a new key
-for every packet. A value of 1 would tell the key derivation
-to generate a new key after 2 packets, for 2 its 4 packets and 
-so on.
 
 -O|--anytun02-compat
 ~~~~~~~~~~~~~~~~~~~~
