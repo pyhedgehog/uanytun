@@ -32,7 +32,9 @@
 ##  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
 ##
 
+ifneq ($(MAKECMDGOALS),distclean)
 include include.mk
+endif
 
 EXECUTABLE := uanytun
 
@@ -67,7 +69,9 @@ all: $(EXECUTABLE)
    sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
    rm -f $@.$$$$; echo '(re)building $@'
 
+ifneq ($(MAKECMDGOALS),distclean)
 -include $(SRC:%.c=%.d)
+endif
 
 uanytun: $(OBJ)
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
@@ -91,7 +95,7 @@ clean:
 manpage:
 	$(MAKE) --directory="../doc/" manpage
 
-install: install-bin install-etc install-man add-user
+install: all install-bin install-etc install-man add-user
 
 install-bin: $(EXECUTABLE)
 	mkdir -p $(DESTDIR)$(SBINDIR)
