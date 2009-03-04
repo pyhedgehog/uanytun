@@ -141,8 +141,10 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
   }
 
   int ret = tun_init_post(dev);
-  if(ret) 
+  if(ret) {
+    tun_close(dev);
     return ret;
+  }
 
   if(ifcfg_addr)
     tun_do_ifconfig(dev);
