@@ -19,8 +19,8 @@ using ssl crypto library:
  libssl-dev
 
 
-OpenBSD
--------
+OpenBSD/FreeBSD
+---------------
 
 using libgcrypt:
 
@@ -61,7 +61,7 @@ Notes:
   - if using openssl pre 0.9.8 you have to disable passphrase
     because openssl had no SHA256 implementation prior to this
     version
-  - on OpenBSD you have to use gmake instead of make
+  - on OpenBSD/FreeBSD you have to use gmake instead of make
 
 
 Installing

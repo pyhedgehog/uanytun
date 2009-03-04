@@ -32,8 +32,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SIGNAL_H_
-#define _SIGNAL_H_
+#ifndef _SIG_HANDLER_H_
+#define _SIG_HANDLER_H_
 
 #include <signal.h>
 

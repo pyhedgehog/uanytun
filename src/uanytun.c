@@ -40,7 +40,7 @@
 #include <errno.h>
 
 #include "log.h"
-#include "signal.h"
+#include "sig_handler.h"
 #include "options.h"
 
 #include "tun.h"

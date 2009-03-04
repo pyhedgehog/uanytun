@@ -42,7 +42,7 @@ CRYPT_OBJ := key_derivation.o \
             auth_algo.o
 OBJ := log.o \
       string_list.o \
-      signal.o \
+      sig_handler.o \
       options.o \
       tun.o \
       udp.o \

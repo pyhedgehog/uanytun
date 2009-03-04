@@ -35,8 +35,8 @@
 #include "datatypes.h"
 
 #include "log.h"
-#include "signal.h"
 #include <signal.h>
+#include "sig_handler.h"
 
 volatile sig_atomic_t signal_exit = 0;
 

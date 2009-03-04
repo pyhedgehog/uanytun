@@ -119,7 +119,7 @@ case $TARGET in
     echo "loading BSD specific TUN Device"
     CFLAGS=$CFLAGS' -I/usr/local/include'
     LDFLAGS=$LDFLAGS' -L/usr/local/lib'
-    if [ "$TARGET" == 'OpenBSD' ]; then
+    if [ "x$TARGET" = "xOpenBSD" ]; then
       V4_MAPPED=0
     fi
   ;;
