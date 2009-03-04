@@ -92,7 +92,7 @@ do
     V4_MAPPED=0 
   ;; 
   --enable-v4-mapped)
-    V4_MAPPED=1 
+    V4_MAPPED=2
   ;; 
   --help)
     print_usage
@@ -109,17 +109,17 @@ done
 rm -f include.mk
 case $TARGET in 
   Linux)
-    rm -rf tun.c
+    rm -f tun.c
     ln -sf linux/tun.c
     echo "loading Linux specific TUN Device"
   ;;
   OpenBSD|FreeBSD|NetBSD)
-    rm -rf tun.c
+    rm -f tun.c
     ln -sf bsd/tun.c
     echo "loading BSD specific TUN Device"
     CFLAGS=$CFLAGS' -I/usr/local/include'
     LDFLAGS=$LDFLAGS' -L/usr/local/lib'
-    if [ "x$TARGET" = "xOpenBSD" ]; then
+    if [ $V4_MAPPED -ne 2 ]; then
       V4_MAPPED=0
     fi
   ;;

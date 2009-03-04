@@ -164,8 +164,8 @@ int tun_init_post(tun_device_t* dev)
   
   struct tuninfo ti;  
 
-  if (ioctl(dev->fd_, TUNGIFINFO, &ti) < 0) {
-    log_printf(ERROR, "can't enable multicast for interface");
+  if(ioctl(dev->fd_, TUNGIFINFO, &ti) < 0) {
+    log_printf(ERROR, "can't enable multicast for interface: %s", strerror(errno));
     return -1;
   }  
 
@@ -173,15 +173,15 @@ int tun_init_post(tun_device_t* dev)
   if(dev->type_ == TYPE_TUN)
     ti.flags &= ~IFF_POINTOPOINT;
   
-  if (ioctl(dev->fd_, TUNSIFINFO, &ti) < 0) {
-    log_printf(ERROR, "can't enable multicast for interface");
+  if(ioctl(dev->fd_, TUNSIFINFO, &ti) < 0) {
+    log_printf(ERROR, "can't enable multicast for interface: %s", strerror(errno));
     return -1;
   }
   return 0;
 }
 
 #elif defined(__GNUC__) && defined(__FreeBSD__)
- #warning this device has never been tested on FreeBSD and might not work
+
 int tun_init_post(tun_device_t* dev)
 {
   if(!dev)
@@ -191,10 +191,26 @@ int tun_init_post(tun_device_t* dev)
   if(dev->type_ == TYPE_TAP)
     dev->with_pi_ = 0;
 
-  int arg = 0;
-  ioctl(dev->fd_, TUNSLMODE, &arg);
-  arg = 1;
-  ioctl(dev->fd_, TUNSIFHEAD, &arg);
+  if(dev->type_ == TYPE_TUN) {
+    int arg = 0;
+    if(ioctl(dev->fd_, TUNSLMODE, &arg) < 0) {
+      log_printf(ERROR, "can't disable link-layer mode for interface: %s", strerror(errno));
+      return -1;
+    }  
+
+    arg = 1;
+    if(ioctl(dev->fd_, TUNSIFHEAD, &arg) < 0) {
+      log_printf(ERROR, "can't enable multi-af mode for interface: %s", strerror(errno));
+      return -1;
+    }  
+
+    arg = IFF_BROADCAST;
+    arg |= IFF_MULTICAST;
+    if(ioctl(dev->fd_, TUNSIFMODE, &arg) < 0) {
+      log_printf(ERROR, "can't enable multicast for interface: %s", strerror(errno));
+      return -1;
+    }  
+  }
 
   return 0;
 }
