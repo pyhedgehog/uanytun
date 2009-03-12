@@ -229,3 +229,30 @@ void log_printf(log_prio_t prio, const char* fmt, ...)
 
   log_targets_log(&stdlog.targets_, prio, msg);
 }
+
+void log_print_hex_dump(log_prio_t prio, const u_int8_t* buf, u_int32_t len)
+{
+  if(stdlog.max_prio_ < prio)
+    return;
+
+  static char msg[MSG_LENGTH_MAX];
+
+  if(!buf) {
+    snprintf(msg, MSG_LENGTH_MAX, "(NULL)");
+  }
+  else {
+    u_int32_t i;
+    int offset = snprintf(msg, MSG_LENGTH_MAX, "dump(%d): ", len);
+    if(offset < 0)
+      return;
+    u_int8_t* ptr = &msg[offset];
+    
+    for(i=0; i < len; i++) {
+      if(((i+1)*3) >= (MSG_LENGTH_MAX - offset))
+        break;
+      sprintf(ptr, "%02X ", buf[i]);
+      ptr+=3;
+    }
+  }
+  log_targets_log(&stdlog.targets_, prio, msg);
+}

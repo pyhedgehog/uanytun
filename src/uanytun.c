@@ -308,23 +308,6 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   return return_value;
 }
 
-void print_hex_dump(const u_int8_t* buf, u_int32_t len)
-{
-  if(!buf) {
-    printf("(NULL)");
-  }
-
-  u_int32_t i;
-  for(i=0; i < len; i++) {
-    printf("%02X ", buf[i]);
-    if(!((i+1)%8))
-      printf(" ");
-    if(!((i+1)%16))
-      printf("\n");
-  }
-  printf("\n");
-}
-
 int main(int argc, char* argv[])
 {
   log_init();

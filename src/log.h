@@ -84,5 +84,6 @@ void log_close();
 void update_max_prio();
 int log_add_target(const char* conf);
 void log_printf(log_prio_t prio, const char* fmt, ...);
+void log_print_hex_dump(log_prio_t prio, const u_int8_t* buf, u_int32_t len);
 
 #endif
