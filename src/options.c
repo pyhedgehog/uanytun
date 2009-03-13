@@ -43,6 +43,10 @@
 
 #include "log.h"
 
+#ifndef NO_CRYPT
+#include "auth_algo.h"
+#endif
+
 #define PARSE_BOOL_PARAM(SHORT, LONG, VALUE)             \
     else if(!strcmp(str,SHORT) || !strcmp(str,LONG))     \
       VALUE = 1;
@@ -257,6 +261,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_HEXSTRING_PARAM_SEC("-A","--salt", opt->salt_)
     PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
     PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
+    PARSE_INT_PARAM("-b","--auth-tag-length", opt->auth_tag_length_)
 #endif
     else 
       return i;
@@ -293,6 +298,13 @@ void options_parse_post(options_t* opt)
   if((strcmp(opt->cipher_, "null") || strcmp(opt->auth_algo_, "null")) && 
      !strcmp(opt->kd_prf_, "null")) {
     log_printf(WARNING, "using NULL key derivation with encryption and or authentication enabled!");
+  }
+
+  u_int32_t tag_len_max = auth_algo_get_max_length(opt->auth_algo_);
+  if(!tag_len_max) opt->auth_tag_length_ = 0;
+  else if(tag_len_max < opt->auth_tag_length_) {
+    log_printf(WARNING, "%s auth algo can't generate tags of length %d, using maximum tag length(%d)", opt->auth_algo_, opt->auth_tag_length_, tag_len_max);
+    opt->auth_tag_length_ = tag_len_max;
   }
 #endif
 
@@ -331,8 +343,10 @@ void options_default(options_t* opt)
   opt->passphrase_ = NULL;
   opt->cipher_ = strdup("aes-ctr");
   opt->auth_algo_ = strdup("sha1");
+  opt->auth_tag_length_ = 10;
 #else
   opt->cipher_ = strdup("null");
+  opt->auth_tag_length_ = 0;
 #endif
   opt->anytun02_compat_ = 0;
   opt->key_.buf_ = NULL;
@@ -426,6 +440,7 @@ void options_print_usage()
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
+  printf("        [-b|--auth-tag-length] <length>     length of the auth tag\n");
 #endif
 }
 
@@ -464,6 +479,7 @@ void options_print(options_t* opt)
   printf("cipher: '%s'\n", opt->cipher_);
 #ifndef NO_CRYPT
   printf("auth_algo: '%s'\n", opt->auth_algo_);
+  printf("auth_tag_length: %d\n", opt->auth_tag_length_);
   printf("kd_prf: '%s'\n", opt->kd_prf_);
   printf("ld_kdr: %d\n", opt->ld_kdr_);
   printf("passphrase: '%s'\n", opt->passphrase_);

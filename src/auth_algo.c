@@ -43,17 +43,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+auth_algo_type_t auth_algo_get_type(const char* type)
+{
+  if(!strcmp(type, "null"))
+    return aa_null;
+  else if(!strcmp(type, "sha1"))
+    return aa_sha1;
+  
+  return aa_unknown;
+}
+
+u_int32_t auth_algo_get_max_length(const char* type)
+{
+  switch(auth_algo_get_type(type)) {
+  case aa_null: return 0;
+  case aa_sha1: return SHA1_LENGTH;
+  default: return 0;
+  }
+}
+
 int auth_algo_init(auth_algo_t* aa, const char* type)
 {
   if(!aa) 
     return -1;
 
-  aa->type_ = aa_unknown;
-  if(!strcmp(type, "null"))
-    aa->type_ = aa_null;
-  else if(!strcmp(type, "sha1"))
-    aa->type_ = aa_sha1;
-  else {
+  aa->type_ = auth_algo_get_type(type);
+  if(aa->type_ == aa_unknown) {
     log_printf(ERROR, "unknown auth algo type");
     return -1;
   }
@@ -174,7 +189,6 @@ void auth_algo_sha1_close(auth_algo_t* aa)
 
 void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
 {
-  encrypted_packet_add_auth_tag(packet);
   if(!encrypted_packet_get_auth_tag_length(packet))
     return;
 
@@ -224,7 +238,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_di
 int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
 {
   if(!encrypted_packet_get_auth_tag_length(packet))
-    return 0;
+    return 1;
 
   if(!aa || !aa->params_) {
     log_printf(ERROR, "auth algo not initialized");
@@ -269,7 +283,6 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_di
   }
   
   int result = memcmp(&tag[encrypted_packet_get_auth_tag_length(packet) - length], &hmac[SHA1_LENGTH - length], length);
-  encrypted_packet_remove_auth_tag(packet);
   
   if(result)
     return 0;

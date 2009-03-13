@@ -189,7 +189,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
     log_printf(ERROR, "error on receiving udp packet: %s", strerror(errno));
     return 0;
   }
-  else if(len < encrypted_packet_get_header_length()) {
+  else if(len < encrypted_packet_get_minimum_length(encrypted_packet)) {
     log_printf(WARNING, "received packet is to short");
     return 0;
   }
@@ -249,7 +249,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   plain_packet_t plain_packet;
   plain_packet_init(&plain_packet);
   encrypted_packet_t encrypted_packet;
-  encrypted_packet_init(&encrypted_packet);
+  encrypted_packet_init(&encrypted_packet, opt->auth_tag_length_);
   seq_nr_t seq_nr = 0;
   fd_set readfds;
 

@@ -39,17 +39,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-void encrypted_packet_init(encrypted_packet_t* packet)
+void encrypted_packet_init(encrypted_packet_t* packet, u_int32_t auth_tag_length)
 {
   if(!packet)
     return;
 
   memset (packet, 0, sizeof(*packet));
+  if(auth_tag_length > (ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t)))
+    packet->auth_tag_length_ = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t);
+  else
+    packet->auth_tag_length_ = auth_tag_length;
 }
 
-u_int32_t encrypted_packet_get_header_length()
+u_int32_t encrypted_packet_get_minimum_length(encrypted_packet_t* packet)
 {
-  return sizeof(encrypted_packet_header_t);
+  if(!packet)
+    return 0;
+
+  return (sizeof(encrypted_packet_header_t) + packet->auth_tag_length_);
 }
 
 u_int8_t* encrypted_packet_get_packet(encrypted_packet_t* packet)
@@ -65,7 +72,7 @@ u_int32_t encrypted_packet_get_length(encrypted_packet_t* packet)
   if(!packet)
     return 0;
 
-  return (packet->payload_length_ + sizeof(encrypted_packet_header_t));
+  return (packet->payload_length_ + sizeof(encrypted_packet_header_t) + packet->auth_tag_length_);
 }
 
 void encrypted_packet_set_length(encrypted_packet_t* packet, u_int32_t len)
@@ -74,20 +81,13 @@ void encrypted_packet_set_length(encrypted_packet_t* packet, u_int32_t len)
     return;
 
   if(len > ENCRYPTED_PACKET_SIZE_MAX)
-    len = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t);
-  else if(len < sizeof(encrypted_packet_header_t))
+    len = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t) - packet->auth_tag_length_;
+  else if(len < (sizeof(encrypted_packet_header_t) + packet->auth_tag_length_))
     len = 0;
   else
-    len -= sizeof(encrypted_packet_header_t);
+    len -= (sizeof(encrypted_packet_header_t) + packet->auth_tag_length_);
 
   packet->payload_length_ = len;
-
-  if(len >= ENCRYPTED_PACKET_AUTHTAG_SIZE) {
-    packet->auth_tag_ = packet->data_.buf_ + sizeof(encrypted_packet_header_t);
-    packet->auth_tag_ += packet->payload_length_ - ENCRYPTED_PACKET_AUTHTAG_SIZE;
-  }
-  else
-    packet->auth_tag_ = NULL;
 }
 
 u_int8_t* encrypted_packet_get_payload(encrypted_packet_t* packet)
@@ -111,17 +111,10 @@ void encrypted_packet_set_payload_length(encrypted_packet_t* packet, u_int32_t l
   if(!packet)
     return;
 
-  if(len > ENCRYPTED_PACKET_SIZE_MAX || (len + sizeof(encrypted_packet_header_t)) > ENCRYPTED_PACKET_SIZE_MAX)
-    len = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t);
+  if(len > (ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t) - packet->auth_tag_length_))
+    len = ENCRYPTED_PACKET_SIZE_MAX - sizeof(encrypted_packet_header_t) - packet->auth_tag_length_;
 
   packet->payload_length_ = len;
-
-  if(len >= ENCRYPTED_PACKET_AUTHTAG_SIZE) {
-    packet->auth_tag_ = packet->data_.buf_ + sizeof(encrypted_packet_header_t);
-    packet->auth_tag_ += packet->payload_length_ - ENCRYPTED_PACKET_AUTHTAG_SIZE;
-  }
-  else
-    packet->auth_tag_ = NULL;
 }
 
 u_int8_t* encrypted_packet_get_auth_portion(encrypted_packet_t* packet)
@@ -137,46 +130,24 @@ u_int32_t encrypted_packet_get_auth_portion_length(encrypted_packet_t* packet)
   if(!packet)
     return 0;
 
-  u_int32_t len = packet->payload_length_ + sizeof(encrypted_packet_header_t);
-
-  if(!packet->auth_tag_)
-    return len;
-  
-  return (len > ENCRYPTED_PACKET_AUTHTAG_SIZE) ? (len - ENCRYPTED_PACKET_AUTHTAG_SIZE) : 0;
+  return  packet->payload_length_ + sizeof(encrypted_packet_header_t);
 }
 
 
 u_int8_t* encrypted_packet_get_auth_tag(encrypted_packet_t* packet)
 {
-  if(!packet)
+  if(!packet || !packet->auth_tag_length_)
     return NULL;
 
-  return packet->auth_tag_;
+  return (packet->data_.buf_ + sizeof(encrypted_packet_header_t) + packet->payload_length_);
 }
 
 u_int32_t encrypted_packet_get_auth_tag_length(encrypted_packet_t* packet)
 {
-  if(!packet || !packet->auth_tag_)
+  if(!packet)
     return 0;
 
-  return ENCRYPTED_PACKET_AUTHTAG_SIZE;
-}
-
-void encrypted_packet_add_auth_tag(encrypted_packet_t* packet)
-{
-  if(!packet)
-    return;
-
-  encrypted_packet_set_payload_length(packet, packet->payload_length_ + ENCRYPTED_PACKET_AUTHTAG_SIZE);
-}
-
-void encrypted_packet_remove_auth_tag(encrypted_packet_t* packet)
-{
-  if(!packet || !packet->auth_tag_)
-    return;
-
-  packet->auth_tag_ = NULL;
-  packet->payload_length_ = (packet->payload_length_ > ENCRYPTED_PACKET_AUTHTAG_SIZE) ? packet->payload_length_ - ENCRYPTED_PACKET_AUTHTAG_SIZE: 0;  
+  return packet->auth_tag_length_;
 }
 
 

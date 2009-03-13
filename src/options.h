@@ -74,6 +74,7 @@ struct options_struct {
   char* passphrase_;
 #endif
   int anytun02_compat_;
+  u_int32_t auth_tag_length_;
   buffer_t key_;
   buffer_t salt_;
 };

@@ -41,6 +41,7 @@
 #include <openssl/hmac.h>
 #endif
 #include "key_derivation.h"
+#include "encrypted_packet.h"
 
 enum auth_algo_type_enum { aa_unknown, aa_null, aa_sha1 };
 typedef enum auth_algo_type_enum auth_algo_type_t;
@@ -52,6 +53,8 @@ struct auth_algo_struct {
 };
 typedef struct auth_algo_struct auth_algo_t;
 
+auth_algo_type_t auth_algo_get_type(const char* type);
+u_int32_t auth_algo_get_max_length(const char* type);
 int auth_algo_init(auth_algo_t* aa, const char* type);
 void auth_algo_close(auth_algo_t* aa);
 

@@ -36,6 +36,7 @@ SYNOPSIS
 [ *-A|--salt* <master salt> ]
 [ *-c|--cipher* <cipher type> ]
 [ *-a|--auth-algo* <algo type> ]
+[ *-b|--auth-tag-length* <length> ]
 
 DESCRIPTION
 -----------
@@ -298,9 +299,14 @@ Possible values:
 * *null* - no message authentication
 * *sha1* - HMAC-SHA1, default value
 
-If HMAC-SHA1 is used, the packet length is increased by
-10 bytes. These 10 bytes contain the authentication data.
+If HMAC-SHA1 is used, the packet length is increased. The additional bytes 
+contain the authentication data. see *-b|--auth-tag-length* for more info.
 
+-b|--auth-tag-length <length>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The number of bytes to use for the auth tag. This value defaults to 10 bytes 
+unless the *null* auth algo is used in which case it defaults to 0. 
 
 EXAMPLES
 --------
