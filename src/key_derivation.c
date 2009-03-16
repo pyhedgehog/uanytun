@@ -45,11 +45,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, int8_t anytun02_compat, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len)
+int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, int8_t anytun02_compat, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len)
 {
   if(!kd) 
     return -1;
 
+  kd->role_ = role;
   kd->anytun02_compat_ = anytun02_compat;
   kd->key_length_ = 0;
 
@@ -73,20 +74,7 @@ int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, i
     return -1;
   }
 
-  kd->ld_kdr_ = ld_kdr;
-  if(ld_kdr > (int8_t)(sizeof(seq_nr_t) * 8))
-    kd->ld_kdr_ = sizeof(seq_nr_t) * 8;
-
   kd->params_ = NULL;
-
-  int d, i;
-  for(d = 0; d<2; ++d) {
-    for(i = 0; i<KD_LABEL_COUNT; ++i) {
-      kd->key_store_[d][i].key_.buf_ = NULL;
-      kd->key_store_[d][i].key_.length_ = 0;
-      kd->key_store_[d][i].r_ = 0;
-    }
-  }
 
   if(!key) {
     kd->master_key_.buf_ = NULL;
@@ -250,23 +238,15 @@ void key_derivation_close(key_derivation_t* kd)
     free(kd->master_key_.buf_);
   if(kd->master_salt_.buf_)
     free(kd->master_salt_.buf_);
-
-  int d, i;
-  for(d = 0; d<2; ++d) {
-    for(i = 0; i<KD_LABEL_COUNT; ++i) {
-      if(kd->key_store_[d][i].key_.buf_)
-        free(kd->key_store_[d][i].key_.buf_);
-    }
-  }
 }
 
-int key_derivation_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
+int key_derivation_generate(key_derivation_t* kd, key_derivation_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
 {
   if(!kd || !key) 
     return -1;
 
-  if(label >= KD_LABEL_COUNT) {
-    log_printf(ERROR, "label 0x%02X out of range", label);
+  if(label >= LABEL_NIL) {
+    log_printf(ERROR, "unknown label 0x%02X", label);
     return -1;
   }
 
@@ -370,21 +350,12 @@ void key_derivation_aesctr_close(key_derivation_t* kd)
   }
 }
 
-int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_dir_t dir, seq_nr_t* r, satp_prf_label_t label, seq_nr_t seq_nr)
+int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_derivation_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr)
 {
-  if(!kd || !kd->params_ || !r)
+  if(!kd || !kd->params_)
     return -1;
 
   key_derivation_aesctr_param_t* params = kd->params_;
-
-  *r = 0;
-  if(kd->ld_kdr_ >= 0)
-    *r = seq_nr >> kd->ld_kdr_;
-
-  if(kd->key_store_[dir][label].key_.buf_ && kd->key_store_[dir][label].r_ == *r) {
-    if(!(*r) || (seq_nr % (*r)))
-      return 0;
-  }
 
   if(kd->master_salt_.length_ != KD_AESCTR_SALT_LENGTH) {
     log_printf(ERROR, "master salt has the wrong length");
@@ -394,17 +365,17 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_dir_t dir, se
   params->ctr_.salt_.zero_ = 0;
   if(kd->anytun02_compat_) {
     params->ctr_.params_compat_.label_ ^= label;
-    params->ctr_.params_compat_.r_ ^= SEQ_NR_T_HTON(*r);
+    params->ctr_.params_compat_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
   }
   else {
     params->ctr_.params_.label_ ^= label;
-    params->ctr_.params_.r_ ^= SEQ_NR_T_HTON(*r);
+    params->ctr_.params_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
   }
 
-  return 1;
+  return 0;
 }
 
-int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
+int key_derivation_aesctr_generate(key_derivation_t* kd, key_derivation_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
 {
   if(!kd || !kd->params_ || !kd->master_key_.buf_ || !kd->master_salt_.buf_) {
     log_printf(ERROR, "key derivation not initialized or no key or salt set");
@@ -413,20 +384,9 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, sa
 
   key_derivation_aesctr_param_t* params = kd->params_;
 
-  seq_nr_t r;
-  int ret = key_derivation_aesctr_calc_ctr(kd, dir, &r, label, seq_nr);
-  if(ret < 0) {
+  if(key_derivation_aesctr_calc_ctr(kd, dir, label, seq_nr)) {
     log_printf(ERROR, "failed to calculate key derivation CTR");
     return -1;
-  }
-  else if(!ret) {
-    if(len > kd->key_store_[dir][label].key_.length_) {
-      log_printf(WARNING, "stored (old) key for label 0x%02X is too short, filling with zeros", label);
-      memset(key, 0, len);
-      len = kd->key_store_[dir][label].key_.length_;
-    }
-    memcpy(key, kd->key_store_[dir][label].key_.buf_, len);
-    return 0;
   }
 
 #ifndef USE_SSL_CRYPTO
@@ -459,28 +419,5 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, sa
   AES_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
 #endif
   
-  if(!kd->ld_kdr_)
-    return 1;
-
-  if(!kd->key_store_[dir][label].key_.buf_) {
-    kd->key_store_[dir][label].key_.length_ = 0;
-    kd->key_store_[dir][label].key_.buf_ = malloc(len);
-    if(!kd->key_store_[dir][label].key_.buf_)
-      return -2;
-
-    kd->key_store_[dir][label].key_.length_ = len;
-  }
-  else if(kd->key_store_[dir][label].key_.length_ < len) {
-    u_int8_t* tmp = realloc(kd->key_store_[dir][label].key_.buf_, len);
-    if(!tmp)
-      return -2;
-
-    kd->key_store_[dir][label].key_.buf_ = tmp;
-    kd->key_store_[dir][label].key_.length_ = len;
-  }
-
-  memcpy(kd->key_store_[dir][label].key_.buf_, key, len);
-  kd->key_store_[dir][label].r_ = r;
-
-  return 1;
+  return 0;
 }

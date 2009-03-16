@@ -100,7 +100,7 @@ void auth_algo_close(auth_algo_t* aa)
     free(aa->key_.buf_);
 }
 
-void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
+void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet)
 {
   if(!aa) 
     return;
@@ -115,7 +115,7 @@ void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t d
   }
 }
 
-int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
+int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet)
 {
   if(!aa) 
     return 0;
@@ -187,7 +187,7 @@ void auth_algo_sha1_close(auth_algo_t* aa)
 
 }
 
-void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
+void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet)
 {
   if(!encrypted_packet_get_auth_tag_length(packet))
     return;
@@ -202,7 +202,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_di
   }
   auth_algo_sha1_param_t* params = aa->params_;
 
-  int ret = key_derivation_generate(kd, dir, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
+  int ret = key_derivation_generate(kd, dir, LABEL_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
   if(ret < 0)
     return;
 
@@ -235,7 +235,7 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_di
 }
 
 
-int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet)
+int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet)
 {
   if(!encrypted_packet_get_auth_tag_length(packet))
     return 1;
@@ -250,7 +250,7 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_di
   }
   auth_algo_sha1_param_t* params = aa->params_;
 
-  int ret = key_derivation_generate(kd, dir, LABEL_SATP_MSG_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
+  int ret = key_derivation_generate(kd, dir, LABEL_AUTH, encrypted_packet_get_seq_nr(packet), aa->key_.buf_, aa->key_.length_);
   if(ret < 0)
     return 0;
 

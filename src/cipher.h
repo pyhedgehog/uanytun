@@ -43,8 +43,8 @@
 #endif
 #include "key_derivation.h"
 #else
-enum key_store_dir_enum { kd_inbound = 0, kd_outbound = 1 };
-typedef enum key_store_dir_enum key_store_dir_t;
+enum key_derivation_dir_enum { kd_inbound = 0, kd_outbound = 1 };
+typedef enum key_derivation_dir_enum key_derivation_dir_t;
 typedef u_int8_t key_derivation_t;
 #endif
 
@@ -64,8 +64,8 @@ typedef struct cipher_struct cipher_t;
 int cipher_init(cipher_t* c, const char* type, int8_t anytun02_compat);
 void cipher_close(cipher_t* c);
 
-int cipher_encrypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
-int cipher_decrypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* in, plain_packet_t* out);
+int cipher_encrypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
+int cipher_decrypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* in, plain_packet_t* out);
 
 int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen);
 
@@ -106,8 +106,8 @@ typedef struct cipher_aesctr_param_struct cipher_aesctr_param_t;
 
 int cipher_aesctr_init(cipher_t* c);
 void cipher_aesctr_close(cipher_t* c);
-int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
-int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_store_dir_t dir, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
+int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
+int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux);
 #endif
 
 #endif

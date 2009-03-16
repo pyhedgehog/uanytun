@@ -58,8 +58,8 @@ u_int32_t auth_algo_get_max_length(const char* type);
 int auth_algo_init(auth_algo_t* aa, const char* type);
 void auth_algo_close(auth_algo_t* aa);
 
-void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet);
-int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet);
+void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet);
+int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet);
 
 
 #define SHA1_LENGTH 20
@@ -75,7 +75,7 @@ typedef struct auth_algo_sha1_param_struct auth_algo_sha1_param_t;
 
 int auth_algo_sha1_init(auth_algo_t* aa);
 void auth_algo_sha1_close(auth_algo_t* aa);
-void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet);
-int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_store_dir_t dir, encrypted_packet_t* packet);
+void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet);
+int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet);
 
 #endif

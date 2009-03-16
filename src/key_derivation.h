@@ -41,44 +41,45 @@
 #include <openssl/aes.h>
 #endif
 
-#define KD_LABEL_COUNT 3
-enum satp_prf_label_enum {
-  LABEL_SATP_ENCRYPTION  = 0x00,
-  LABEL_SATP_MSG_AUTH    = 0x01,
-  LABEL_SATP_SALT        = 0x02,
-};
-typedef enum satp_prf_label_enum satp_prf_label_t;
+#include "options.h"
+
+#define LABEL_ENC 0
+#define LABEL_AUTH 1
+#define LABEL_SALT 3
+#define LABEL_NIL 4
+
+#define LABEL_LEFT_ENC 0xDEADBEEF
+#define LABEL_RIGHT_ENC 0xDEAE0010
+#define LABEL_LEFT_SALT 0xDF10416F
+#define LABEL_RIGHT_SALT 0xDF13FF90
+#define LABEL_LEFT_AUTH 0xE0000683
+#define LABEL_RIGHT_AUTH 0xE001B97C
+
+typedef u_int32_t satp_prf_label_t;
 
 enum key_derivation_type_enum { kd_unknown, kd_null, kd_aes_ctr };
 typedef enum key_derivation_type_enum key_derivation_type_t;
-enum key_store_dir_enum { kd_inbound = 0, kd_outbound = 1 };
-typedef enum key_store_dir_enum key_store_dir_t;
-
-struct key_store_struct {
-  buffer_t key_;
-  seq_nr_t r_;
-};
-typedef struct key_store_struct key_store_t;
+enum key_derivation_dir_enum { kd_inbound = 0, kd_outbound = 1 };
+typedef enum key_derivation_dir_enum key_derivation_dir_t;
 
 struct key_derivation_struct {
   key_derivation_type_t type_;
   u_int16_t key_length_;
-  int8_t ld_kdr_;
+  role_t role_;
   int8_t anytun02_compat_;
   buffer_t master_key_;
   buffer_t master_salt_;
-  key_store_t key_store_[2][KD_LABEL_COUNT];
   void* params_;
 };
 typedef struct key_derivation_struct key_derivation_t;
 
-int key_derivation_init(key_derivation_t* kd, const char* type, int8_t ld_kdr, int8_t anytun02_compat, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len);
+int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, int8_t anytun02_compat, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len);
 #ifndef NO_PASSPHRASE
 int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphrase, u_int16_t key_length);
 int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passphrase, u_int16_t salt_length);
 #endif
 void key_derivation_close(key_derivation_t* kd);
-int key_derivation_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
+int key_derivation_generate(key_derivation_t* kd, key_derivation_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
 
 int key_derivation_null_generate(u_int8_t* key, u_int32_t len);
 
@@ -96,14 +97,14 @@ union __attribute__((__packed__)) key_derivation_aesctr_ctr_union {
   struct __attribute__((__packed__)) {
     u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(u_int8_t) - sizeof(seq_nr_t)];
     u_int8_t label_;
-    seq_nr_t r_;
+    seq_nr_t seq_;
     u_int16_t zero_;
   } params_;
   struct __attribute__((__packed__)) {
     u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(u_int8_t) - 2*sizeof(u_int8_t) - sizeof(seq_nr_t)];
     u_int8_t label_;
-    u_int8_t r_fill_[2];
-    seq_nr_t r_;
+    u_int8_t seq_fill_[2];
+    seq_nr_t seq_;
     u_int16_t zero_;
   } params_compat_;
 };
@@ -122,7 +123,7 @@ typedef struct key_derivation_aesctr_param_struct key_derivation_aesctr_param_t;
 
 int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase);
 void key_derivation_aesctr_close(key_derivation_t* kd);
-int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_store_dir_t dir, seq_nr_t* r, satp_prf_label_t label, seq_nr_t seq_nr);
-int key_derivation_aesctr_generate(key_derivation_t* kd, key_store_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
+int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_derivation_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr);
+int key_derivation_aesctr_generate(key_derivation_t* kd, key_derivation_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
 
 #endif

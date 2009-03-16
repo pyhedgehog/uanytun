@@ -72,7 +72,6 @@ struct options_struct {
   char* cipher_;
 #ifndef NO_CRYPT
   char* kd_prf_;
-  int ld_kdr_;
   char* auth_algo_;
   char* passphrase_;
   role_t role_;
