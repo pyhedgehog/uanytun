@@ -324,6 +324,9 @@ int main(int argc, char* argv[])
     if(ret == -3) {
       fprintf(stderr, "syntax error: -4 and -6 are mutual exclusive\n\n");
     }
+    if(ret == -4) {
+      fprintf(stderr, "syntax error: unknown role name\n\n");
+    }
 
     if(ret != -2) 
       options_print_usage();

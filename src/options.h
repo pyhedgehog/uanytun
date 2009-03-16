@@ -46,6 +46,9 @@ typedef struct ifconfig_param_struct ifconfig_param_t;
 enum resolv_addr_type_enum { ANY, IPV4_ONLY, IPV6_ONLY };
 typedef enum resolv_addr_type_enum resolv_addr_type_t;
 
+enum role_enum  { ROLE_LEFT, ROLE_RIGHT, ROLE_SYMMETRIC };
+typedef enum role_enum role_t;
+
 struct options_struct {
   char* progname_;
   int daemonize_;
@@ -72,6 +75,7 @@ struct options_struct {
   int ld_kdr_;
   char* auth_algo_;
   char* passphrase_;
+  role_t role_;
 #endif
   int anytun02_compat_;
   u_int32_t auth_tag_length_;

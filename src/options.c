@@ -223,6 +223,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
 
   argc--;
 
+  char* role = NULL;
   int i, ipv4_only = 0, ipv6_only = 0;
   for(i=1; argc > 0; ++i)
   {
@@ -257,6 +258,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
 #ifndef NO_PASSPHRASE
     PARSE_STRING_PARAM_SEC("-E","--passphrase", opt->passphrase_)
 #endif
+    PARSE_STRING_PARAM("-e","--role", role)
     PARSE_HEXSTRING_PARAM_SEC("-K","--key", opt->key_)
     PARSE_HEXSTRING_PARAM_SEC("-A","--salt", opt->salt_)
     PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
@@ -273,6 +275,19 @@ int options_parse(options_t* opt, int argc, char* argv[])
   if(ipv6_only)
     opt->resolv_addr_type_ = IPV6_ONLY;
 
+  if(role) {
+    if(!strcmp(role, "alice") || !strcmp(role, "server") || !strcmp(role, "left"))
+      opt->role_ = ROLE_LEFT;
+    else if(!strcmp(role, "bob") || !strcmp(role, "client") || !strcmp(role, "right"))
+      opt->role_ = ROLE_RIGHT;
+    else if(!strcmp(role, "eve") || !strcmp(role, "weak") || !strcmp(role, "symmetric"))
+      opt->role_ = ROLE_SYMMETRIC;
+    else {
+      free(role);
+      return -4;
+    }
+    free(role);
+  }
   return 0;
 }
 
@@ -341,6 +356,7 @@ void options_default(options_t* opt)
   opt->kd_prf_ = strdup("aes-ctr");
   opt->ld_kdr_ = 0;
   opt->passphrase_ = NULL;
+  opt->role_ = ROLE_LEFT;
   opt->cipher_ = strdup("aes-ctr");
   opt->auth_algo_ = strdup("sha1");
   opt->auth_tag_length_ = 10;
@@ -438,6 +454,7 @@ void options_print_usage()
 #endif
   printf("        [-K|--key] <master key>             master key to use for encryption\n");
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
+  printf("        [-e|--role] <role>                  alice, bob or eve");
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
   printf("        [-b|--auth-tag-length] <length>     length of the auth tag\n");
@@ -483,6 +500,13 @@ void options_print(options_t* opt)
   printf("kd_prf: '%s'\n", opt->kd_prf_);
   printf("ld_kdr: %d\n", opt->ld_kdr_);
   printf("passphrase: '%s'\n", opt->passphrase_);
+  printf("role: ");
+  switch(opt->role_) {
+  case ROLE_LEFT: printf("left\n"); break;
+  case ROLE_RIGHT: printf("right\n"); break;
+  case ROLE_SYMMETRIC: printf("symmetric\n"); break;
+  default: printf("??\n"); break;
+  }
 #endif
   printf("anytun02_compat: %d\n", opt->anytun02_compat_);
 
