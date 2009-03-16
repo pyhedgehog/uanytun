@@ -59,7 +59,7 @@ typedef u_int32_t satp_prf_label_t;
 
 enum key_derivation_type_enum { kd_unknown, kd_null, kd_aes_ctr };
 typedef enum key_derivation_type_enum key_derivation_type_t;
-enum key_derivation_dir_enum { kd_inbound = 0, kd_outbound = 1 };
+enum key_derivation_dir_enum { kd_inbound, kd_outbound };
 typedef enum key_derivation_dir_enum key_derivation_dir_t;
 
 struct key_derivation_struct {
@@ -80,6 +80,7 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
 #endif
 void key_derivation_close(key_derivation_t* kd);
 int key_derivation_generate(key_derivation_t* kd, key_derivation_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len);
+satp_prf_label_t convert_label(role_t role, key_derivation_dir_t dir, satp_prf_label_t label);
 
 int key_derivation_null_generate(u_int8_t* key, u_int32_t len);
 
@@ -95,8 +96,8 @@ union __attribute__((__packed__)) key_derivation_aesctr_ctr_union {
     u_int16_t zero_;
   } salt_;
   struct __attribute__((__packed__)) {
-    u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(u_int8_t) - sizeof(seq_nr_t)];
-    u_int8_t label_;
+    u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(satp_prf_label_t) - sizeof(seq_nr_t)];
+    satp_prf_label_t label_;
     seq_nr_t seq_;
     u_int16_t zero_;
   } params_;

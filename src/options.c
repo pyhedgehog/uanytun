@@ -279,8 +279,6 @@ int options_parse(options_t* opt, int argc, char* argv[])
       opt->role_ = ROLE_LEFT;
     else if(!strcmp(role, "bob") || !strcmp(role, "client") || !strcmp(role, "right"))
       opt->role_ = ROLE_RIGHT;
-    else if(!strcmp(role, "eve") || !strcmp(role, "weak") || !strcmp(role, "symmetric"))
-      opt->role_ = ROLE_SYMMETRIC;
     else {
       free(role);
       return -4;
@@ -451,7 +449,7 @@ void options_print_usage()
 #endif
   printf("        [-K|--key] <master key>             master key to use for encryption\n");
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
-  printf("        [-e|--role] <role>                  alice, bob or eve");
+  printf("        [-e|--role] <role>                  left (alice) or right (bob)");
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
   printf("        [-b|--auth-tag-length] <length>     length of the auth tag\n");
@@ -500,7 +498,6 @@ void options_print(options_t* opt)
   switch(opt->role_) {
   case ROLE_LEFT: printf("left\n"); break;
   case ROLE_RIGHT: printf("right\n"); break;
-  case ROLE_SYMMETRIC: printf("symmetric\n"); break;
   default: printf("??\n"); break;
   }
 #endif

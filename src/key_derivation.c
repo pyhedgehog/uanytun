@@ -262,6 +262,47 @@ int key_derivation_generate(key_derivation_t* kd, key_derivation_dir_t dir, satp
   return ret;
 }
 
+satp_prf_label_t convert_label(role_t role, key_derivation_dir_t dir, satp_prf_label_t label)
+{
+  switch(label) {
+  case LABEL_ENC: {
+    if(dir == kd_outbound) {
+      if(role == ROLE_LEFT) return LABEL_LEFT_ENC;
+      if(role == ROLE_RIGHT) return LABEL_RIGHT_ENC;
+    }
+    else {
+      if(role == ROLE_LEFT) return LABEL_RIGHT_ENC;
+      if(role == ROLE_RIGHT) return LABEL_LEFT_ENC;
+    }
+    break;
+  }
+  case LABEL_SALT: {
+    if(dir == kd_outbound) {
+      if(role == ROLE_LEFT) return LABEL_LEFT_SALT;
+      if(role == ROLE_RIGHT) return LABEL_RIGHT_SALT;
+    }
+    else {
+      if(role == ROLE_LEFT) return LABEL_RIGHT_SALT;
+      if(role == ROLE_RIGHT) return LABEL_LEFT_SALT;
+    }
+    break;
+  }
+  case LABEL_AUTH: {
+    if(dir == kd_outbound) {
+      if(role == ROLE_LEFT) return LABEL_LEFT_AUTH;
+      if(role == ROLE_RIGHT) return LABEL_RIGHT_AUTH;
+    }
+    else {
+      if(role == ROLE_LEFT) return LABEL_RIGHT_AUTH;
+      if(role == ROLE_RIGHT) return LABEL_LEFT_AUTH;
+    }
+    break;
+  }
+  }
+
+  return label;
+}
+
 /* ---------------- NULL Key Derivation ---------------- */
 
 int key_derivation_null_generate(u_int8_t* key, u_int32_t len)
@@ -358,7 +399,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_derivation_dir_t di
   key_derivation_aesctr_param_t* params = kd->params_;
 
   if(kd->master_salt_.length_ != KD_AESCTR_SALT_LENGTH) {
-    log_printf(ERROR, "master salt has the wrong length");
+    log_printf(ERROR, "master salt has wrong length");
     return -1;
   }
   memcpy(params->ctr_.salt_.buf_, kd->master_salt_.buf_, KD_AESCTR_SALT_LENGTH);
@@ -368,7 +409,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_derivation_dir_t di
     params->ctr_.params_compat_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
   }
   else {
-    params->ctr_.params_.label_ ^= label;
+    params->ctr_.params_.label_ ^= convert_label(kd->role_, dir, label);
     params->ctr_.params_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
   }
 
