@@ -22,6 +22,9 @@ cipher aes-ctr
 #auth-algo null
 auth-algo sha1
 
+##message auth tag length
+#auth-tag-length 10
+
 ## Passphrase
 ## this is used to generate the crypto-key and salt
 ## this should be al least 30 characters

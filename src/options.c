@@ -320,6 +320,9 @@ void options_parse_post(options_t* opt)
   }
 #endif
 
+  if(opt->anytun02_compat_)
+    log_printf(WARNING, "--anytun02-compat is deprecated and very likly to be removed by the next release");
+
   if(!(opt->dev_name_) && !(opt->dev_type_))
     opt->dev_type_ = strdup("tun");
 }
@@ -443,7 +446,6 @@ void options_print_usage()
   printf("        [-w|--window-size] <window size>    seqence number window size\n");
 #ifndef NO_CRYPT
   printf("        [-k|--kd-prf] <kd-prf type>         key derivation pseudo random function\n");
-  printf("        [-O|--anytun02-compat]              enable compatiblity mode for anytun 0.2.x and prior\n");
 #ifndef NO_PASSPHRASE
   printf("        [-E|--passphrase] <pass phrase>     a passprhase to generate master key and salt from\n");
 #endif
