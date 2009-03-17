@@ -45,8 +45,8 @@
 
 #define LABEL_ENC 0
 #define LABEL_AUTH 1
-#define LABEL_SALT 3
-#define LABEL_NIL 4
+#define LABEL_SALT 2
+#define LABEL_NIL 3
 
 #define LABEL_LEFT_ENC 0xDEADBEEF
 #define LABEL_RIGHT_ENC 0xDEAE0010
