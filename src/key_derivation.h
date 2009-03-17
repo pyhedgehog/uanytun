@@ -55,8 +55,6 @@
 #define LABEL_LEFT_AUTH 0xE0000683
 #define LABEL_RIGHT_AUTH 0xE001B97C
 
-typedef u_int32_t satp_prf_label_t;
-
 enum key_derivation_type_enum { kd_unknown, kd_null, kd_aes_ctr };
 typedef enum key_derivation_type_enum key_derivation_type_t;
 enum key_derivation_dir_enum { kd_inbound, kd_outbound };

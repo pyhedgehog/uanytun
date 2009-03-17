@@ -66,6 +66,10 @@ typedef u_int16_t mux_t;
 #define MUX_T_NTOH(a) ntohs(a)
 #define MUX_T_HTON(a) htons(a)
 
+typedef u_int32_t satp_prf_label_t;
+#define SATP_PRF_LABEL_T_NTOH(a) ntohl(a)
+#define SATP_PRF_LABEL_T_HTON(a) htonl(a)
+
 struct buffer_struct {
   u_int32_t length_;
   u_int8_t* buf_;

@@ -120,7 +120,7 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
     return -1;
 
   if(kd->master_key_.buf_) {
-    log_printf(ERROR, "master key and passphrase provided, ignoring passphrase");
+    log_printf(WARNING, "master key and passphrase provided, ignoring passphrase");
     return 0;
   }    
   log_printf(NOTICE, "using passphrase to generate master key");
@@ -176,7 +176,7 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
     return -1;
 
   if(kd->master_salt_.buf_) {
-    log_printf(ERROR, "master salt and passphrase provided, ignoring passphrase");
+    log_printf(WARNING, "master salt and passphrase provided, ignoring passphrase");
     return 0;
   }    
   log_printf(NOTICE, "using passphrase to generate master salt");
@@ -409,7 +409,7 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_derivation_dir_t di
     params->ctr_.params_compat_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
   }
   else {
-    params->ctr_.params_.label_ ^= convert_label(kd->role_, dir, label);
+    params->ctr_.params_.label_ ^= SATP_PRF_LABEL_T_HTON(convert_label(kd->role_, dir, label));
     params->ctr_.params_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
   }
 
