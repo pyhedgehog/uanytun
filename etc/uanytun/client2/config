@@ -2,6 +2,8 @@
 ## Main options             #
 #############################
 
+role client
+
 ## Client ID
 ##  (has to be unique for each client)
 mux 2

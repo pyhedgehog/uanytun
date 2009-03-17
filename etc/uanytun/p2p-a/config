@@ -2,6 +2,8 @@
 ## Main options             #
 #############################
 
+role alice
+
 ## device type tun = ip/ipv6, tap = ethernet
 type tun
 
