@@ -48,12 +48,12 @@
 #define LABEL_SALT 2
 #define LABEL_NIL 3
 
-#define LABEL_LEFT_ENC 0xDEADBEEF
-#define LABEL_RIGHT_ENC 0xDEAE0010
-#define LABEL_LEFT_SALT 0xDF10416F
-#define LABEL_RIGHT_SALT 0xDF13FF90
-#define LABEL_LEFT_AUTH 0xE0000683
-#define LABEL_RIGHT_AUTH 0xE001B97C
+#define LABEL_LEFT_ENC 0x356A192B
+#define LABEL_RIGHT_ENC 0xDA4B9237
+#define LABEL_LEFT_SALT 0x77DE68DA
+#define LABEL_RIGHT_SALT 0x1B645389
+#define LABEL_LEFT_AUTH 0xAC3478D6
+#define LABEL_RIGHT_AUTH 0xC1DFD96E
 
 enum key_derivation_type_enum { kd_unknown, kd_null, kd_aes_ctr };
 typedef enum key_derivation_type_enum key_derivation_type_t;
