@@ -64,14 +64,13 @@ struct key_derivation_struct {
   key_derivation_type_t type_;
   u_int16_t key_length_;
   role_t role_;
-  int8_t anytun02_compat_;
   buffer_t master_key_;
   buffer_t master_salt_;
   void* params_;
 };
 typedef struct key_derivation_struct key_derivation_t;
 
-int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, int8_t anytun02_compat, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len);
+int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len);
 #ifndef NO_PASSPHRASE
 int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphrase, u_int16_t key_length);
 int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passphrase, u_int16_t salt_length);
@@ -99,13 +98,6 @@ union __attribute__((__packed__)) key_derivation_aesctr_ctr_union {
     seq_nr_t seq_;
     u_int16_t zero_;
   } params_;
-  struct __attribute__((__packed__)) {
-    u_int8_t fill_[KD_AESCTR_SALT_LENGTH - sizeof(u_int8_t) - 2*sizeof(u_int8_t) - sizeof(seq_nr_t)];
-    u_int8_t label_;
-    u_int8_t seq_fill_[2];
-    seq_nr_t seq_;
-    u_int16_t zero_;
-  } params_compat_;
 };
 typedef union key_derivation_aesctr_ctr_union key_derivation_aesctr_ctr_t;
 

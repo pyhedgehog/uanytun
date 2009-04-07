@@ -253,7 +253,6 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_INT_PARAM("-w","--window-size", opt->seq_window_size_)
 #ifndef NO_CRYPT
     PARSE_STRING_PARAM("-k","--kd-prf", opt->kd_prf_)
-    PARSE_BOOL_PARAM("-O","--anytun02-compat", opt->anytun02_compat_)
 #ifndef NO_PASSPHRASE
     PARSE_STRING_PARAM_SEC("-E","--passphrase", opt->passphrase_)
 #endif
@@ -320,9 +319,6 @@ void options_parse_post(options_t* opt)
   }
 #endif
 
-  if(opt->anytun02_compat_)
-    log_printf(WARNING, "--anytun02-compat is deprecated and very likly to be removed by the next release");
-
   if(!(opt->dev_name_) && !(opt->dev_type_))
     opt->dev_type_ = strdup("tun");
 }
@@ -363,7 +359,6 @@ void options_default(options_t* opt)
   opt->cipher_ = strdup("null");
   opt->auth_tag_length_ = 0;
 #endif
-  opt->anytun02_compat_ = 0;
   opt->key_.buf_ = NULL;
   opt->key_.length_ = 0;
   opt->salt_.buf_ = NULL;
@@ -503,7 +498,6 @@ void options_print(options_t* opt)
   default: printf("??\n"); break;
   }
 #endif
-  printf("anytun02_compat: %d\n", opt->anytun02_compat_);
 
   u_int32_t i;
   printf("key_[%d]: '", opt->key_.length_);

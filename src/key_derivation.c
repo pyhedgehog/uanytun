@@ -45,13 +45,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, int8_t anytun02_compat, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len)
+int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len)
 {
   if(!kd) 
     return -1;
 
   kd->role_ = role;
-  kd->anytun02_compat_ = anytun02_compat;
   kd->key_length_ = 0;
 
   kd->type_ = kd_unknown;
@@ -74,6 +73,11 @@ int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, int
     return -1;
   }
 
+  switch(role) {
+  case ROLE_LEFT: log_printf(NOTICE, "key derivation role: left"); break;
+  case ROLE_RIGHT: log_printf(NOTICE, "key derivation role: right"); break;
+  default: log_printf(NOTICE, "key derivation role: unknown"); break;
+  }
   kd->params_ = NULL;
 
   if(!key) {
@@ -404,14 +408,8 @@ int key_derivation_aesctr_calc_ctr(key_derivation_t* kd, key_derivation_dir_t di
   }
   memcpy(params->ctr_.salt_.buf_, kd->master_salt_.buf_, KD_AESCTR_SALT_LENGTH);
   params->ctr_.salt_.zero_ = 0;
-  if(kd->anytun02_compat_) {
-    params->ctr_.params_compat_.label_ ^= label;
-    params->ctr_.params_compat_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
-  }
-  else {
-    params->ctr_.params_.label_ ^= SATP_PRF_LABEL_T_HTON(convert_label(kd->role_, dir, label));
-    params->ctr_.params_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
-  }
+  params->ctr_.params_.label_ ^= SATP_PRF_LABEL_T_HTON(convert_label(kd->role_, dir, label));
+  params->ctr_.params_.seq_ ^= SEQ_NR_T_HTON(seq_nr);
 
   return 0;
 }
