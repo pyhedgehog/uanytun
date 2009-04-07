@@ -1,11 +1,11 @@
 2009.??.?? -- Version 0.3
 
+* updated to new protocol specification (extended label and crypto role)
 * the auth tag length can now be configured
 * added extended logging support (syslog, file stdout and stderr)
 * changed -n|--ifconfig parameter to new behavior
   tun and tap devices now use the same syntax
 * improved tap device handling on OpenBSD
-* added runtime option for anytun 0.2 crypto compatibility mode
 * fixed name resolution bug
 * fixed ipv6 addrlen bug
 * fixed packet length errors
