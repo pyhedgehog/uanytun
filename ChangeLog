@@ -1,8 +1,10 @@
-2009.??.?? -- Version 0.3
+2009.05.01 -- Version 0.3
 
 * updated to new protocol specification (extended label and crypto role)
+  Mind that due this protocol changes this version is incompatible to older 
+  version of anytun and uanytun
 * the auth tag length can now be configured
-* added extended logging support (syslog, file stdout and stderr)
+* added extended logging support (syslog, file, stdout and stderr)
 * changed -n|--ifconfig parameter to new behavior
   tun and tap devices now use the same syntax
 * improved tap device handling on OpenBSD
