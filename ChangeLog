@@ -1,7 +1,8 @@
 2009.??.?? -- Version 0.?
 
 * added signal handling without races
-
+* all log_targets print time now too
+	
 2009.05.01 -- Version 0.3
 
 * updated to new protocol specification (extended label and crypto role)
