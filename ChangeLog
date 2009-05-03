@@ -1,3 +1,7 @@
+2009.??.?? -- Version 0.?
+
+* added signal handling without races
+
 2009.05.01 -- Version 0.3
 
 * updated to new protocol specification (extended label and crypto role)

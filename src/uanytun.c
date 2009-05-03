@@ -249,7 +249,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   encrypted_packet_t encrypted_packet;
   encrypted_packet_init(&encrypted_packet, opt->auth_tag_length_);
   seq_nr_t seq_nr = 0;
-  fd_set readfds;
+  fd_set readfds, readyfds;
 
   cipher_t c;
   auth_algo_t aa;
@@ -260,36 +260,45 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   if(ret)
     return ret;
 
-  signal_init();
-  int return_value = 0;
-  while(!return_value) {
-    FD_ZERO(&readfds);
-    FD_SET(dev->fd_, &readfds);
-    FD_SET(sock->fd_, &readfds);
-    int nfds = dev->fd_ > sock->fd_ ? dev->fd_+1 : sock->fd_+1;
+  FD_ZERO(&readfds);
+  FD_SET(dev->fd_, &readfds);
+  FD_SET(sock->fd_, &readfds);
+  int nfds = dev->fd_ > sock->fd_ ? dev->fd_ : sock->fd_;
 
-    int ret = select(nfds, &readfds, NULL, NULL, NULL);
+  int return_value = 0;
+  int sig_fd = signal_init();
+  if(sig_fd < 0)
+    return_value -1;
+
+  FD_SET(sig_fd, &readfds);
+  nfds = (nfds < sig_fd) ? sig_fd : nfds;
+
+  while(!return_value) {
+    memcpy(&readyfds, &readfds, sizeof(readyfds));
+    int ret = select(nfds + 1, &readyfds, NULL, NULL, NULL);
     if(ret == -1 && errno != EINTR) {
       log_printf(ERROR, "select returned with error: %s", strerror(errno));
       return_value = -1;
       break;
     }
-    if(!ret)
+    if(!ret || ret == -1)
       continue;
 
-    if(signal_exit) {
-      return_value = 1;
-      break;
+    if(FD_ISSET(sig_fd, &readyfds)) {
+      if(signal_handle()) {
+        return_value = 1;
+        break;
+      }
     }
 
-    if(FD_ISSET(dev->fd_, &readfds)) {
+    if(FD_ISSET(dev->fd_, &readyfds)) {
       return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, seq_nr);
       seq_nr++;
       if(return_value)
         break;
     }
 
-    if(FD_ISSET(sock->fd_, &readfds)) {
+    if(FD_ISSET(sock->fd_, &readyfds)) {
       return_value = process_sock_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win); 
       if(return_value)
         break;
@@ -302,6 +311,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
   key_derivation_close(&kd);
 #endif
   seq_win_clear(&seq_win);
+  signal_stop();
 
   return return_value;
 }
