@@ -336,7 +336,8 @@ void tun_do_ifconfig(tun_device_t* dev)
   }
 
   char* const argv[] = { "/sbin/ifconfig", dev->actual_name_, dev->net_addr_, "netmask", dev->net_mask_, "mtu", mtu_str, end, NULL };
-  uanytun_exec("/sbin/ifconfig", argv, NULL);
+  char* const evp[] = { NULL };
+  uanytun_exec("/sbin/ifconfig", argv, evp);
 
   free(mtu_str);
 }

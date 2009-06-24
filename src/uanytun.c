@@ -402,7 +402,8 @@ int main(int argc, char* argv[])
   if(opt.post_up_script_) {
     log_printf(NOTICE, "executing post-up script '%s'", opt.post_up_script_);
     char* const argv[] = { opt.post_up_script_, dev.actual_name_, NULL };
-    int ret = uanytun_exec(opt.post_up_script_, argv, NULL);
+    char* const evp[] = { NULL };
+    int ret = uanytun_exec(opt.post_up_script_, argv, evp);
   }
 
 
