@@ -273,6 +273,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
   if(ipv6_only)
     opt->resolv_addr_type_ = IPV6_ONLY;
 
+#ifndef NO_CRYPT
   if(role) {
     if(!strcmp(role, "alice") || !strcmp(role, "server") || !strcmp(role, "left"))
       opt->role_ = ROLE_LEFT;
@@ -284,6 +285,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     }
     free(role);
   }
+#endif
   return 0;
 }
 
