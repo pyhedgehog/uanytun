@@ -32,9 +32,52 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYSEXEC_H_
-#define _SYSEXEC_H_
+#include "datatypes.h"
 
-int uanytun_exec(const char* script, char* const argv[], char* const evp[]);
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
 
-#endif
+#include "sysexec.h"
+#include "log.h"
+
+int uanytun_exec(const char* script, char* const argv[], char* const evp[])
+{
+  if(!script)
+    return -1;
+
+  pid_t pid;
+  pid = fork();
+  if(!pid) {
+    int fd;
+    for (fd=getdtablesize();fd>=0;--fd) // close all file descriptors
+      close(fd);
+
+    fd = open("/dev/null",O_RDWR);        // stdin
+    if(fd == -1)
+      log_printf(WARNING,  "can't open stdin");
+    else {
+      if(dup(fd) == -1)   // stdout
+        log_printf(WARNING,  "can't open stdout");
+      if(dup(fd) == -1)   // stderr
+        log_printf(WARNING,  "can't open stderr");
+    }
+    execve(script, argv, evp);
+        // if execl return, an error occurred
+    log_printf(ERROR, "error on executing script: %s", strerror(errno));
+    return -1;
+  }
+  int status = 0;
+  waitpid(pid, &status, 0);
+  if(WIFEXITED(status))
+    log_printf(NOTICE, "script '%s' returned %d", script, WEXITSTATUS(status));  
+  else if(WIFSIGNALED(status))
+    log_printf(NOTICE, "script '%s' terminated after signal %d", script, WTERMSIG(status));
+  else
+    log_printf(ERROR, "executing script '%s': unkown error");
+
+  return status;
+
+}

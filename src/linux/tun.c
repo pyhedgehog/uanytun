@@ -54,6 +54,7 @@
 #define DEFAULT_DEVICE "/dev/net/tun"
 
 #include "log.h"
+#include "sysexec.h"
 
 int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix){
   if(!dev) 
@@ -189,18 +190,15 @@ void tun_do_ifconfig(tun_device_t* dev)
   if(!dev || !dev->actual_name_ || !dev->net_addr_ || !dev->net_mask_)
     return;
 
-  char* command = NULL;
-  asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d", dev->actual_name_, dev->net_addr_, dev->net_mask_, dev->mtu_);
-  if(!command) {
+  char* mtu_str = NULL;
+  asprintf(&mtu_str, "%d", dev->mtu_);
+  if(!mtu_str) {
     log_printf(ERROR, "Execution of ifconfig failed");
     return;
   }
 
-  int result = system(command);
-  if(result == -1)
-    log_printf(ERROR, "Execution of ifconfig failed");
-  else
-    log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
+  char* const argv[] = { dev->actual_name_, dev->net_addr_, "netmask", dev->net_mask_, "mtu", mtu_str, NULL };
+  uanytun_exec("/sbin/ifconfig", argv, NULL);
 
-  free(command);
+  free(mtu_str);
 }

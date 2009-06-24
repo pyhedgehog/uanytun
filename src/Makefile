@@ -43,6 +43,7 @@ CRYPT_OBJ := key_derivation.o \
 OBJ := log.o \
       string_list.o \
       sig_handler.o \
+      sysexec.o \
       options.o \
       tun.o \
       udp.o \
