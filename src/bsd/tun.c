@@ -313,36 +313,30 @@ void tun_do_ifconfig(tun_device_t* dev)
   if(!dev || !dev->actual_name_ || !dev->net_addr_ || !dev->net_mask_)
     return;
 
-
-  char* command = NULL;
-  char* netmask;
   char* end;
   if(dev->type_ == TYPE_TAP) {
 #if defined(__GNUC__) && defined(__OpenBSD__)
-    end = " link0";
+    end = "link0";
 #elif defined(__GNUC__) && defined(__FreeBSD__)
-    end = " up";
+    end = "up";
 #elif defined(__GNUC__) && defined(__NetBSD__)
-    end = "";
+    end = NULL;
 #else
  #error This Device works just for OpenBSD, FreeBSD or NetBSD
 #endif
   }
   else
-    end = " up";
+    end = "up";
 
-  asprintf(&command, "/sbin/ifconfig %s %s netmask %s mtu %d%s", dev->actual_name_, dev->net_addr_,
-                                                                 dev->net_mask_, dev->mtu_, end);
-  if(!command) {
+  char* mtu_str = NULL;
+  asprintf(&mtu_str, "%d", dev->mtu_);
+  if(!mtu_str) {
     log_printf(ERROR, "Execution of ifconfig failed");
     return;
   }
 
-  int result = system(command);
-  if(result == -1)
-    log_printf(ERROR, "Execution of ifconfig failed");
-  else
-    log_printf(NOTICE, "ifconfig returned %d", WEXITSTATUS(result));
+  char* const argv[] = { dev->actual_name_, dev->net_addr_, "netmask", dev->net_mask_, "mtu", mtu_str, end, NULL };
+  uanytun_exec("/sbin/ifconfig", argv, NULL);
 
-  free(command);
+  free(mtu_str);
 }
