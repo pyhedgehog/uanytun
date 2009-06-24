@@ -39,7 +39,9 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <sys/select.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "sysexec.h"
 #include "log.h"
@@ -49,12 +51,23 @@ int uanytun_exec(const char* script, char* const argv[], char* const evp[])
   if(!script)
     return -1;
 
+  int pipefd[2];
+  if(pipe(pipefd) == -1) {
+    log_printf(ERROR, "executing script '%s' pipe() error: %s", script, strerror(errno));
+    return -1;
+  }
+
   pid_t pid;
   pid = fork();
+  if(pid == -1) {
+    log_printf(ERROR, "executing script '%s' fork() error: %s", script, strerror(errno));
+    return -1;
+  }
+
   if(!pid) {
     int fd;
     for (fd=getdtablesize();fd>=0;--fd) // close all file descriptors
-      close(fd);
+      if(fd != pipefd[1]) close(fd);
 
     fd = open("/dev/null",O_RDWR);        // stdin
     if(fd == -1)
@@ -67,18 +80,35 @@ int uanytun_exec(const char* script, char* const argv[], char* const evp[])
     }
     execve(script, argv, evp);
         // if execve returns, an error occurred, but logging doesn't work 
-        // because we closed all file descriptors, so just call exit
+        // because we closed all file descriptors, so just write errno to
+        // pipe and call exit
+    write(pipefd[1], (void*)(&errno), sizeof(errno));
     exit(-1);
   }
+  close(pipefd[1]);
+
   int status = 0;
   waitpid(pid, &status, 0);
+
+  fd_set rfds;
+  FD_ZERO(&rfds);
+  FD_SET(pipefd[0], &rfds);
+  struct timeval tv = { 0 , 0 };
+  if(select(pipefd[0]+1, &rfds, NULL, NULL, &tv) == 1) {
+    int err = 0;
+    if(read(pipefd[0], (void*)(&err), sizeof(err)) >= sizeof(err)) {
+      log_printf(NOTICE, "script '%s' exec() error: %s", script, strerror(err));
+      close(pipefd[0]);
+      return -1;
+    }
+  }
   if(WIFEXITED(status))
     log_printf(NOTICE, "script '%s' returned %d", script, WEXITSTATUS(status));  
   else if(WIFSIGNALED(status))
     log_printf(NOTICE, "script '%s' terminated after signal %d", script, WTERMSIG(status));
   else
-    log_printf(ERROR, "executing script '%s': unkown error");
+    log_printf(ERROR, "executing script '%s': unkown error", script);
 
+  close(pipefd[0]);
   return status;
-
 }
