@@ -35,9 +35,9 @@
 #ifndef _SYSEXEC_H_
 #define _SYSEXEC_H_
 
-int exec_script(const char* script, const char* ifname)
+int uanytun_exec(const char* script, char* const argv[], char* const evp[])
 {
-  if(!script || !ifname)
+  if(!script)
     return -1;
 
   pid_t pid;
@@ -56,7 +56,7 @@ int exec_script(const char* script, const char* ifname)
       if(dup(fd) == -1)   // stderr
         log_printf(WARNING,  "can't open stderr");
     }
-    execl("/bin/sh", "/bin/sh", script, ifname, NULL);
+    execve(script, argv, evp);
         // if execl return, an error occurred
     log_printf(ERROR, "error on executing script: %s", strerror(errno));
     return -1;

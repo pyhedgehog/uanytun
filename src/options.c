@@ -446,7 +446,7 @@ void options_print_usage()
 #endif
   printf("        [-K|--key] <master key>             master key to use for encryption\n");
   printf("        [-A|--salt] <master salt>           master salt to use for encryption\n");
-  printf("        [-e|--role] <role>                  left (alice) or right (bob)");
+  printf("        [-e|--role] <role>                  left (alice) or right (bob)\n");
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
   printf("        [-b|--auth-tag-length] <length>     length of the auth tag\n");
