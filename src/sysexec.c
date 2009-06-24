@@ -65,9 +65,9 @@ int uanytun_exec(const char* script, char* const argv[], char* const evp[])
         log_printf(WARNING,  "can't open stderr");
     }
     execve(script, argv, evp);
-        // if execl return, an error occurred
-    log_printf(ERROR, "error on executing script: %s", strerror(errno));
-    return -1;
+        // if execve returns, an error occurred, but logging doesn't work 
+        // because we closed all file descriptors, so just call exit
+    exit(-1);
   }
   int status = 0;
   waitpid(pid, &status, 0);
