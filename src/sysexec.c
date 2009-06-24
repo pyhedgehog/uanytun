@@ -71,12 +71,12 @@ int uanytun_exec(const char* script, char* const argv[], char* const evp[])
 
     fd = open("/dev/null",O_RDWR);        // stdin
     if(fd == -1)
-      log_printf(WARNING,  "can't open stdin");
+      log_printf(WARNING, "can't open stdin");
     else {
       if(dup(fd) == -1)   // stdout
-        log_printf(WARNING,  "can't open stdout");
+        log_printf(WARNING, "can't open stdout");
       if(dup(fd) == -1)   // stderr
-        log_printf(WARNING,  "can't open stderr");
+        log_printf(WARNING, "can't open stderr");
     }
     execve(script, argv, evp);
         // if execve returns, an error occurred, but logging doesn't work 
