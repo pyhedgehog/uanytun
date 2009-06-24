@@ -39,6 +39,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <stdlib.h>
 
 #include "sysexec.h"
 #include "log.h"
