@@ -35,8 +35,6 @@
 #ifndef _SIG_HANDLER_H_
 #define _SIG_HANDLER_H_
 
-#include <signal.h>
-
 int signal_init();
 int signal_handle();
 void signal_stop();
