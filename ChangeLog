@@ -1,5 +1,7 @@
-2009.??.?? -- Version 0.?
+2009.11.08 -- Version 0.3.1
 
+* switched to GPLv3 or higher
+* improved script execution
 * added signal handling without races
 * all log_targets print time now too
 	
