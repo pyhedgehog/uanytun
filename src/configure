@@ -44,6 +44,9 @@ PASSPHRASE=1
 V4_MAPPED=1
 
 PREFIX='/usr/local'
+SBINDIR=''
+ETCDIR=''
+MANDIR=''
 USERNAME='uanytun'
 USERHOME='/var/run/uanytun'
 
@@ -51,6 +54,9 @@ print_usage() {
   echo "configure --help                    print this"
   echo "          --target=<TARGET>         build target i.e. Linux (default: autodetect)"
   echo "          --prefix=<PREFIX>         the installation prefix (default: /usr/local)"
+  echo "          --sbindir=<DIR>           the path to the sbin directory (default: $PREFIX/sbin)"
+  echo "          --sysconfdir=<DIR>        the path to the system configuration directory (default: $PREFIX/etc"
+  echo "          --mandir=<DIR>            the path to the system man pages (default: $PREFIX/share/man)"
   echo "          --username=<USERNAME>     create this user when installing (default: uanytun)"
   echo "          --userhome=<PATH>         the home directory of the user to be created  (default: /var/run/uanytun)"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
@@ -70,6 +76,15 @@ do
   ;;
   --prefix=*)
     PREFIX=${arg#--prefix=}
+  ;;
+  --sbindir=*)
+    SBINDIR=${arg#--sbindir=}
+  ;;
+  --sysconfdir=*)
+    ETCDIR=${arg#--sysconfdir=}
+  ;;
+  --mandir=*)
+    MANDIR=${arg#--mandir=}
   ;;
   --username=*)
     USERNAME=${arg#--username=}
@@ -158,10 +173,16 @@ if [ $V4_MAPPED -eq 0 ]; then
   echo "WARNING: disabling V4 mapped addresses, this prevents uanytun from using IPv6 and IPv4 Sockets at the same time"
 fi
 
-if [ "x$PREFIX" = "x/usr" ]; then
- ETCDIR=/etc
-else
+if [ -z "$SBINDIR" ]; then
+ SBINDIR=$PREFIX/sbin
+fi
+
+if [ -z "$ETCDIR" ]; then
  ETCDIR=$PREFIX/etc
+fi
+
+if [ -z "$MANDIR" ]; then
+ MANDIR=$PREFIX/share/man
 fi
 
 cat >> include.mk <<EOF
@@ -174,9 +195,10 @@ CC := gcc
 CFLAGS := $CFLAGS
 LDFLAGS := $LDFLAGS
 
-SBINDIR := $PREFIX/sbin
-MANDIR := $PREFIX/share/man
+PREFIX := $PREFIX
+SBINDIR := $SBINDIR
 ETCDIR := $ETCDIR
+MANDIR := $MANDIR
 USERNAME := $USERNAME
 USERHOME := $USERHOME
 EOF
