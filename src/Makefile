@@ -97,7 +97,7 @@ clean:
 manpage:
 	$(MAKE) --directory="../doc/" manpage
 
-install: all install-bin install-etc install-man add-user
+install: all install-bin install-etc install-man
 
 install-bin: $(EXECUTABLE)
 	mkdir -p $(DESTDIR)$(SBINDIR)
@@ -114,9 +114,6 @@ install-etc:
          cd $$dir ;                                                                                        \
          mkdir -p $(DESTDIR)$(ETCDIR)/uanytun/$$dir ;                                                      \
          install -m 600 config $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;                                  \
-         sed -i 's#username uanytun#username $(USERNAME)#' $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;      \
-         sed -i 's#groupname uanytun#groupname $(USERNAME)#' $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;    \
-         sed -i 's#chroot /var/run/uanytun#chroot $(USERHOME)#' $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ; \
          if [ -e 'post-up.sh' ]; then                                                                      \
            install -m 755 post-up.sh $(DESTDIR)$(ETCDIR)/uanytun/$$dir/post-up.sh ;                        \
          fi ;                                                                                              \
@@ -134,17 +131,10 @@ install-man: manpage
 	cp ../doc/uanytun.8 $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
 	gzip $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
 
-add-user:
-	@ adduser --system --group --home $(USERHOME) $(USERNAME)
-
-remove-user: 
-	@ deluser $(USERNAME)
-	@ rm -rf $(USERHOME)
-
 remove:
 	rm -f $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
 	rm -f $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8.gz
 	rm -f $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
 
-purge: remove remove-user
+purge: remove
 	rm -rf $(DESTDIR)$(ETCDIR)/uanytun/

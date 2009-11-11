@@ -47,8 +47,6 @@ PREFIX='/usr/local'
 SBINDIR=''
 ETCDIR=''
 MANDIR=''
-USERNAME='uanytun'
-USERHOME='/var/run/uanytun'
 
 print_usage() {
   echo "configure --help                    print this"
@@ -57,8 +55,6 @@ print_usage() {
   echo "          --sbindir=<DIR>           the path to the sbin directory (default: $PREFIX/sbin)"
   echo "          --sysconfdir=<DIR>        the path to the system configuration directory (default: $PREFIX/etc"
   echo "          --mandir=<DIR>            the path to the system man pages (default: $PREFIX/share/man)"
-  echo "          --username=<USERNAME>     create this user when installing (default: uanytun)"
-  echo "          --userhome=<PATH>         the home directory of the user to be created  (default: /var/run/uanytun)"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --no-crypto               disable crypto at all (only NULL cipher)"
   echo "          --disable-passphrase      disable master key and salt passphrase"
@@ -85,12 +81,6 @@ do
   ;;
   --mandir=*)
     MANDIR=${arg#--mandir=}
-  ;;
-  --username=*)
-    USERNAME=${arg#--username=}
-  ;;
-  --userhome=*)
-    USERHOME=${arg#--userhome=}
   ;;
   --use-ssl-crypto)
     CRYPTO_LIB='ssl'
@@ -194,13 +184,12 @@ TARGET := $TARGET
 CC := gcc
 CFLAGS := $CFLAGS
 LDFLAGS := $LDFLAGS
+STRIP := strip
 
 PREFIX := $PREFIX
 SBINDIR := $SBINDIR
 ETCDIR := $ETCDIR
 MANDIR := $MANDIR
-USERNAME := $USERNAME
-USERHOME := $USERHOME
 EOF
 
 exit 0
