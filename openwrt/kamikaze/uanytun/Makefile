@@ -12,13 +12,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uanytun
-PKG_VERSION:=0.3-rc1
+PKG_VERSION:=0.3.1
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.anytun.org/~equinox/
-PKG_MD5SUM:=97854b33081f7685ff174db4c7083d8e
+PKG_SOURCE_URL:=http://www.anytun.org/download/
+PKG_MD5SUM:=7923882da9b97559d5f2074f5d5f8dee
 
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
