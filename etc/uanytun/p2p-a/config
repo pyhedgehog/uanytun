@@ -61,8 +61,8 @@ remote-port 4445
 log syslog:3,uanytun-p2p-a,daemon
 
 ## change user and group after init
-username uanytun
-groupname uanytun
+#username uanytun
+#groupname uanytun
 
 ## chroot to users home directory
 #chroot /var/run/uanytun
