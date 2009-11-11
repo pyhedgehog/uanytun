@@ -126,13 +126,13 @@ passed to the daemon:
    IPv4 and IPv6 addresses.
 
 *-d, --dev <name>*::
-   device name
+   device name +
    By default, tapN is used for Ethernet tunnel interfaces,
    and tunN for IP tunnels, respectively. This option can
    be used to manually override these defaults.
 
 *-t, --type <tun|tap>*::
-   device type
+   device type +
    Type of the tunnels to create. Use tap for Ethernet
    tunnels, tun for IP tunnels.
 
@@ -159,7 +159,7 @@ passed to the daemon:
    reasons. default: 0
 
 *-w, --window-size <window size>*::
-   seqence window size
+   seqence window size +
    Sometimes, packets arrive out of order on the receiver
    side. This option defines the size of a list of received
    packets' sequence numbers. If, according to this list,
@@ -226,7 +226,7 @@ passed to the daemon:
    message authentication algorithm +
    This option sets the message authentication algorithm. +
    If HMAC-SHA1 is used, the packet length is increased. The additional bytes 
-   contain the authentication data. see *-b, --auth-tag-length* for more info. +
+   contain the authentication data. see *--auth-tag-length* for more info. +
    Possible values:
 
    *null*;; no message authentication
@@ -266,7 +266,7 @@ uanytun -r anycast.anytun.org -d anytun0 -t tun -n 192.0.2.2/30 -a null -c null 
 Anycast tunnel endpoints:
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 As *uAnytun* can't work as an anycast endpoint it can't be used for this purpose. You
-have to use *anytun* for that job.
+have to use *Anytun* for that job.
 
 
 BUGS
@@ -278,6 +278,7 @@ AUTHORS
 -------
 
 Christian Pointner <equinox@anytun.org>
+
 
 RESOURCES
 ---------
