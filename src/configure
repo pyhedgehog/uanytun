@@ -36,6 +36,8 @@
 
 TARGET=`uname -s`
 
+EBUILD_COMPAT=0
+
 CFLAGS='-g -O2'
 LDFLAGS='-g -Wall -O2'
 
@@ -100,14 +102,19 @@ do
   --enable-v4-mapped)
     V4_MAPPED=2
   ;; 
+  --ebuild-compat)
+    EBUILD_COMPAT=1
+  ;;
   --help)
     print_usage
     exit 0
   ;;
   *)
-    echo "Unknown argument: $arg"
-    print_usage
-    exit 1
+    if [ $EBUILD_COMPAT -ne 1 ]; then
+      echo "Unknown argument: $arg"
+      print_usage
+      exit 1
+    fi
   ;;
   esac
 done

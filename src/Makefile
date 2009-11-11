@@ -78,6 +78,9 @@ endif
 uanytun: $(OBJ)
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
+strip: $(EXECUTABLE)
+	$(STRIP) -s $(EXECUTABLE)
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
 
@@ -102,7 +105,6 @@ install: all install-bin install-etc install-man
 install-bin: $(EXECUTABLE)
 	mkdir -p $(DESTDIR)$(SBINDIR)
 	install -m 755 $(EXECUTABLE) $(DESTDIR)$(SBINDIR)
-	$(STRIP) $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
 
 install-etc:
 	mkdir -p $(DESTDIR)$(ETCDIR)/uanytun
