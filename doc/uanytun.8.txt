@@ -3,7 +3,9 @@ uanytun(8)
 
 NAME
 ----
+
 uanytun - micro anycast tunneling daemon
+
 
 SYNOPSIS
 --------
@@ -40,6 +42,7 @@ uanytun
   [ -b|--auth-tag-length <length> ]
 ....
 
+
 DESCRIPTION
 -----------
 
@@ -51,6 +54,7 @@ and multicast hosts. Unlike Anytun which is a full featured implementation
 uAnytun has no support for multiple connections or synchronisation. It is a 
 small single threaded implementation intended to act as a client on small 
 platforms.
+
 
 OPTIONS
 -------
@@ -254,7 +258,6 @@ Host B:
 uanytun -r hosta.example.com -t tun -n 192.168.123.2/30 -c aes-ctr-256 -k aes-ctr-256 \
         -E have_a_very_safe_and_productive_day -e right
 
-
 One unicast and one anycast tunnel endpoint:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  
@@ -273,6 +276,7 @@ BUGS
 ----
 Most likely there are some bugs in *uAnytun*. If you find a bug, please let
 the developers know at uanytun@anytun.org. Of course, patches are preferred.
+
 
 AUTHORS
 -------
