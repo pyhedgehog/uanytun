@@ -18,7 +18,6 @@ using ssl crypto library:
  build-essential
  libssl-dev
 
-
 OpenBSD/FreeBSD
 ---------------
 
@@ -57,14 +56,12 @@ using ssl crypto library:
 # ./configure --use-ssl-crypto
 # make
 
-
 Notes: 
   - try './configure --help' for further information
   - if using openssl pre 0.9.8 you have to disable passphrase
     because openssl had no SHA256 implementation prior to this
     version
   - on OpenBSD/FreeBSD you have to use gmake instead of make
-
 
 Installing
 ----------
