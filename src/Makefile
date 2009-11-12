@@ -75,15 +75,15 @@ ifneq ($(MAKECMDGOALS),distclean)
 -include $(SRC:%.c=%.d)
 endif
 
-uanytun: $(OBJ)
+$(EXECUTABLE): $(OBJ)
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
-
-strip: $(EXECUTABLE)
-	$(STRIP) -s $(EXECUTABLE)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
 
+
+strip: $(EXECUTABLE)
+	$(STRIP) -s $(EXECUTABLE)
 
 distclean: cleanall
 	find . -name *.o -exec rm -f {} \;
