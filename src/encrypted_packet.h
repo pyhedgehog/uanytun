@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ENCRYPTED_PACKET_H_
-#define _ENCRYPTED_PACKET_H_
+#ifndef UANYUTN_encrypted_packet_h_INCLUDED
+#define UANYUTN_encrypted_packet_h_INCLUDED
 
 #define ENCRYPTED_PACKET_SIZE_MAX 1600
 

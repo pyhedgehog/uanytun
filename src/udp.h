@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _UDP_H_
-#define _UDP_H_
+#ifndef UANYUTN_udp_h_INCLUDED
+#define UANYUTN_udp_h_INCLUDED
 
 #include "options.h"
 

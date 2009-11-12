@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _KEY_DERIVATION_H_
-#define _KEY_DERIVATION_H_
+#ifndef UANYUTN_key_derivation_h_INCLUDED
+#define UANYUTN_key_derivation_h_INCLUDED
 
 #ifndef USE_SSL_CRYPTO
 #include <gcrypt.h>

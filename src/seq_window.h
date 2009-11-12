@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SEQ_WINDOW_H_
-#define _SEQ_WINDOW_H_
+#ifndef UANYUTN_seq_window_h_INCLUDED
+#define UANYUTN_seq_window_h_INCLUDED
 
 struct seq_win_element_struct {
   sender_id_t sender_id_;

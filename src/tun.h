@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TUN_H_
-#define _TUN_H_
+#ifndef UANYUTN_tun_h_INCLUDED
+#define UANYUTN_tun_h_INCLUDED
 
 #include <stdlib.h>
 

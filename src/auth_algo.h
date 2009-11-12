@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _AUTH_ALGO_H_
-#define _AUTH_ALGO_H_
+#ifndef UANYTUN_auth_algo_h_INCLUDED
+#define UANYTUN_auth_algo_h_INCLUDED
 
 #ifndef USE_SSL_CRYPTO
 #include <gcrypt.h>

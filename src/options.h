@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPTIONS_H_
-#define _OPTIONS_H_
+#ifndef UANYUTN_options_h_INCLUDED
+#define UANYUTN_options_h_INCLUDED
 
 #include "string_list.h"
 
