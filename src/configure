@@ -192,6 +192,7 @@ CC := gcc
 CFLAGS := $CFLAGS
 LDFLAGS := $LDFLAGS
 STRIP := strip
+INSTALL := install
 
 PREFIX := $PREFIX
 SBINDIR := $SBINDIR

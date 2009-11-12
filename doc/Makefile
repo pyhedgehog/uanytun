@@ -35,6 +35,8 @@
 
 VERSION=$(shell cat ../version)
 
+.PHONY: clean 
+
 all: manpage
 
 uanytun.8: uanytun.8.txt

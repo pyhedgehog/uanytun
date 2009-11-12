@@ -40,19 +40,19 @@ endif
 EXECUTABLE := uanytun
 
 CRYPT_OBJ := key_derivation.o \
-            auth_algo.o
+             auth_algo.o
 OBJ := log.o \
-      string_list.o \
-      sig_handler.o \
-      sysexec.o \
-      options.o \
-      tun.o \
-      udp.o \
-      plain_packet.o \
-      encrypted_packet.o \
-      seq_window.o \
-      cipher.o \
-      uanytun.o
+       string_list.o \
+       sig_handler.o \
+       sysexec.o \
+       options.o \
+       tun.o \
+       udp.o \
+       plain_packet.o \
+       encrypted_packet.o \
+       seq_window.o \
+       cipher.o \
+       uanytun.o
 
 
 ifndef NO_CRYPT_OBJ
@@ -61,15 +61,15 @@ endif
 
 SRC := $(OBJ:%.o=%.c)
 
-.PHONY: clean distclean manpage install install-bin install-etc install-man remove purge
+.PHONY: clean cleanall distclean manpage install install-bin install-etc install-man uninstall remove purge
 
 all: $(EXECUTABLE)
 
 %.d: %.c
 	@set -e; rm -f $@; \
-	 $(CC) -MM $(CFLAGS) $< > $@.$$$$; \
-   sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
-   rm -f $@.$$$$; echo '(re)building $@'
+  $(CC) -MM $(CFLAGS) $< > $@.$$$$; \
+  sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+  rm -f $@.$$$$; echo '(re)building $@'
 
 ifneq ($(MAKECMDGOALS),distclean)
 -include $(SRC:%.c=%.d)
@@ -85,7 +85,7 @@ strip: $(EXECUTABLE)
 	$(CC) $(CFLAGS) -c $<
 
 
-distclean: clean
+distclean: cleanall
 	find . -name *.o -exec rm -f {} \;
 	find . -name "*.\~*" -exec rm -rf {} \;
 	rm -f include.mk
@@ -97,41 +97,46 @@ clean:
 	rm -f *.d.*
 	rm -f $(EXECUTABLE)
 
+cleanall: clean
+	$(MAKE) --directory="../doc/" clean
+
 manpage:
 	$(MAKE) --directory="../doc/" manpage
 
 install: all install-bin install-etc install-man
 
 install-bin: $(EXECUTABLE)
-	mkdir -p $(DESTDIR)$(SBINDIR)
-	install -m 755 $(EXECUTABLE) $(DESTDIR)$(SBINDIR)
+	$(INSTALL) -d $(DESTDIR)$(SBINDIR)
+	$(INSTALL) -m 755 $(EXECUTABLE) $(DESTDIR)$(SBINDIR)
 
 install-etc:
-	mkdir -p $(DESTDIR)$(ETCDIR)/uanytun
-	install -m 644 ../etc/uanytun/autostart $(DESTDIR)$(ETCDIR)/uanytun/autostart
-	@( cd '../etc/uanytun/' ;                                                                                \
-     for dir in `ls`; do                                                                                   \
-       if [ -d $$dir ]; then                                                                               \
-         echo "install $$dir configuration" ;                                                              \
-         cd $$dir ;                                                                                        \
-         mkdir -p $(DESTDIR)$(ETCDIR)/uanytun/$$dir ;                                                      \
-         install -m 600 config $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;                                  \
-         if [ -e 'post-up.sh' ]; then                                                                      \
-           install -m 755 post-up.sh $(DESTDIR)$(ETCDIR)/uanytun/$$dir/post-up.sh ;                        \
-         fi ;                                                                                              \
-         cd .. ;                                                                                           \
-       fi ;                                                                                                \
-     done                                                                                                  \
+	$(INSTALL) -d $(DESTDIR)$(ETCDIR)/uanytun
+	$(INSTALL) -m 644 ../etc/uanytun/autostart $(DESTDIR)$(ETCDIR)/uanytun/autostart
+	@( cd '../etc/uanytun/' ;                                                             \
+     for dir in `ls`; do                                                                \
+       if [ -d $$dir ]; then                                                            \
+         echo "install $$dir configuration" ;                                           \
+         cd $$dir ;                                                                     \
+         $(INSTALL) -d $(DESTDIR)$(ETCDIR)/uanytun/$$dir ;                              \
+         $(INSTALL) -m 600 config $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;            \
+         if [ -e 'post-up.sh' ]; then                                                   \
+           $(INSTALL) -m 755 post-up.sh $(DESTDIR)$(ETCDIR)/uanytun/$$dir/post-up.sh ;  \
+         fi ;                                                                           \
+         cd .. ;                                                                        \
+       fi ;                                                                             \
+     done                                                                               \
    )
-	mkdir -p $(DESTDIR)$(ETCDIR)/init.d
-	install -m 755 ../etc/init.d/uanytun $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+	$(INSTALL) -d $(DESTDIR)$(ETCDIR)/init.d
+	$(INSTALL) -m 755 ../etc/init.d/uanytun $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
 	@ sed -i 's#DAEMON=/usr/sbin/uanytun#DAEMON=$(SBINDIR)/$(EXECUTABLE)#' $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
 	@ sed -i 's#CONFIG_DIR=/etc/uanytun#CONFIG_DIR=$(ETCDIR)/uanytun#' $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
 
 install-man: manpage
-	mkdir -p $(DESTDIR)$(MANDIR)/man8/
-	cp ../doc/uanytun.8 $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
+	$(INSTALL) -d $(DESTDIR)$(MANDIR)/man8/
+	$(INSTALL) -m 644 ../doc/uanytun.8 $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
 	gzip $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
+
+uninstall: remove
 
 remove:
 	rm -f $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
