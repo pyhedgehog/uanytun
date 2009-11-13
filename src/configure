@@ -110,14 +110,20 @@ do
     exit 0
   ;;
   *)
-    if [ $EBUILD_COMPAT -ne 1 ]; then
-      echo "Unknown argument: $arg"
-      print_usage
-      exit 1
-    fi
+    ERRORS="$ERRORS $arg"
   ;;
   esac
 done
+
+if [ -n "$ERRORS" ] && [ $EBUILD_COMPAT -ne 1 ]; then
+  for error in $ERRORS; do
+    echo "Unknown argument: $error"
+  done
+
+  print_usage
+  exit 1
+fi
+
 
 rm -f include.mk
 case $TARGET in 
