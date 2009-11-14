@@ -49,6 +49,7 @@ PREFIX='/usr/local'
 SBINDIR=''
 ETCDIR=''
 MANDIR=''
+EXAMPLES=''
 
 print_usage() {
   echo "configure --help                    print this"
@@ -57,6 +58,7 @@ print_usage() {
   echo "          --sbindir=<DIR>           the path to the sbin directory (default: $PREFIX/sbin)"
   echo "          --sysconfdir=<DIR>        the path to the system configuration directory (default: $PREFIX/etc"
   echo "          --mandir=<DIR>            the path to the system man pages (default: $PREFIX/share/man)"
+  echo "          --examplesdir=<DIR>       the path to the examples files (default: $PREFIX/share/examples)"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --no-crypto               disable crypto at all (only NULL cipher)"
   echo "          --disable-passphrase      disable master key and salt passphrase"
@@ -83,6 +85,9 @@ do
   ;;
   --mandir=*)
     MANDIR=${arg#--mandir=}
+  ;;
+  --examplesdir=*)
+    EXAMPLESDIR=${arg#--examplesdir=}
   ;;
   --use-ssl-crypto)
     CRYPTO_LIB='ssl'
@@ -177,15 +182,19 @@ if [ $V4_MAPPED -eq 0 ]; then
 fi
 
 if [ -z "$SBINDIR" ]; then
- SBINDIR=$PREFIX/sbin
+  SBINDIR=$PREFIX/sbin
 fi
 
 if [ -z "$ETCDIR" ]; then
- ETCDIR=$PREFIX/etc
+  ETCDIR=$PREFIX/etc
 fi
 
 if [ -z "$MANDIR" ]; then
- MANDIR=$PREFIX/share/man
+  MANDIR=$PREFIX/share/man
+fi
+
+if [ -z "$EXAMPLESDIR" ]; then
+  EXAMPLESDIR=$PREFIX/share/examples
 fi
 
 cat >> include.mk <<EOF
@@ -204,6 +213,7 @@ PREFIX := $PREFIX
 SBINDIR := $SBINDIR
 ETCDIR := $ETCDIR
 MANDIR := $MANDIR
+EXAMPLESDIR := $EXAMPLESDIR
 EOF
 
 exit 0

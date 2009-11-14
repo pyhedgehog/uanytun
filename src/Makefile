@@ -103,33 +103,37 @@ cleanall: clean
 manpage:
 	$(MAKE) --directory="../doc/" manpage
 
-install: all install-bin install-etc install-man
+install: all install-bin install-etc install-examples install-man
 
 install-bin: $(EXECUTABLE)
 	$(INSTALL) -d $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -m 755 $(EXECUTABLE) $(DESTDIR)$(SBINDIR)
 
 install-etc:
-	$(INSTALL) -d $(DESTDIR)$(ETCDIR)/uanytun
-	$(INSTALL) -m 644 ../etc/uanytun/autostart $(DESTDIR)$(ETCDIR)/uanytun/autostart
-	@( cd '../etc/uanytun/' ;                                                             \
-     for dir in `ls`; do                                                                \
-       if [ -d $$dir ]; then                                                            \
-         echo "install $$dir configuration" ;                                           \
-         cd $$dir ;                                                                     \
-         $(INSTALL) -d $(DESTDIR)$(ETCDIR)/uanytun/$$dir ;                              \
-         $(INSTALL) -m 600 config $(DESTDIR)$(ETCDIR)/uanytun/$$dir/config ;            \
-         if [ -e 'post-up.sh' ]; then                                                   \
-           $(INSTALL) -m 755 post-up.sh $(DESTDIR)$(ETCDIR)/uanytun/$$dir/post-up.sh ;  \
-         fi ;                                                                           \
-         cd .. ;                                                                        \
-       fi ;                                                                             \
-     done                                                                               \
-   )
+	$(INSTALL) -d $(DESTDIR)$(ETCDIR)/$(EXECUTABLE)
+	@ echo "example configurations can be found at $(EXAMPLESDIR)/$(EXECUTABLE)" > $(DESTDIR)$(ETCDIR)/$(EXECUTABLE)/README
 	$(INSTALL) -d $(DESTDIR)$(ETCDIR)/init.d
 	$(INSTALL) -m 755 ../etc/init.d/uanytun $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
 	@ sed -i 's#DAEMON=/usr/sbin/uanytun#DAEMON=$(SBINDIR)/$(EXECUTABLE)#' $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
 	@ sed -i 's#CONFIG_DIR=/etc/uanytun#CONFIG_DIR=$(ETCDIR)/uanytun#' $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+
+install-examples:
+	$(INSTALL) -d $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)
+	$(INSTALL) -m 644 ../etc/uanytun/autostart $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)/autostart
+	@( cd '../etc/uanytun/' ;                                                                        \
+     for dir in `ls`; do                                                                           \
+       if [ -d $$dir ]; then                                                                       \
+         echo "install $$dir configuration" ;                                                      \
+         cd $$dir ;                                                                                \
+         $(INSTALL) -d $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)/$$dir ;                              \
+         $(INSTALL) -m 600 config $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)/$$dir/config ;            \
+         if [ -e 'post-up.sh' ]; then                                                              \
+           $(INSTALL) -m 755 post-up.sh $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)/$$dir/post-up.sh ;  \
+         fi ;                                                                                      \
+         cd .. ;                                                                                   \
+       fi ;                                                                                        \
+     done                                                                                          \
+   )
 
 install-man: manpage
 	$(INSTALL) -d $(DESTDIR)$(MANDIR)/man8/
@@ -142,6 +146,7 @@ remove:
 	rm -f $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
 	rm -f $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8.gz
 	rm -f $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+	rm -rf $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)/
 
 purge: remove
-	rm -rf $(DESTDIR)$(ETCDIR)/uanytun/
+	rm -rf $(DESTDIR)$(ETCDIR)/$(EXECUTABLE)/
