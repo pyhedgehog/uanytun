@@ -50,6 +50,7 @@ SBINDIR=''
 ETCDIR=''
 MANDIR=''
 EXAMPLESDIR=''
+INSTALLEXAMPLES=1
 
 print_usage() {
   echo "configure --help                    print this"
@@ -59,6 +60,7 @@ print_usage() {
   echo "          --sysconfdir=<DIR>        the path to the system configuration directory (default: $PREFIX/etc"
   echo "          --mandir=<DIR>            the path to the system man pages (default: $PREFIX/share/man)"
   echo "          --examplesdir=<DIR>       the path to the examples files (default: $PREFIX/share/examples)"
+  echo "          --no-examples             dont't install example files"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --no-crypto               disable crypto at all (only NULL cipher)"
   echo "          --disable-passphrase      disable master key and salt passphrase"
@@ -88,6 +90,9 @@ do
   ;;
   --examplesdir=*)
     EXAMPLESDIR=${arg#--examplesdir=}
+  ;;
+  --no-examples)
+    INSTALLEXAMPLES=0
   ;;
   --use-ssl-crypto)
     CRYPTO_LIB='ssl'
@@ -213,7 +218,10 @@ PREFIX := $PREFIX
 SBINDIR := $SBINDIR
 ETCDIR := $ETCDIR
 MANDIR := $MANDIR
-EXAMPLESDIR := $EXAMPLESDIR
 EOF
+
+if [ $INSTALLEXAMPLES -eq 1 ]; then
+  echo "EXAMPLESDIR := $EXAMPLESDIR" >> include.mk
+fi
 
 exit 0

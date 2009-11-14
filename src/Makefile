@@ -103,7 +103,16 @@ cleanall: clean
 manpage:
 	$(MAKE) --directory="../doc/" manpage
 
-install: all install-bin install-etc install-examples install-man
+
+ifdef EXAMPLESDIR
+INSTALL_TARGETS := install-bin install-etc install-examples install-man
+REMOVE_TARGETS := remove-examples
+else
+INSTALL_TARGETS := install-bin install-etc install-man
+REMOVE_TARGETS := 
+endif
+ 
+install: all $(INSTALL_TARGETS)
 
 install-bin: $(EXECUTABLE)
 	$(INSTALL) -d $(DESTDIR)$(SBINDIR)
@@ -141,10 +150,12 @@ install-man: manpage
 
 uninstall: remove
 
-remove:
+remove: $(REMOVE_TARGETS)
 	rm -f $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
 	rm -f $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
 	rm -f $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+
+remove-examples:
 	rm -rf $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)/
 
 purge: remove
