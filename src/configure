@@ -222,6 +222,9 @@ EOF
 
 if [ $INSTALLEXAMPLES -eq 1 ]; then
   echo "EXAMPLESDIR := $EXAMPLESDIR" >> include.mk
+  echo "installing example files"
+else
+  echo "not installing example files"
 fi
 
 exit 0
