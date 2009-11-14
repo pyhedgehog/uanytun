@@ -49,7 +49,7 @@ PREFIX='/usr/local'
 SBINDIR=''
 ETCDIR=''
 MANDIR=''
-EXAMPLES=''
+EXAMPLESDIR=''
 
 print_usage() {
   echo "configure --help                    print this"

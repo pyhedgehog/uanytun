@@ -138,13 +138,12 @@ install-examples:
 install-man: manpage
 	$(INSTALL) -d $(DESTDIR)$(MANDIR)/man8/
 	$(INSTALL) -m 644 ../doc/uanytun.8 $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
-	gzip $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
 
 uninstall: remove
 
 remove:
 	rm -f $(DESTDIR)$(SBINDIR)/$(EXECUTABLE)
-	rm -f $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8.gz
+	rm -f $(DESTDIR)$(MANDIR)/man8/$(EXECUTABLE).8
 	rm -f $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
 	rm -rf $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)/
 
