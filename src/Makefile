@@ -111,7 +111,7 @@ else
 INSTALL_TARGETS := install-bin install-etc install-man
 REMOVE_TARGETS := 
 endif
- 
+
 install: all $(INSTALL_TARGETS)
 
 install-bin: $(EXECUTABLE)
@@ -122,9 +122,10 @@ install-etc:
 	$(INSTALL) -d $(DESTDIR)$(ETCDIR)/$(EXECUTABLE)
 	@ echo "example configurations can be found at $(EXAMPLESDIR)/$(EXECUTABLE)" > $(DESTDIR)$(ETCDIR)/$(EXECUTABLE)/README
 	$(INSTALL) -d $(DESTDIR)$(ETCDIR)/init.d
-	$(INSTALL) -m 755 ../etc/init.d/uanytun $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
-	@ sed -i 's#DAEMON=/usr/sbin/uanytun#DAEMON=$(SBINDIR)/$(EXECUTABLE)#' $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
-	@ sed -i 's#CONFIG_DIR=/etc/uanytun#CONFIG_DIR=$(ETCDIR)/uanytun#' $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+	@ sed -e 's#DAEMON=/usr/sbin/uanytun#DAEMON=$(SBINDIR)/$(EXECUTABLE)#' \
+        -e 's#CONFIG_DIR=/etc/uanytun#CONFIG_DIR=$(ETCDIR)/uanytun#' ../etc/init.d/uanytun > ../etc/init.d/uanytun.bak
+	$(INSTALL) -m 755 ../etc/init.d/uanytun.bak $(DESTDIR)$(ETCDIR)/init.d/$(EXECUTABLE)
+	rm -f ../etc/init.d/uanytun.bak
 
 install-examples:
 	$(INSTALL) -d $(DESTDIR)$(EXAMPLESDIR)/$(EXECUTABLE)
