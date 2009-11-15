@@ -49,6 +49,7 @@ PREFIX='/usr/local'
 SBINDIR=''
 ETCDIR=''
 MANDIR=''
+INSTALLMANPAGE=1
 EXAMPLESDIR=''
 INSTALLEXAMPLES=1
 
@@ -59,6 +60,7 @@ print_usage() {
   echo "          --sbindir=<DIR>           the path to the sbin directory (default: $PREFIX/sbin)"
   echo "          --sysconfdir=<DIR>        the path to the system configuration directory (default: $PREFIX/etc"
   echo "          --mandir=<DIR>            the path to the system man pages (default: $PREFIX/share/man)"
+  echo "          --no-manpage              dont't install manpage"
   echo "          --examplesdir=<DIR>       the path to the examples files (default: $PREFIX/share/examples)"
   echo "          --no-examples             dont't install example files"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
@@ -87,6 +89,9 @@ do
   ;;
   --mandir=*)
     MANDIR=${arg#--mandir=}
+  ;;
+  --no-manpage)
+    INSTALLMANPAGE=0
   ;;
   --examplesdir=*)
     EXAMPLESDIR=${arg#--examplesdir=}
@@ -217,8 +222,14 @@ INSTALL := install
 PREFIX := $PREFIX
 SBINDIR := $SBINDIR
 ETCDIR := $ETCDIR
-MANDIR := $MANDIR
 EOF
+
+if [ $INSTALLMANPAGE -eq 1 ]; then
+  echo "MANDIR := $MANDIR" >> include.mk
+  echo "installing manpage"
+else
+  echo "not installing manpage"
+fi
 
 if [ $INSTALLEXAMPLES -eq 1 ]; then
   echo "EXAMPLESDIR := $EXAMPLESDIR" >> include.mk
