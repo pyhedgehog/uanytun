@@ -19,19 +19,29 @@ using ssl crypto library:
  build-essential
  libssl-dev
 
+for manpage:
+
+ asciidoc
+
 
 OpenBSD/FreeBSD
 ---------------
 
 using libgcrypt:
 
- gmake
- libgcrypt
- libgpg-error
+ devel/gmake
+ security/libgcrypt
 
 using ssl crypto library:
 
- gmake
+ devel/gmake
+
+for manpage:
+
+ textproc/asciidoc
+ textproc/libxslt
+ sysutils/readlink
+ misc/getopt 
 
 
 
