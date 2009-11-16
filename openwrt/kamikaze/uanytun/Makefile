@@ -20,9 +20,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.anytun.org/download/
 PKG_MD5SUM:=7923882da9b97559d5f2074f5d5f8dee
 
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
+
 
 define Package/uanytun/template
   SECTION:=net
@@ -46,6 +45,7 @@ uAnytun is a tiny implementation of SATP the secure anycast tunneling protocol.
   for multiple connections or synchronisation. It is a small single threaded 
   implementation intended to act as a client on small platforms.
 endef
+
 
 define Package/uanytun
   $(call Package/uanytun/template)
@@ -90,43 +90,87 @@ endef
 
 
 
-define Build/Configure
-  (cd $(PKG_BUILD_DIR)/src; \
+ifneq ($(CONFIG_PACKAGE_uanytun-nocrypt),)
+ define Build/Configure/uanytun-nocrypt
+	rm -rf $(PKG_BUILD_DIR)/uanytun-nocrypt
+	mkdir -p $(PKG_BUILD_DIR)/uanytun-nocrypt
+	$(CP) -r $(PKG_BUILD_DIR)/src $(PKG_BUILD_DIR)/uanytun-nocrypt
+	(cd $(PKG_BUILD_DIR)/uanytun-nocrypt/src; \
     touch include.mk; \
     ln -s linux/tun.c . \
   )
-endef
+ endef
 
-define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR) 
-
-	$(MAKE) -C $(PKG_BUILD_DIR)/src \
+ define Build/Compile/uanytun-nocrypt
+	$(MAKE) -C $(PKG_BUILD_DIR)/uanytun-nocrypt/src \
     $(TARGET_CONFIGURE_OPTS) \
     NO_CRYPT_OBJ=1 \
     TARGET=Linux \
     CFLAGS="$(TARGET_CFLAGS) -DNO_CRYPT" \
     LDFLAGS="$(TARGET_LDFLAGS) -ldl" 
-	cp $(PKG_BUILD_DIR)/src/uanytun $(PKG_BUILD_DIR)/src/uanytun-nocrypt
-	$(MAKE) -C $(PKG_BUILD_DIR)/src NO_CRYPT_OBJ=1 clean
+	$(STRIP) $(PKG_BUILD_DIR)/uanytun-nocrypt/src/uanytun
+ endef
+endif
 
-	$(MAKE) -C $(PKG_BUILD_DIR)/src \
+ifneq ($(CONFIG_PACKAGE_uanytun-sslcrypt),)
+ define Build/Configure/uanytun-sslcrypt
+	rm -rf $(PKG_BUILD_DIR)/uanytun-sslcrypt
+	mkdir -p $(PKG_BUILD_DIR)/uanytun-sslcrypt
+	$(CP) -r $(PKG_BUILD_DIR)/src $(PKG_BUILD_DIR)/uanytun-sslcrypt
+	(cd $(PKG_BUILD_DIR)/uanytun-sslcrypt/src; \
+    touch include.mk; \
+    ln -s linux/tun.c . \
+  )
+ endef
+
+ define Build/Compile/uanytun-sslcrypt
+	$(MAKE) -C $(PKG_BUILD_DIR)/uanytun-sslcrypt/src \
     $(TARGET_CONFIGURE_OPTS) \
     TARGET=Linux \
     CFLAGS="$(TARGET_CFLAGS) -DUSE_SSL_CRYPTO -I$(STAGING_DIR)/usr/include" \
     LDFLAGS="$(TARGET_LDFLAGS) -ldl -lcrypto" 
-	cp $(PKG_BUILD_DIR)/src/uanytun $(PKG_BUILD_DIR)/src/uanytun-sslcrypt
-	$(MAKE) -C $(PKG_BUILD_DIR)/src clean
+	$(STRIP) $(PKG_BUILD_DIR)/uanytun-sslcrypt/src/uanytun
+ endef
+endif
 
-	$(MAKE) -C $(PKG_BUILD_DIR)/src \
+ifneq ($(CONFIG_PACKAGE_uanytun),)
+ define Build/Configure/uanytun-default
+	rm -rf $(PKG_BUILD_DIR)/uanytun
+	mkdir -p $(PKG_BUILD_DIR)/uanytun
+	$(CP) -r $(PKG_BUILD_DIR)/src $(PKG_BUILD_DIR)/uanytun
+	(cd $(PKG_BUILD_DIR)/uanytun/src; \
+    touch include.mk; \
+    ln -s linux/tun.c . \
+  )
+ endef
+
+ define Build/Compile/uanytun-default
+	$(MAKE) -C $(PKG_BUILD_DIR)/uanytun/src \
     $(TARGET_CONFIGURE_OPTS) \
     TARGET=Linux \
     CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
     LDFLAGS="$(TARGET_LDFLAGS) -ldl -lgcrypt -lgpg-error" 
+	$(STRIP) $(PKG_BUILD_DIR)/uanytun/src/uanytun
+ endef
+endif
 
-	$(STRIP) $(PKG_BUILD_DIR)/src/uanytun-nocrypt
-	$(STRIP) $(PKG_BUILD_DIR)/src/uanytun-sslcrypt
-	$(STRIP) $(PKG_BUILD_DIR)/src/uanytun
+
+define Build/Configure
+	$(call Build/Configure/uanytun-nocrypt)
+	$(call Build/Configure/uanytun-sslcrypt)
+	$(call Build/Configure/uanytun-default)
+endef
+
+define Build/Compile
+	$(call Build/Compile/uanytun-nocrypt)
+	$(call Build/Compile/uanytun-sslcrypt)
+	$(call Build/Compile/uanytun-default)
+endef
+
+define Build/Clean
+	rm -rf $(PKG_BUILD_DIR)/uanytun-nocrypt
+	rm -rf $(PKG_BUILD_DIR)/uanytun-sslcrypt
+	rm -rf $(PKG_BUILD_DIR)/uanytun
 endef
 
 
@@ -135,7 +179,7 @@ define Package/uanytun/install-generic
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/$(3) $(1)/etc/config/$(2)
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/$(2) $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(2)/src/uanytun $(1)/usr/sbin/$(2)
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/uanytun.init $(1)/etc/init.d/$(2)
 	@sed -e 's/BIN=uanytun/BIN=$(2)/' -i $(1)/etc/init.d/$(2)
