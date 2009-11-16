@@ -19,7 +19,7 @@ using ssl crypto library:
  build-essential
  libssl-dev
 
-for manpage:
+only for manpage:
 
  asciidoc
 
@@ -36,10 +36,11 @@ using ssl crypto library:
 
  devel/gmake
 
-for manpage:
+only for manpage:
 
  textproc/asciidoc
  textproc/libxslt
+ textproc/docbook-xsl
  sysutils/readlink
  misc/getopt 
 
