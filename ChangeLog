@@ -1,6 +1,7 @@
 200?.??.?? -- Version ??
 
-* small clenaups at install target of build system
+* clenaups and improvements at configure and install target of Makefile
+* manpage cleanups
 * moved to new svn location
 
 2009.11.08 -- Version 0.3.1
