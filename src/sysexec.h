@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UANYUTN_sysexec_h_INCLUDED
-#define UANYUTN_sysexec_h_INCLUDED
+#ifndef UANYTUN_sysexec_h_INCLUDED
+#define UANYTUN_sysexec_h_INCLUDED
 
 int uanytun_exec(const char* script, char* const argv[], char* const evp[]);
 

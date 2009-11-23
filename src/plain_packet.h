@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UANYUTN_plain_packet_h_INCLUDED
-#define UANYUTN_plain_packet_h_INCLUDED
+#ifndef UANYTUN_plain_packet_h_INCLUDED
+#define UANYTUN_plain_packet_h_INCLUDED
 
 #define PLAIN_PACKET_SIZE_MAX 1600
 

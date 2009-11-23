@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UANYUTN_tun_helper_h_INCLUDED
-#define UANYUTN_tun_helper_h_INCLUDED
+#ifndef UANYTUN_tun_helper_h_INCLUDED
+#define UANYTUN_tun_helper_h_INCLUDED
 
 #include <string.h>
 #include <sys/socket.h>

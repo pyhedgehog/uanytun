@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UANYUTN_datatypes_h_INCLUDED
-#define UANYUTN_datatypes_h_INCLUDED
+#ifndef UANYTUN_datatypes_h_INCLUDED
+#define UANYTUN_datatypes_h_INCLUDED
 
 #include <stdint.h>
 #include <arpa/inet.h>

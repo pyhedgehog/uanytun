@@ -33,8 +33,8 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UANYUTN_cipher_h_INCLUDED
-#define UANYUTN_cipher_h_INCLUDED
+#ifndef UANYTUN_cipher_h_INCLUDED
+#define UANYTUN_cipher_h_INCLUDED
 
 #ifndef NO_CRYPT
 #ifndef USE_SSL_CRYPTO
