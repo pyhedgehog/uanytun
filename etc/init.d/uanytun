@@ -31,7 +31,7 @@ start_vpn () {
       test -d $CHROOTDIR || mkdir -p $CHROOTDIR
     fi
     DAEMONARG=`sed 's/#.*//' < $CONFIG_DIR/$NAME/config | grep -e '\w' | sed  's/^/--/' | tr '\n' ' '`
-    $DAEMON --write-pid /var/run/uanytun.$NAME.pid $POSTUP $DAEMONARG || STATUS="FAILED"
+    $DAEMON --write-pid /var/run/uanytun.$NAME.pid $POSTUP $DAEMONOPTS $DAEMONARG || STATUS="FAILED"
   else
     STATUS="no config found"
   fi
