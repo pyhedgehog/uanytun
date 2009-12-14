@@ -109,7 +109,7 @@ int priv_drop(priv_info_t* priv)
 int do_chroot(const char* chrootdir)
 {
   if(getuid() != 0) {
-    log_printf(ERROR, "this programm has to be run as root in order to run in a chroot");
+    log_printf(ERROR, "this program has to be run as root in order to run in a chroot");
     return -1;
   }
 
