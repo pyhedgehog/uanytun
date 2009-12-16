@@ -24,16 +24,16 @@ fi
 
 start_vpn () {
   STATUS="OK"
-  if [ -f $CONFIG_DIR/$NAME/config ] ; then
+  if [ -f $CONFIG_DIR/$VPNNAME/config ] ; then
     POSTUP=''
-    test -f  $CONFIG_DIR/$NAME/post-up.sh && POSTUP="-x $CONFIG_DIR/$NAME/post-up.sh"
-    CHROOTDIR=`grep '^chroot' < $CONFIG_DIR/$NAME/config | sed 's/chroot\s*//'`
+    test -f  $CONFIG_DIR/$VPNNAME/post-up.sh && POSTUP="-x $CONFIG_DIR/$VPNNAME/post-up.sh"
+    CHROOTDIR=`grep '^chroot' < $CONFIG_DIR/$VPNNAME/config | sed 's/chroot\s*//'`
     if [ -n "$CHROOTDIR" ] ; then
       test -d $CHROOTDIR || mkdir -p $CHROOTDIR
     fi
     test -d $VARRUN_DIR || mkdir -p $VARRUN_DIR
-    DAEMONARG=`sed 's/#.*//' < $CONFIG_DIR/$NAME/config | grep -e '\w' | sed  's/^/--/' | tr '\n' ' '`
-    $DAEMON --write-pid $VARRUN_DIR/$NAME.$NAME.pid $POSTUP $DAEMONOPTS $DAEMONARG || STATUS="FAILED"
+    DAEMONARG=`sed 's/#.*//' < $CONFIG_DIR/$VPNNAME/config | grep -e '\w' | sed  's/^/--/' | tr '\n' ' '`
+    $DAEMON --write-pid $VARRUN_DIR/$NAME.$VPNNAME.pid $POSTUP $DAEMONOPTS $DAEMONARG || STATUS="FAILED"
   else
     STATUS="no config found"
   fi
@@ -50,8 +50,8 @@ case "$1" in
   echo -n "Starting $DESC:"
   if test -z "$2" ; then
     if [ -f $CONFIG_DIR/autostart ] ; then
-      for NAME in `sed 's/#.*//'  <  $CONFIG_DIR/autostart | grep -e '\w'`; do
-        echo -n " $NAME"
+      for VPNNAME in `sed 's/#.*//'  <  $CONFIG_DIR/autostart | grep -e '\w'`; do
+        echo -n " $VPNNAME"
         start_vpn
       done
     else
@@ -61,8 +61,8 @@ case "$1" in
   else
     while shift ; do
       [ -z "$1" ] && break
-      NAME=$1
-      echo -n " $NAME"
+      VPNNAME=$1
+      echo -n " $VPNNAME"
       start_vpn
     done
   fi
@@ -71,20 +71,20 @@ case "$1" in
   stop)
   echo -n "Stoping $DESC:"
   if test -z "$2" ; then
-    for PIDFILE in `ls $VARRUN_DIR/$NAME.*.pid 2> /dev/null`; do
-      NAME=`echo $PIDFILE | cut -c18-`
-      NAME=${NAME%%.pid}
-      echo -n " $NAME"
+    for PIDFILE in `ls $VARRUN_DIR/$VPNNAME.*.pid 2> /dev/null`; do
+      VPNNAME=`echo $PIDFILE | cut -c18-`
+      VPNNAME=${VPNNAME%%.pid}
+      echo -n " $VPNNAME"
       stop_vpn
     done
   else
     while shift ; do
       [ -z "$1" ] && break
-      if test -e $VARRUN_DIR/$NAME.$1.pid ; then
-        PIDFILE=`ls $VARRUN_DIR/$NAME.$1.pid 2> /dev/null`
-        NAME=`echo $PIDFILE | cut -c18-`
-        NAME=${NAME%%.pid}
-        echo -n " $NAME"
+      if test -e $VARRUN_DIR/$VPNNAME.$1.pid ; then
+        PIDFILE=`ls $VARRUN_DIR/$VPNNAME.$1.pid 2> /dev/null`
+        VPNNAME=`echo $PIDFILE | cut -c18-`
+        VPNNAME=${VPNNAME%%.pid}
+        echo -n " $VPNNAME"
         stop_vpn
       else
         echo -n " (failure: No such tunnel is running: $1)"
@@ -96,21 +96,21 @@ case "$1" in
   reload)
   echo -n "Reloading $DESC:"
   if test -z "$2" ; then
-    for PIDFILE in `ls $VARRUN_DIR/$NAME.*.pid 2> /dev/null`; do
-      NAME=`echo $PIDFILE | cut -c18-`
-      NAME=${NAME%%.pid}
-      echo -n " $NAME"
+    for PIDFILE in `ls $VARRUN_DIR/$VPNNAME.*.pid 2> /dev/null`; do
+      VPNNAME=`echo $PIDFILE | cut -c18-`
+      VPNNAME=${VPNNAME%%.pid}
+      echo -n " $VPNNAME"
       stop_vpn
       start_vpn
     done
   else
     while shift ; do
       [ -z "$1" ] && break
-      if test -e $VARRUN_DIR/$NAME.$1.pid ; then
-        PIDFILE=`ls $VARRUN_DIR/$NAME.$1.pid 2> /dev/null`
-        NAME=`echo $PIDFILE | cut -c18-`
-        NAME=${NAME%%.pid}
-        echo -n " $NAME"
+      if test -e $VARRUN_DIR/$VPNNAME.$1.pid ; then
+        PIDFILE=`ls $VARRUN_DIR/$VPNNAME.$1.pid 2> /dev/null`
+        VPNNAME=`echo $PIDFILE | cut -c18-`
+        VPNNAME=${VPNNAME%%.pid}
+        echo -n " $VPNNAME"
         stop_vpn
         start_vpn
       else
