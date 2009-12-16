@@ -71,7 +71,7 @@ case "$1" in
   stop)
   echo -n "Stoping $DESC:"
   if test -z "$2" ; then
-    for PIDFILE in `ls $VARRUN_DIR/$VPNNAME.*.pid 2> /dev/null`; do
+    for PIDFILE in `ls $VARRUN_DIR/$NAME.*.pid 2> /dev/null`; do
       VPNNAME=`echo $PIDFILE | cut -c18-`
       VPNNAME=${VPNNAME%%.pid}
       echo -n " $VPNNAME"
@@ -80,8 +80,8 @@ case "$1" in
   else
     while shift ; do
       [ -z "$1" ] && break
-      if test -e $VARRUN_DIR/$VPNNAME.$1.pid ; then
-        PIDFILE=`ls $VARRUN_DIR/$VPNNAME.$1.pid 2> /dev/null`
+      if test -e $VARRUN_DIR/$NAME.$1.pid ; then
+        PIDFILE=`ls $VARRUN_DIR/$NAME.$1.pid 2> /dev/null`
         VPNNAME=`echo $PIDFILE | cut -c18-`
         VPNNAME=${VPNNAME%%.pid}
         echo -n " $VPNNAME"
@@ -96,7 +96,7 @@ case "$1" in
   reload)
   echo -n "Reloading $DESC:"
   if test -z "$2" ; then
-    for PIDFILE in `ls $VARRUN_DIR/$VPNNAME.*.pid 2> /dev/null`; do
+    for PIDFILE in `ls $VARRUN_DIR/$NAME.*.pid 2> /dev/null`; do
       VPNNAME=`echo $PIDFILE | cut -c18-`
       VPNNAME=${VPNNAME%%.pid}
       echo -n " $VPNNAME"
@@ -106,8 +106,8 @@ case "$1" in
   else
     while shift ; do
       [ -z "$1" ] && break
-      if test -e $VARRUN_DIR/$VPNNAME.$1.pid ; then
-        PIDFILE=`ls $VARRUN_DIR/$VPNNAME.$1.pid 2> /dev/null`
+      if test -e $VARRUN_DIR/$NAME.$1.pid ; then
+        PIDFILE=`ls $VARRUN_DIR/$NAME.$1.pid 2> /dev/null`
         VPNNAME=`echo $PIDFILE | cut -c18-`
         VPNNAME=${VPNNAME%%.pid}
         echo -n " $VPNNAME"
