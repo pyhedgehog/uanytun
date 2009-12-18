@@ -147,7 +147,7 @@ case $TARGET in
     ln -sf linux/tun.c
     echo "loading Linux specific TUN Device"
   ;;
-  OpenBSD|FreeBSD|NetBSD)
+  OpenBSD|FreeBSD|NetBSD|GNU/kFreeBSD)
     rm -f tun.c
     ln -sf bsd/tun.c
     echo "loading BSD specific TUN Device"

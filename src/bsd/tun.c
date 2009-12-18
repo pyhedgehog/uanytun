@@ -183,7 +183,7 @@ int tun_init_post(tun_device_t* dev)
   return 0;
 }
 
-#elif defined(__GNUC__) && defined(__FreeBSD__)
+#elif defined(__GNUC__) && (defined(__FreeBSD__) || defined(__FreeBSD_kernel__))
 
 int tun_init_post(tun_device_t* dev)
 {
@@ -318,7 +318,7 @@ void tun_do_ifconfig(tun_device_t* dev)
   if(dev->type_ == TYPE_TAP) {
 #if defined(__GNUC__) && defined(__OpenBSD__)
     end = "link0";
-#elif defined(__GNUC__) && defined(__FreeBSD__)
+#elif defined(__GNUC__) && (defined(__FreeBSD__) || defined(__FreeBSD_kernel__))
     end = "up";
 #elif defined(__GNUC__) && defined(__NetBSD__)
     end = NULL;
