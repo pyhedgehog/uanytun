@@ -34,6 +34,7 @@
  */
 
 #include "datatypes.h"
+#include "version.h"
 
 #include "options.h"
 
@@ -233,6 +234,8 @@ int options_parse(options_t* opt, int argc, char* argv[])
 
     if(!strcmp(str,"-h") || !strcmp(str,"--help"))
       return -1;
+    else if(!strcmp(str,"-v") || !strcmp(str,"--version"))
+      return -5;
     PARSE_INVERSE_BOOL_PARAM("-D","--nodaemonize", opt->daemonize_)
     PARSE_STRING_PARAM("-u","--username", opt->username_)
     PARSE_STRING_PARAM("-g","--groupname", opt->groupname_)
@@ -420,6 +423,7 @@ void options_print_usage()
 {
   printf("USAGE:\n");
   printf("uanytun [-h|--help]                         prints this...\n");
+  printf("        [-v|--version]                      print version info and exit\n");
   printf("        [-D|--nodaemonize]                  don't run in background\n");
   printf("        [-u|--username] <username>          change to this user\n");
   printf("        [-g|--groupname] <groupname>        change to this group\n");
@@ -454,6 +458,12 @@ void options_print_usage()
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
   printf("        [-b|--auth-tag-length] <length>     length of the auth tag\n");
 #endif
+}
+
+void options_print_version()
+{
+  printf("%s\n", VERSION_STRING_0);
+  printf("%s\n", VERSION_STRING_1);
 }
 
 void options_print(options_t* opt)

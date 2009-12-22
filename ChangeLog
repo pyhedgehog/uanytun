@@ -1,5 +1,6 @@
 20**.**.** -- Version ?
 
+* added -v|--version option
 * added prebuilt manpage to release tarball (less build deps)
 	
 2009.12.02 -- Version 0.3.2

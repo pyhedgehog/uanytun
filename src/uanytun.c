@@ -336,9 +336,15 @@ int main(int argc, char* argv[])
     if(ret == -4) {
       fprintf(stderr, "syntax error: unknown role name\n\n");
     }
+    if(ret == -5) {
+      options_print_version();
+    }
 
-    if(ret != -2) 
+    if(ret != -2 && ret != -5) 
       options_print_usage();
+
+    if(ret == -1 || ret == -5)
+      ret = 0;
 
     options_clear(&opt);
     log_close();

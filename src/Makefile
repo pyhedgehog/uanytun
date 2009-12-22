@@ -89,6 +89,7 @@ distclean: cleanall
 	find . -name *.o -exec rm -f {} \;
 	find . -name "*.\~*" -exec rm -rf {} \;
 	rm -f include.mk
+	rm -f version.h
 	rm -f tun.c
 
 clean:
