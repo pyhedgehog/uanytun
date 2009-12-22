@@ -1,3 +1,7 @@
+20**.**.** -- Version ?
+
+* added prebuilt manpage to release tarball (less build deps)
+	
 2009.12.02 -- Version 0.3.2
 
 * clenaups and improvements at configure and install target of Makefile
