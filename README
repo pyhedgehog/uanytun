@@ -19,7 +19,7 @@ using ssl crypto library:
  build-essential
  libssl-dev
 
-only for manpage:
+if you want to rebuild the manpage:
 
  asciidoc
 
@@ -36,7 +36,7 @@ using ssl crypto library:
 
  devel/gmake
 
-only for manpage:
+if you want to rebuild the manpage:
 
  textproc/asciidoc
  textproc/libxslt
