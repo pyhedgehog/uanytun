@@ -158,7 +158,7 @@ case $TARGET in
     fi
   ;;
   *)
-    echo "Plattform not supported"
+    echo "platform not supported"
     exit 1;
   ;;
 esac
