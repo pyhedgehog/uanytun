@@ -36,15 +36,12 @@
 #include "datatypes.h"
 
 #include "log.h"
+#include "sig_handler.h"
+
 #include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/select.h>
 #include <errno.h>
-
-#include "sig_handler.h"
-
-#include <stdio.h>
 
 
 static int sig_pipe_fds[2];
