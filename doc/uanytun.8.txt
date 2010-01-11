@@ -159,7 +159,7 @@ passed to the daemon:
    (1, 2, 3, ...). It is needed to distinguish the senders
    in case of replay attacks. As *uAnytun* does not support 
    synchronisation it can't be used as an anycast endpoint therefore 
-   this option is quite useless but implemented for compability 
+   this option is quite useless but implemented for compatibility 
    reasons. default: 0
 
 *-w, --window-size <window size>*::
