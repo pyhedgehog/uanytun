@@ -120,7 +120,7 @@ case "$1" in
   fi
   echo "."
   ;;
-  restart)
+  restart|force-reload)
     SCRIPT=$0
     shift
     $SCRIPT stop $*
