@@ -351,26 +351,21 @@ int main(int argc, char* argv[])
     exit(ret);
   }
   string_list_element_t* tmp = opt.log_targets_.first_;
-  if(!tmp) {
-    log_add_target("syslog:3,uanytun,daemon");
-  }
-  else {
-    while(tmp) {
-      ret = log_add_target(tmp->string_);
-      if(ret) {
-        switch(ret) {
-        case -2: fprintf(stderr, "memory error on log_add_target, exitting\n"); break;
-        case -3: fprintf(stderr, "unknown log target: '%s', exitting\n", tmp->string_); break;
-        case -4: fprintf(stderr, "this log target is only allowed once: '%s', exitting\n", tmp->string_); break;
-        default: fprintf(stderr, "syntax error near: '%s', exitting\n", tmp->string_); break;
-        }
-        
-        options_clear(&opt);
-        log_close();
-        exit(ret);
+  while(tmp) {
+    ret = log_add_target(tmp->string_);
+    if(ret) {
+      switch(ret) {
+      case -2: fprintf(stderr, "memory error on log_add_target, exitting\n"); break;
+      case -3: fprintf(stderr, "unknown log target: '%s', exitting\n", tmp->string_); break;
+      case -4: fprintf(stderr, "this log target is only allowed once: '%s', exitting\n", tmp->string_); break;
+      default: fprintf(stderr, "syntax error near: '%s', exitting\n", tmp->string_); break;
       }
-      tmp = tmp->next_;
+        
+      options_clear(&opt);
+      log_close();
+      exit(ret);
     }
+    tmp = tmp->next_;
   }
 
   log_printf(NOTICE, "just started...");

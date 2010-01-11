@@ -277,6 +277,9 @@ int options_parse(options_t* opt, int argc, char* argv[])
   if(ipv6_only)
     opt->resolv_addr_type_ = IPV6_ONLY;
 
+  if(!opt->log_targets_.first_)
+    string_list_add(&opt->log_targets_, "syslog:3,uanytun,daemon");
+
 #ifndef NO_CRYPT
   if(role) {
     if(!strcmp(role, "alice") || !strcmp(role, "server") || !strcmp(role, "left"))
