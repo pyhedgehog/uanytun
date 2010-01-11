@@ -56,49 +56,14 @@
 #ifndef NO_CRYPT
 #include "key_derivation.h"
 #include "auth_algo.h"
-
-#ifndef USE_SSL_CRYPTO
-#include <gcrypt.h>
+#else
+typedef u_int8_t auth_algo_t;
 #endif
-#endif
-
+#include "init_crypt.h"
 
 #include "daemon.h"
 #include "sysexec.h"
 
-#ifndef NO_CRYPT
-#ifndef USE_SSL_CRYPTO
-
-#define MIN_GCRYPT_VERSION "1.2.0"
-
-int init_libgcrypt()
-{
-  if(!gcry_check_version(MIN_GCRYPT_VERSION)) {
-    log_printf(NOTICE, "invalid Version of libgcrypt, should be >= %s", MIN_GCRYPT_VERSION);
-    return -1;
-  }
-
-  gcry_error_t err = gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-  if(err) {
-    log_printf(ERROR, "failed to disable secure memory: %s", gcry_strerror(err));
-    return -1;
-  }
-
-  err = gcry_control(GCRYCTL_INITIALIZATION_FINISHED);
-  if(err) {
-    log_printf(ERROR, "failed to finish libgcrypt initialization: %s", gcry_strerror(err));
-    return -1;
-  }
-
-  log_printf(NOTICE, "libgcrypt init finished");
-  return 0;
-}
-#endif
-#endif
-
-#ifdef NO_CRYPT
-typedef u_int8_t auth_algo_t;
-#endif
 
 int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
@@ -379,17 +344,13 @@ int main(int argc, char* argv[])
       exit(-1);
     }
 
-#ifndef NO_CRYPT
-#ifndef USE_SSL_CRYPTO
-  ret = init_libgcrypt();
+  ret = init_crypt();
   if(ret) {
-    log_printf(ERROR, "error on libgcrpyt initialization, exitting");
+    log_printf(ERROR, "error on crpyto initialization, exitting");
     options_clear(&opt);
     log_close();
     exit(ret);
   }
-#endif
-#endif
 
   tun_device_t dev;
   ret = tun_init(&dev, opt.dev_name_, opt.dev_type_, opt.ifconfig_param_.net_addr_, opt.ifconfig_param_.prefix_length_);
