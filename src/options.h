@@ -58,6 +58,7 @@ struct options_struct {
   char* chroot_dir_;
   char* pid_file_;
   string_list_t log_targets_;
+  int debug_;
   char* local_addr_;
   char* local_port_;
   sender_id_t sender_id_;

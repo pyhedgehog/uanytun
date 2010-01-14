@@ -245,6 +245,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_STRING_PARAM("-p","--port", opt->local_port_)
     PARSE_INT_PARAM("-s","--sender-id", opt->sender_id_)
     PARSE_STRING_LIST("-L","--log", opt->log_targets_)
+    PARSE_BOOL_PARAM("-U", "--debug", opt->debug_)
     PARSE_STRING_PARAM("-r","--remote-host", opt->remote_addr_)
     PARSE_STRING_PARAM("-o","--remote-port", opt->remote_port_)
     PARSE_BOOL_PARAM("-4","--ipv4-only", ipv4_only)
@@ -276,6 +277,11 @@ int options_parse(options_t* opt, int argc, char* argv[])
     opt->resolv_addr_type_ = IPV4_ONLY;
   if(ipv6_only)
     opt->resolv_addr_type_ = IPV6_ONLY;
+
+  if(opt->debug_) {
+    string_list_add(&opt->log_targets_, "stdout:5");
+    opt->daemonize_ = 0;
+  }
 
   if(!opt->log_targets_.first_)
     string_list_add(&opt->log_targets_, "syslog:3,uanytun,daemon");
@@ -344,6 +350,7 @@ void options_default(options_t* opt)
   opt->chroot_dir_ = NULL;
   opt->pid_file_ = NULL;
   string_list_init(&opt->log_targets_);
+  opt->debug_ = 0;
   opt->local_addr_ = NULL;
   opt->local_port_ = strdup("4444");
   opt->sender_id_ = 0;
@@ -437,6 +444,7 @@ void options_print_usage()
   printf("        [-s|--sender-id ] <sender id>       the sender id to use\n");
   printf("        [-L|--log] <target>:<level>[,<param1>[,<param2>..]]\n");
   printf("                                            add a log target, can be invoked several times\n");
+  printf("        [-U|--debug]                        don't daemonize and log to stdout with maximum log level\n");
 
   printf("        [-r|--remote-host] <hostname|ip>    remote host\n");
   printf("        [-o|--remote-port] <port>           remote port\n");
@@ -482,6 +490,7 @@ void options_print(options_t* opt)
   printf("pid_file: '%s'\n", opt->pid_file_);
   printf("log_targets: \n");
   string_list_print(&opt->log_targets_, "  '", "'\n");
+  printf("debug: %s\n", !opt->debug_ ? "false" : "true");
   printf("local_addr: '%s'\n", opt->local_addr_);
   printf("local_port: '%s'\n", opt->local_port_);
   printf("sender_id: %d\n", opt->sender_id_);
