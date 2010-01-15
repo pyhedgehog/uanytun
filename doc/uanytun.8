@@ -2,12 +2,12 @@
 .\"     Title: uanytun
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.1 <http://docbook.sf.net/>
-.\"      Date: 01/11/2010
+.\"      Date: 01/15/2010
 .\"    Manual: uanytun user manual
 .\"    Source: uanytun trunk
 .\"  Language: English
 .\"
-.TH "UANYTUN" "8" "01/11/2010" "uanytun trunk" "uanytun user manual"
+.TH "UANYTUN" "8" "01/15/2010" "uanytun trunk" "uanytun user manual"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -31,6 +31,7 @@ uanytun \- micro anycast tunneling daemon
   [ \fB\-C|\-\-chroot\fR <path> ]
   [ \fB\-P|\-\-write\-pid\fR <filename> ]
   [ \fB\-L|\-\-log\fR <target>:<level>[,<param1>[,<param2>[\&.\&.]]] ]
+  [ \fB\-U|\-\-debug\fR ]
   [ \fB\-i|\-\-interface\fR <ip\-address> ]
   [ \fB\-p|\-\-port\fR <port> ]
   [ \fB\-r|\-\-remote\-host\fR <hostname|ip> ]
@@ -120,6 +121,17 @@ log to standard output, parameters <level>
 .RS 4
 log to standard error, parameters <level>
 .RE
+.RE
+.PP
+\fB\-U, \-\-debug\fR
+.RS 4
+This option instructs
+\fBuAnytun\fR
+to run in debug mode\&. It implicits
+\fB\-D\fR
+(don\(cqt daemonize) and adds a log target with the configuration
+\fBstdout:5\fR
+(logging with maximum level)\&. In future releases there might be additional output when this option is supplied\&.
 .RE
 .PP
 \fB\-i, \-\-interface <ip address>\fR
