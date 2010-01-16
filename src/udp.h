@@ -62,7 +62,6 @@ int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resol
 void udp_close(udp_t* sock);
 
 char* udp_endpoint_to_string(udp_endpoint_t e);
-char* udp_get_local_end_string(udp_t* sock);
 char* udp_get_remote_end_string(udp_t* sock);
 
 int udp_read(udp_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end);

@@ -54,16 +54,7 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
   if(!sock || !port) 
     return -1;
 
-  sock->socks_ = malloc(sizeof(udp_socket_t));
-  if(!sock->socks_) {
-    log_printf(ERROR, "memory error at udp_init");
-    return -2;
-  }
-
-  sock->socks_->next_ = NULL;
-  sock->socks_->fd_ = 0;
-  memset(&(sock->socks_->local_end_), 0, sizeof(sock->socks_->local_end_));
-
+  sock->socks_ = NULL;
   memset(&(sock->remote_end_), 0, sizeof(sock->remote_end_));
   sock->remote_end_set_ = 0;
 
@@ -86,40 +77,66 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
     udp_close(sock);
     return -1;
   }
-
   if(!res) {
     udp_close(sock);
     log_printf(ERROR, "getaddrinfo returned no address for %s:%s", local_addr, port);
     return -1;
   }
 
-  memcpy(&(sock->socks_->local_end_), res->ai_addr, res->ai_addrlen);
+  struct addrinfo* r = res;
+  udp_socket_t* prev_sock = NULL;
+  while(r) {
+    udp_socket_t* new_sock = malloc(sizeof(udp_socket_t));
+    if(!new_sock) {
+      log_printf(ERROR, "memory error at udp_init");
+      freeaddrinfo(res);
+      udp_close(sock);
+      return -2;
+    }
+    memset(&(new_sock->local_end_), 0, sizeof(new_sock->local_end_));
+    new_sock->next_ = NULL;
 
-  sock->socks_->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
-  if(sock->socks_->fd_ < 0) {
-    log_printf(ERROR, "Error on opening udp socket: %s", strerror(errno));
-    freeaddrinfo(res);
-    udp_close(sock);
-    return -1;
-  }
+    if(!sock->socks_) {
+      sock->socks_ = new_sock;
+      prev_sock = new_sock;
+    }
+    else {
+      prev_sock->next_ = new_sock;
+      prev_sock = new_sock;
+    }
+    
+    memcpy(&(new_sock->local_end_), r->ai_addr, r->ai_addrlen);
+    new_sock->fd_ = socket(r->ai_family, SOCK_DGRAM, 0);
+    if(new_sock->fd_ < 0) {
+      log_printf(ERROR, "Error on opening udp socket: %s", strerror(errno));
+      freeaddrinfo(res);
+      udp_close(sock);
+      return -1;
+    }
 
-  errcode = bind(sock->socks_->fd_, res->ai_addr, res->ai_addrlen);
-  if(errcode) {
-    log_printf(ERROR, "Error on binding udp socket: %s", strerror(errno));
-    freeaddrinfo(res);
-    udp_close(sock);
-    return -1;
-  }
+    if(r->ai_family == AF_INET6) {
+      int on = 1;
+      if(setsockopt(new_sock->fd_, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)))
+        log_printf(ERROR, "Error on setting IPV6_V6ONLY socket option: %s", strerror(errno));
+    }
+
+    errcode = bind(new_sock->fd_, r->ai_addr, r->ai_addrlen);
+    if(errcode) {
+      log_printf(ERROR, "Error on binding udp socket: %s", strerror(errno));
+      freeaddrinfo(res);
+      udp_close(sock);
+      return -1;
+    }
   
-/* this doesn't work on linux ?? */
-/* #ifdef NO_V4MAPPED */
-/*   if(res->ai_family == AF_INET6) { */
-/*     log_printf(NOTICE, "disabling V4-Mapped addresses"); */
-/*     int on = 1; */
-/*     if(setsockopt(sock->fd_, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on))) */
-/*       log_printf(ERROR, "Error on setting IPV6_V6ONLY socket option: %s", strerror(errno)); */
-/*   } */
-/* #endif */
+    char* local_string = udp_endpoint_to_string(new_sock->local_end_);
+    if(local_string) {
+      log_printf(NOTICE, "listening on: %s", local_string);
+      free(local_string);
+    }
+
+    r = r->ai_next;
+  }
+
   freeaddrinfo(res);
 
   return 0;
@@ -163,11 +180,16 @@ void udp_close(udp_t* sock)
   if(!sock)
     return;
 
-  if(sock->socks_->fd_ > 0)
-    close(sock->socks_->fd_);
-
-  if(sock->socks_)
-    free(sock->socks_);
+  while(sock->socks_) {
+    if(sock->socks_->fd_ > 0)
+      close(sock->socks_->fd_);
+    
+    udp_socket_t*s = sock->socks_;
+    sock->socks_ = sock->socks_->next_;
+    
+    free(s);
+  }
+  sock->socks_ = NULL;
 }
 
 char* udp_endpoint_to_string(udp_endpoint_t e)
@@ -203,14 +225,6 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
   asprintf(&ret, "%s%c%d", addrstr, addrport_sep ,port);
   free(addrstr);
   return ret;
-}
-
-char* udp_get_local_end_string(udp_t* sock)
-{
-  if(!sock)
-    return NULL;
-
-  return udp_endpoint_to_string(sock->socks_->local_end_);
 }
 
 char* udp_get_remote_end_string(udp_t* sock)

@@ -379,12 +379,6 @@ int main(int argc, char* argv[])
     log_close();
     exit(ret);
   }
-  char* local_string = udp_get_local_end_string(&sock);
-  if(local_string) {
-    log_printf(NOTICE, "listening on: %s", local_string);
-    free(local_string);
-  }
-
 
   if(opt.remote_addr_) {
     if(!udp_set_remote(&sock, opt.remote_addr_, opt.remote_port_, opt.resolv_addr_type_)) {
