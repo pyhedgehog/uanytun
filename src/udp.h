@@ -52,19 +52,22 @@ typedef struct udp_socket_struct udp_socket_t;
 
 struct udp_struct {
   udp_socket_t* socks_;
+  udp_socket_t* active_sock_;
   udp_endpoint_t remote_end_;
   int remote_end_set_;
 };
 typedef struct udp_struct udp_t;
 
 int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type);
+int udp_init_fd_set(udp_t* sock, fd_set* set);
 int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type);
+void udp_set_active_sock(udp_t* sock, int fd);
 void udp_close(udp_t* sock);
 
 char* udp_endpoint_to_string(udp_endpoint_t e);
 char* udp_get_remote_end_string(udp_t* sock);
 
-int udp_read(udp_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end);
+int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end);
 int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len);
 
 #endif

@@ -55,6 +55,7 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
     return -1;
 
   sock->socks_ = NULL;
+  sock->active_sock_ = NULL;
   memset(&(sock->remote_end_), 0, sizeof(sock->remote_end_));
   sock->remote_end_set_ = 0;
 
@@ -142,6 +143,20 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
   return 0;
 }
 
+int udp_init_fd_set(udp_t* sock, fd_set* set)
+{
+  int max_fd = 0;
+
+  udp_socket_t* s = sock->socks_;
+  while(s) {
+    FD_SET(s->fd_, set);
+    max_fd = s->fd_ > max_fd ? s->fd_ : max_fd;
+    s = s->next_;
+  }
+
+  return max_fd;
+}
+
 int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
 {
   if(!sock || !remote_addr || !port) 
@@ -170,9 +185,36 @@ int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resol
   }
   memcpy(&(sock->remote_end_), res->ai_addr, res->ai_addrlen);
   sock->remote_end_set_ = 1;
+
+  if(!sock->active_sock_) {
+    udp_socket_t* s = sock->socks_;
+    while(s) {
+      if((((struct sockaddr *)&s->local_end_)->sa_family) == res->ai_family) {
+        sock->active_sock_ = s;
+        break;
+      }
+      s = s->next_;
+    }
+  }
+
   freeaddrinfo(res);
 
   return 0;
+}
+
+void udp_set_active_sock(udp_t* sock, int fd)
+{
+  if(!sock || (sock->active_sock_ && sock->active_sock_->fd_ == fd))
+    return;
+
+  udp_socket_t* s = sock->socks_;
+  while(s) {
+    if(s->fd_ == fd) {
+      sock->active_sock_ = s;
+      return;
+    }
+    s = s->next_;
+  }
 }
 
 void udp_close(udp_t* sock)
@@ -235,27 +277,26 @@ char* udp_get_remote_end_string(udp_t* sock)
   return udp_endpoint_to_string(sock->remote_end_);
 }
  
-int udp_read(udp_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
+int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
 {
   if(!sock || !remote_end)
     return -1;
 
   socklen_t socklen = sizeof(*remote_end);
-  return recvfrom(sock->socks_->fd_, buf, len, 0, (struct sockaddr *)remote_end, &socklen);
+  return recvfrom(fd, buf, len, 0, (struct sockaddr *)remote_end, &socklen);
 }
 
 int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
 {
-  if(!sock || !sock->remote_end_set_)
-    return -1;
+  if(!sock || !sock->remote_end_set_ || !sock->active_sock_)
+    return 0;
 
   socklen_t socklen = sizeof(sock->remote_end_);
-#ifdef NO_V4MAPPED
-  if((((struct sockaddr *)&sock->socks_->local_end_)->sa_family) == AF_INET)
+  if((((struct sockaddr *)&sock->active_sock_->local_end_)->sa_family) == AF_INET)
     socklen = sizeof(struct sockaddr_in);
-  else if ((((struct sockaddr *)&sock->socks_->local_end_)->sa_family) == AF_INET6)
+  else if ((((struct sockaddr *)&sock->active_sock_->local_end_)->sa_family) == AF_INET6)
     socklen = sizeof(struct sockaddr_in6);
-#endif
-  return sendto(sock->socks_->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_), socklen);;
+
+  return sendto(sock->active_sock_->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_), socklen);
 }
 

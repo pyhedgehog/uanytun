@@ -140,7 +140,7 @@ int process_tun_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packe
   return 0;
 }
 
-int process_sock_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
+int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
                       cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
   plain_packet_set_payload_length(plain_packet, -1);
@@ -148,7 +148,7 @@ int process_sock_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_pack
 
   udp_endpoint_t remote;
   memset(&remote, 0, sizeof(udp_endpoint_t));
-  int len = udp_read(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet), &remote);
+  int len = udp_read(sock, fd, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet), &remote);
   if(len == -1) {
     log_printf(ERROR, "error on receiving udp packet: %s", strerror(errno));
     return 0;
@@ -181,6 +181,7 @@ int process_sock_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_pack
     return -2;
   }
    
+  udp_set_active_sock(sock, fd);
   if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) {
     memcpy(&(sock->remote_end_), &remote, sizeof(remote));
     sock->remote_end_set_ = 1;
@@ -228,8 +229,8 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 
   FD_ZERO(&readfds);
   FD_SET(dev->fd_, &readfds);
-  FD_SET(sock->socks_->fd_, &readfds);
-  int nfds = dev->fd_ > sock->socks_->fd_ ? dev->fd_ : sock->socks_->fd_;
+  int nfds = udp_init_fd_set(sock, &readfds);
+  nfds = dev->fd_ > nfds ? dev->fd_ : nfds;
 
   int return_value = 0;
   int sig_fd = signal_init();
@@ -264,10 +265,14 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
         break;
     }
 
-    if(FD_ISSET(sock->socks_->fd_, &readyfds)) {
-      return_value = process_sock_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win); 
-      if(return_value)
-        break;
+    udp_socket_t* s = sock->socks_;
+    while(s) {
+      if(FD_ISSET(s->fd_, &readyfds)) {
+        return_value = process_sock_data(dev, s->fd_, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win); 
+        if(return_value)
+          break;
+      }
+      s = s->next_;
     }
   }
 
