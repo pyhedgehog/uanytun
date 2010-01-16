@@ -2,7 +2,10 @@
 
 * added -v|--version option
 * added prebuilt manpage to release tarball (less build deps)
-	
+* added multi socket support which allows simultanous usage
+  of IPv4 and IPv6 even on operating systems without V4_MAPPED
+  address support
+
 2009.12.02 -- Version 0.3.2
 
 * clenaups and improvements at configure and install target of Makefile
