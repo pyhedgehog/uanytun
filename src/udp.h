@@ -46,20 +46,26 @@ typedef struct sockaddr_storage udp_endpoint_t;
 struct udp_socket_struct {
   int fd_;
   udp_endpoint_t local_end_;
-  udp_endpoint_t remote_end_;
-  int remote_end_set_;
+  struct udp_socket_struct* next_;
 };
 typedef struct udp_socket_struct udp_socket_t;
 
-int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type);
-int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type);
-void udp_close(udp_socket_t* sock);
+struct udp_struct {
+  udp_socket_t* socks_;
+  udp_endpoint_t remote_end_;
+  int remote_end_set_;
+};
+typedef struct udp_struct udp_t;
+
+int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type);
+int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type);
+void udp_close(udp_t* sock);
 
 char* udp_endpoint_to_string(udp_endpoint_t e);
-char* udp_get_local_end_string(udp_socket_t* sock);
-char* udp_get_remote_end_string(udp_socket_t* sock);
+char* udp_get_local_end_string(udp_t* sock);
+char* udp_get_remote_end_string(udp_t* sock);
 
-int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end);
-int udp_write(udp_socket_t* sock, u_int8_t* buf, u_int32_t len);
+int udp_read(udp_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end);
+int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len);
 
 #endif

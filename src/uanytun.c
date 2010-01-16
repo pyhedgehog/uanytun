@@ -103,7 +103,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
   return 0;
 }
 
-int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
+int process_tun_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
                      cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_nr_t seq_nr)
 {
   plain_packet_set_payload_length(plain_packet, -1);
@@ -132,7 +132,7 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
 #ifndef NO_CRYPT
   auth_algo_generate(aa, kd, kd_outbound, encrypted_packet);
 #endif
-  
+ 
   len = udp_write(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet));
   if(len == -1)
     log_printf(ERROR, "error on sending udp packet: %s", strerror(errno));
@@ -140,7 +140,7 @@ int process_tun_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plai
   return 0;
 }
 
-int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
+int process_sock_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
                       cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
   plain_packet_set_payload_length(plain_packet, -1);
@@ -206,7 +206,7 @@ int process_sock_data(tun_device_t* dev, udp_socket_t* sock, options_t* opt, pla
 }
 
 
-int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
+int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 {
   log_printf(INFO, "entering main loop");
 
@@ -228,8 +228,8 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
 
   FD_ZERO(&readfds);
   FD_SET(dev->fd_, &readfds);
-  FD_SET(sock->fd_, &readfds);
-  int nfds = dev->fd_ > sock->fd_ ? dev->fd_ : sock->fd_;
+  FD_SET(sock->socks_->fd_, &readfds);
+  int nfds = dev->fd_ > sock->socks_->fd_ ? dev->fd_ : sock->socks_->fd_;
 
   int return_value = 0;
   int sig_fd = signal_init();
@@ -264,7 +264,7 @@ int main_loop(tun_device_t* dev, udp_socket_t* sock, options_t* opt)
         break;
     }
 
-    if(FD_ISSET(sock->fd_, &readyfds)) {
+    if(FD_ISSET(sock->socks_->fd_, &readyfds)) {
       return_value = process_sock_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win); 
       if(return_value)
         break;
@@ -370,7 +370,7 @@ int main(int argc, char* argv[])
   }
 
 
-  udp_socket_t sock;
+  udp_t sock;
   ret = udp_init(&sock, opt.local_addr_, opt.local_port_, opt.resolv_addr_type_);
   if(ret) {
     log_printf(ERROR, "error on udp_init, exitting");

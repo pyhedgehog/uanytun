@@ -49,14 +49,22 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type)
+int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type)
 {
   if(!sock || !port) 
     return -1;
- 
-  sock->fd_ = 0;
-  memset(&(sock->local_end_), 0, sizeof(sock->local_end_));
-  memset(&(sock->remote_end_), 0, sizeof(sock->local_end_));
+
+  sock->socks_ = malloc(sizeof(udp_socket_t));
+  if(!sock->socks_) {
+    log_printf(ERROR, "memory error at udp_init");
+    return -2;
+  }
+
+  sock->socks_->next_ = NULL;
+  sock->socks_->fd_ = 0;
+  memset(&(sock->socks_->local_end_), 0, sizeof(sock->socks_->local_end_));
+
+  memset(&(sock->remote_end_), 0, sizeof(sock->remote_end_));
   sock->remote_end_set_ = 0;
 
   struct addrinfo hints, *res;
@@ -64,12 +72,12 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resol
   res = NULL;
   memset (&hints, 0, sizeof (hints));
   hints.ai_socktype = SOCK_DGRAM;
-  hints.ai_flags |= AI_PASSIVE;
+  hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
 
   switch(resolv_type) {
-  case IPV4_ONLY: hints.ai_family = PF_INET; break;
-  case IPV6_ONLY: hints.ai_family = PF_INET6; break;
-  default: hints.ai_family = PF_UNSPEC; break;
+  case IPV4_ONLY: hints.ai_family = AF_INET; break;
+  case IPV6_ONLY: hints.ai_family = AF_INET6; break;
+  default: hints.ai_family = AF_UNSPEC; break;
   }
 
   int errcode = getaddrinfo(local_addr, port, &hints, &res);
@@ -85,17 +93,17 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resol
     return -1;
   }
 
-  memcpy(&(sock->local_end_), res->ai_addr, res->ai_addrlen);
+  memcpy(&(sock->socks_->local_end_), res->ai_addr, res->ai_addrlen);
 
-  sock->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
-  if(sock->fd_ < 0) {
+  sock->socks_->fd_ = socket(res->ai_family, SOCK_DGRAM, 0);
+  if(sock->socks_->fd_ < 0) {
     log_printf(ERROR, "Error on opening udp socket: %s", strerror(errno));
     freeaddrinfo(res);
     udp_close(sock);
     return -1;
   }
 
-  errcode = bind(sock->fd_, res->ai_addr, res->ai_addrlen);
+  errcode = bind(sock->socks_->fd_, res->ai_addr, res->ai_addrlen);
   if(errcode) {
     log_printf(ERROR, "Error on binding udp socket: %s", strerror(errno));
     freeaddrinfo(res);
@@ -117,7 +125,7 @@ int udp_init(udp_socket_t* sock, const char* local_addr, const char* port, resol
   return 0;
 }
 
-int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
+int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
 {
   if(!sock || !remote_addr || !port) 
     return -1;
@@ -150,13 +158,16 @@ int udp_set_remote(udp_socket_t* sock, const char* remote_addr, const char* port
   return 0;
 }
 
-void udp_close(udp_socket_t* sock)
+void udp_close(udp_t* sock)
 {
   if(!sock)
     return;
 
-  if(sock->fd_ > 0)
-    close(sock->fd_);
+  if(sock->socks_->fd_ > 0)
+    close(sock->socks_->fd_);
+
+  if(sock->socks_)
+    free(sock->socks_);
 }
 
 char* udp_endpoint_to_string(udp_endpoint_t e)
@@ -194,15 +205,15 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
   return ret;
 }
 
-char* udp_get_local_end_string(udp_socket_t* sock)
+char* udp_get_local_end_string(udp_t* sock)
 {
   if(!sock)
     return NULL;
 
-  return udp_endpoint_to_string(sock->local_end_);
+  return udp_endpoint_to_string(sock->socks_->local_end_);
 }
 
-char* udp_get_remote_end_string(udp_socket_t* sock)
+char* udp_get_remote_end_string(udp_t* sock)
 {
   if(!sock || !sock->remote_end_set_)
     return NULL;
@@ -210,27 +221,27 @@ char* udp_get_remote_end_string(udp_socket_t* sock)
   return udp_endpoint_to_string(sock->remote_end_);
 }
  
-int udp_read(udp_socket_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
+int udp_read(udp_t* sock, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
 {
   if(!sock || !remote_end)
     return -1;
 
   socklen_t socklen = sizeof(*remote_end);
-  return recvfrom(sock->fd_, buf, len, 0, (struct sockaddr *)remote_end, &socklen);
+  return recvfrom(sock->socks_->fd_, buf, len, 0, (struct sockaddr *)remote_end, &socklen);
 }
 
-int udp_write(udp_socket_t* sock, u_int8_t* buf, u_int32_t len)
+int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
 {
   if(!sock || !sock->remote_end_set_)
     return -1;
 
   socklen_t socklen = sizeof(sock->remote_end_);
 #ifdef NO_V4MAPPED
-  if((((struct sockaddr *)&sock->local_end_)->sa_family) == AF_INET)
+  if((((struct sockaddr *)&sock->socks_->local_end_)->sa_family) == AF_INET)
     socklen = sizeof(struct sockaddr_in);
-  else if ((((struct sockaddr *)&sock->local_end_)->sa_family) == AF_INET6)
+  else if ((((struct sockaddr *)&sock->socks_->local_end_)->sa_family) == AF_INET6)
     socklen = sizeof(struct sockaddr_in6);
 #endif
-  return sendto(sock->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_), socklen);;
+  return sendto(sock->socks_->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_), socklen);;
 }
 
