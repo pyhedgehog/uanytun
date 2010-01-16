@@ -43,7 +43,6 @@ LDFLAGS='-g -Wall -O2'
 
 CRYPTO_LIB='gcrypt'
 PASSPHRASE=1
-V4_MAPPED=1
 
 PREFIX='/usr/local'
 SBINDIR=''
@@ -67,9 +66,6 @@ print_usage() {
   echo "          --no-crypto               disable crypto at all (only NULL cipher)"
   echo "          --disable-passphrase      disable master key and salt passphrase"
   echo "          --enable-passphrase       enable master key and salt passphrase"
-  echo "          --disable-v4-mapped       disable V4-Mapped addresses (this means to disable"
-  echo "                                    simultanious use of IPv4 and IPv6)"
-  echo "          --enable-v4-mapped        enable V4-Mapped addresses"
 }
 
 for arg
@@ -111,12 +107,6 @@ do
   --enable-passphrase)
     PASSPHRASE=1
   ;;
-  --disable-v4-mapped)
-    V4_MAPPED=0 
-  ;; 
-  --enable-v4-mapped)
-    V4_MAPPED=2
-  ;; 
   --ebuild-compat)
     EBUILD_COMPAT=1
   ;;
@@ -153,9 +143,6 @@ case $TARGET in
     echo "loading BSD specific TUN Device"
     CFLAGS=$CFLAGS' -I/usr/local/include'
     LDFLAGS=$LDFLAGS' -L/usr/local/lib'
-    if [ $V4_MAPPED -ne 2 ]; then
-      V4_MAPPED=0
-    fi
   ;;
   *)
     echo "platform not supported"
@@ -184,11 +171,6 @@ esac
 if [ $PASSPHRASE -eq 0 ]; then
   CFLAGS=$CFLAGS' -DNO_PASSPHRASE'
   echo "disabling master key and salt passphrase"
-fi
-
-if [ $V4_MAPPED -eq 0 ]; then
-  CFLAGS=$CFLAGS' -DNO_V4MAPPED'
-  echo "WARNING: disabling V4 mapped addresses, this prevents uanytun from using IPv6 and IPv4 Sockets at the same time"
 fi
 
 if [ -z "$SBINDIR" ]; then
