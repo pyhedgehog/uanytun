@@ -154,7 +154,7 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
     return 0;
   }
   else if(len < encrypted_packet_get_minimum_length(encrypted_packet)) {
-    log_printf(WARNING, "received packet is to short");
+    log_printf(WARNING, "received packet is too short");
     return 0;
   }
   encrypted_packet_set_length(encrypted_packet, len);
