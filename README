@@ -8,6 +8,7 @@ issues when using this library. It also needs more space when installed.
 
 Linux
 -----
+(this includes Debian with FreeBSD Kernel)
 
 using libgcrypt:
  
