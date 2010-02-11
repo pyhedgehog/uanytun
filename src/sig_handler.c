@@ -15,7 +15,7 @@
  *  tunneling and relaying of packets of any protocol.
  *  
  *
- *  Copyright (C) 2007-2008 Christian Pointner <equinox@anytun.org>
+ *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
