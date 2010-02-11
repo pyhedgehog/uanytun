@@ -68,15 +68,15 @@ passed to the daemon:
    This option instructs *uAnytun* to run in foreground
    instead of becoming a daemon which is the default.
 
-*-u, --username <username>*::
+*-u, --username '<username>'*::
    run as this user. If no group is specified (*-g*) the default group of 
    the user is used. The default is to not drop privileges.
 
-*-g, --groupname <groupname>*::
+*-g, --groupname '<groupname>'*::
    run as this group. If no username is specified (*-u*) this gets ignored.
    The default is to not drop privileges.
 
-*-C, --chroot <path>*::
+*-C, --chroot '<path>'*::
    Instruct *uAnytun* to run in a chroot jail. The default is 
    to not run in chroot.
 
@@ -84,7 +84,7 @@ passed to the daemon:
    Instruct *uAnytun* to write it's pid to this file. The default is 
    to not create a pid file.
 
-*-L, --log <target>:<level>[,<param1>[,<param2>[..]]]*::
+*-L, --log '<target>:<level>[,<param1>[,<param2>[..]]]'*::
    add log target to logging system. This can be invoked several times
    in order to log to different targets at the same time. Every target 
    hast its own log level which is a number between 0 and 5. Where 0 means
@@ -94,10 +94,10 @@ passed to the daemon:
    config *syslog:3,uanytun,daemon* is added. +
    The following targets are supported:
 
-   *syslog*;; log to syslog daemon, parameters <level>[,<logname>[,<facility>]]
-   *file*;; log to file, parameters <level>[,<path>]
-   *stdout*;; log to standard output, parameters <level>
-   *stderr*;; log to standard error, parameters <level> 
+   'syslog';; log to syslog daemon, parameters <level>[,<logname>[,<facility>]]
+   'file';; log to file, parameters <level>[,<path>]
+   'stdout';; log to standard output, parameters <level>
+   'stderr';; log to standard error, parameters <level> 
 
 *-U, --debug*::
    This option instructs *uAnytun* to run in debug mode. It implicits *-D* 
@@ -105,24 +105,24 @@ passed to the daemon:
    *stdout:5* (logging with maximum level). In future releases there might
    be additional output when this option is supplied.
 
-*-i, --interface <ip address>*::
+*-i, --interface '<ip address>'*::
    This IP address is used as the sender address for outgoing
    packets. The default is to not use a special inteface and just
    bind on all interfaces.
 
-*-p, --port <port>*::
+*-p, --port '<port>'*::
    The local UDP port that is used to send and receive the
    payload data. The two tunnel endpoints can use different
    ports. default: 4444
 
-*-r, --remote-host <hostname|ip>*::
+*-r, --remote-host '<hostname|ip>'*::
    This option can be used to specify the remote tunnel
    endpoint. In case of anycast tunnel endpoints, the
    anycast IP address has to be used. If you do not specify
    an address, it is automatically determined after receiving
    the first data packet.
 
-*-o, --remote-port <port>*::
+*-o, --remote-port '<port>'*::
    The UDP port used for payload data by the remote host
    (specified with -p on the remote host). If you do not specify
    a port, it is automatically determined after receiving
@@ -136,32 +136,32 @@ passed to the daemon:
    Resolv to IPv6 addresses only. The default is to resolv both
    IPv4 and IPv6 addresses.
 
-*-d, --dev <name>*::
+*-d, --dev '<name>'*::
    device name +
    By default, tapN is used for Ethernet tunnel interfaces,
    and tunN for IP tunnels, respectively. This option can
    be used to manually override these defaults.
 
-*-t, --type <tun|tap>*::
+*-t, --type '<tun|tap>'*::
    device type +
    Type of the tunnels to create. Use tap for Ethernet
    tunnels, tun for IP tunnels.
 
-*-n, --ifconfig <local>/<prefix>*::
+*-n, --ifconfig '<local>/<prefix>'*::
    The local IP address and prefix length. The remote tunnel endpoint
    has to use a different IP address in the same subnet.
 
-   *<local>*;; the local IP address for the tun/tap device
-   *<prefix>*;; the prefix length of the network
+   '<local>';; the local IP address for the tun/tap device
+   '<prefix>';; the prefix length of the network
 
-*-x, --post-up-script <script>*::
+*-x, --post-up-script '<script>'*::
    This option instructs *uAnytun* to run this script after the interface 
    is created. By default no script will be executed.
 
-*-m, --mux <mux-id>*::
+*-m, --mux '<mux-id>'*::
    the multiplex id to use. default: 0
 
-*-s, --sender-id  <sender id>*::
+*-s, --sender-id '<sender id>'*::
    Each anycast tunnel endpoint needs a unique sender id
    (1, 2, 3, ...). It is needed to distinguish the senders
    in case of replay attacks. As *uAnytun* does not support 
@@ -169,7 +169,7 @@ passed to the daemon:
    this option is quite useless but implemented for compatibility 
    reasons. default: 0
 
-*-w, --window-size <window size>*::
+*-w, --window-size '<window size>'*::
    seqence window size +
    Sometimes, packets arrive out of order on the receiver
    side. This option defines the size of a list of received
@@ -183,69 +183,69 @@ passed to the daemon:
    By default the sequence window is disabled and therefore a
    window size of 0 is used.
 
-*-k, --kd--prf <kd-prf type>*::
+*-k, --kd--prf '<kd-prf type>'*::
    key derivation pseudo random function +
    The pseudo random function which is used for calculating the 
    session keys and session salt. +
    Possible values:
 
-   *null*;; no random function, keys and salt are set to 0..00
-   *aes-ctr*;; AES in counter mode with 128 Bits, default value
-   *aes-ctr-128*;; AES in counter mode with 128 Bits
-   *aes-ctr-192*;; AES in counter mode with 192 Bits
-   *aes-ctr-256*;; AES in counter mode with 256 Bits
+   'null';; no random function, keys and salt are set to 0..00
+   'aes-ctr';; AES in counter mode with 128 Bits, default value
+   'aes-ctr-128';; AES in counter mode with 128 Bits
+   'aes-ctr-192';; AES in counter mode with 192 Bits
+   'aes-ctr-256';; AES in counter mode with 256 Bits
 
-*-e, --role <role>*::
+*-e, --role '<role>'*::
    SATP uses different session keys for inbound and outbound traffic. The
    role parameter is used to determine which keys to use for outbound or
    inbound packets. On both sides of a vpn connection different roles have 
-   to be used. Possible values are *left* and *right*. You may also use 
-   *alice* or *server* as a replacement for *left* and *bob* or *client* as 
-   a replacement for *right*. By default *left* is used.
+   to be used. Possible values are 'left' and 'right'. You may also use 
+   'alice' or 'server' as a replacement for 'left' and 'bob' or 'client' as 
+   a replacement for 'right'. By default 'left' is used.
 
-*-E, --passphrase <pass phrase>*::
+*-E, --passphrase '<pass phrase>'*::
    This passphrase is used to generate the master key and master salt.
    For the master key the last n bits of the SHA256 digest of the 
    passphrase (where n is the length of the master key in bits) is used. 
    The master salt gets generated with the SHA1 digest. 
    You may force a specific key and or salt by using *--key* and *--salt*.
 
-*-K, --key <master key>*::
+*-K, --key '<master key>'*::
    master key to use for key derivation +
    Master key in hexadecimal notation, e.g.
    01a2b3c4d5e6f708a9b0cadbecfd0fa1, with a mandatory length
    of 32, 48 or 64 characters (128, 192 or 256 bits).
 
-*-A, --salt <master salt>*::
+*-A, --salt '<master salt>'*::
    master salt to use for key derivation +
    Master salt in hexadecimal notation, e.g.
    01a2b3c4d5e6f708a9b0cadbecfd, with a mandatory length
    of 28 characters (14 bytes).
 
-*-c, --cipher <cipher type>*::
+*-c, --cipher '<cipher type>'*::
    payload encryption algorithm +
    Encryption algorithm used for encrypting the payload +
    Possible values:
 
-   *null*;; no encryption
-   *aes-ctr*;; AES in counter mode with 128 Bits, default value
-   *aes-ctr-128*;; AES in counter mode with 128 Bits
-   *aes-ctr-192*;; AES in counter mode with 192 Bits
-   *aes-ctr-256*;; AES in counter mode with 256 Bits
+   'null';; no encryption
+   'aes-ctr';; AES in counter mode with 128 Bits, default value
+   'aes-ctr-128';; AES in counter mode with 128 Bits
+   'aes-ctr-192';; AES in counter mode with 192 Bits
+   'aes-ctr-256';; AES in counter mode with 256 Bits
 
-*-a, --auth-algo <algo type>*::
+*-a, --auth-algo '<algo type>'*::
    message authentication algorithm +
    This option sets the message authentication algorithm. +
    If HMAC-SHA1 is used, the packet length is increased. The additional bytes 
    contain the authentication data. see *--auth-tag-length* for more info. +
    Possible values:
 
-   *null*;; no message authentication
-   *sha1*;; HMAC-SHA1, default value
+   'null';; no message authentication
+   'sha1';; HMAC-SHA1, default value
 
-*-b, --auth-tag-length <length>*::
+*-b, --auth-tag-length '<length>'*::
    The number of bytes to use for the auth tag. This value defaults to 10 bytes 
-   unless the *null* auth algo is used in which case it defaults to 0. 
+   unless the 'null' auth algo is used in which case it defaults to 0. 
 
 
 EXAMPLES
@@ -300,7 +300,7 @@ Main web site: http://www.anytun.org/
 COPYING
 -------
 
-Copyright \(C) 2008-2009 Christian Pointner. This  program is  free 
+Copyright \(C) 2008-2010 Christian Pointner. This  program is  free 
 software: you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software 
 Foundation, either version 3 of the License, or any later version.

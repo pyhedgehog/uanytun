@@ -2,12 +2,12 @@
 .\"     Title: uanytun
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.1 <http://docbook.sf.net/>
-.\"      Date: 01/15/2010
+.\"      Date: 02/11/2010
 .\"    Manual: uanytun user manual
 .\"    Source: uanytun trunk
 .\"  Language: English
 .\"
-.TH "UANYTUN" "8" "01/15/2010" "uanytun trunk" "uanytun user manual"
+.TH "UANYTUN" "8" "02/11/2010" "uanytun trunk" "uanytun user manual"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -68,17 +68,17 @@ This option instructs
 to run in foreground instead of becoming a daemon which is the default\&.
 .RE
 .PP
-\fB\-u, \-\-username <username>\fR
+\fB\-u, \-\-username \fR\fB\fI<username>\fR\fR
 .RS 4
 run as this user\&. If no group is specified (\fB\-g\fR) the default group of the user is used\&. The default is to not drop privileges\&.
 .RE
 .PP
-\fB\-g, \-\-groupname <groupname>\fR
+\fB\-g, \-\-groupname \fR\fB\fI<groupname>\fR\fR
 .RS 4
 run as this group\&. If no username is specified (\fB\-u\fR) this gets ignored\&. The default is to not drop privileges\&.
 .RE
 .PP
-\fB\-C, \-\-chroot <path>\fR
+\fB\-C, \-\-chroot \fR\fB\fI<path>\fR\fR
 .RS 4
 Instruct
 \fBuAnytun\fR
@@ -92,7 +92,7 @@ Instruct
 to write it\(cqs pid to this file\&. The default is to not create a pid file\&.
 .RE
 .PP
-\fB\-L, \-\-log <target>:<level>[,<param1>[,<param2>[\&.\&.]]]\fR
+\fB\-L, \-\-log \fR\fB\fI<target>:<level>[,<param1>[,<param2>[\&.\&.]]]\fR\fR
 .RS 4
 add log target to logging system\&. This can be invoked several times in order to log to different targets at the same time\&. Every target hast its own log level which is a number between 0 and 5\&. Where 0 means disabling log and 5 means debug messages are enabled\&.
 
@@ -102,22 +102,22 @@ is added\&.
 
 The following targets are supported:
 .PP
-\fBsyslog\fR
+\fIsyslog\fR
 .RS 4
 log to syslog daemon, parameters <level>[,<logname>[,<facility>]]
 .RE
 .PP
-\fBfile\fR
+\fIfile\fR
 .RS 4
 log to file, parameters <level>[,<path>]
 .RE
 .PP
-\fBstdout\fR
+\fIstdout\fR
 .RS 4
 log to standard output, parameters <level>
 .RE
 .PP
-\fBstderr\fR
+\fIstderr\fR
 .RS 4
 log to standard error, parameters <level>
 .RE
@@ -134,22 +134,22 @@ to run in debug mode\&. It implicits
 (logging with maximum level)\&. In future releases there might be additional output when this option is supplied\&.
 .RE
 .PP
-\fB\-i, \-\-interface <ip address>\fR
+\fB\-i, \-\-interface \fR\fB\fI<ip address>\fR\fR
 .RS 4
 This IP address is used as the sender address for outgoing packets\&. The default is to not use a special inteface and just bind on all interfaces\&.
 .RE
 .PP
-\fB\-p, \-\-port <port>\fR
+\fB\-p, \-\-port \fR\fB\fI<port>\fR\fR
 .RS 4
 The local UDP port that is used to send and receive the payload data\&. The two tunnel endpoints can use different ports\&. default: 4444
 .RE
 .PP
-\fB\-r, \-\-remote\-host <hostname|ip>\fR
+\fB\-r, \-\-remote\-host \fR\fB\fI<hostname|ip>\fR\fR
 .RS 4
 This option can be used to specify the remote tunnel endpoint\&. In case of anycast tunnel endpoints, the anycast IP address has to be used\&. If you do not specify an address, it is automatically determined after receiving the first data packet\&.
 .RE
 .PP
-\fB\-o, \-\-remote\-port <port>\fR
+\fB\-o, \-\-remote\-port \fR\fB\fI<port>\fR\fR
 .RS 4
 The UDP port used for payload data by the remote host (specified with \-p on the remote host)\&. If you do not specify a port, it is automatically determined after receiving the first data packet\&.
 .RE
@@ -164,62 +164,62 @@ Resolv to IPv4 addresses only\&. The default is to resolv both IPv4 and IPv6 add
 Resolv to IPv6 addresses only\&. The default is to resolv both IPv4 and IPv6 addresses\&.
 .RE
 .PP
-\fB\-d, \-\-dev <name>\fR
+\fB\-d, \-\-dev \fR\fB\fI<name>\fR\fR
 .RS 4
 device name
 
 By default, tapN is used for Ethernet tunnel interfaces, and tunN for IP tunnels, respectively\&. This option can be used to manually override these defaults\&.
 .RE
 .PP
-\fB\-t, \-\-type <tun|tap>\fR
+\fB\-t, \-\-type \fR\fB\fI<tun|tap>\fR\fR
 .RS 4
 device type
 
 Type of the tunnels to create\&. Use tap for Ethernet tunnels, tun for IP tunnels\&.
 .RE
 .PP
-\fB\-n, \-\-ifconfig <local>/<prefix>\fR
+\fB\-n, \-\-ifconfig \fR\fB\fI<local>/<prefix>\fR\fR
 .RS 4
 The local IP address and prefix length\&. The remote tunnel endpoint has to use a different IP address in the same subnet\&.
 .PP
-\fB<local>\fR
+\fI<local>\fR
 .RS 4
 the local IP address for the tun/tap device
 .RE
 .PP
-\fB<prefix>\fR
+\fI<prefix>\fR
 .RS 4
 the prefix length of the network
 .RE
 .RE
 .PP
-\fB\-x, \-\-post\-up\-script <script>\fR
+\fB\-x, \-\-post\-up\-script \fR\fB\fI<script>\fR\fR
 .RS 4
 This option instructs
 \fBuAnytun\fR
 to run this script after the interface is created\&. By default no script will be executed\&.
 .RE
 .PP
-\fB\-m, \-\-mux <mux\-id>\fR
+\fB\-m, \-\-mux \fR\fB\fI<mux\-id>\fR\fR
 .RS 4
 the multiplex id to use\&. default: 0
 .RE
 .PP
-\fB\-s, \-\-sender\-id <sender id>\fR
+\fB\-s, \-\-sender\-id \fR\fB\fI<sender id>\fR\fR
 .RS 4
 Each anycast tunnel endpoint needs a unique sender id (1, 2, 3, \&...)\&. It is needed to distinguish the senders in case of replay attacks\&. As
 \fBuAnytun\fR
 does not support synchronisation it can\(cqt be used as an anycast endpoint therefore this option is quite useless but implemented for compatibility reasons\&. default: 0
 .RE
 .PP
-\fB\-w, \-\-window\-size <window size>\fR
+\fB\-w, \-\-window\-size \fR\fB\fI<window size>\fR\fR
 .RS 4
 seqence window size
 
 Sometimes, packets arrive out of order on the receiver side\&. This option defines the size of a list of received packets\' sequence numbers\&. If, according to this list, a received packet has been previously received or has been transmitted in the past, and is therefore not in the list anymore, this is interpreted as a replay attack and the packet is dropped\&. A value of 0 deactivates this list and, as a consequence, the replay protection employed by filtering packets according to their secuence number\&. By default the sequence window is disabled and therefore a window size of 0 is used\&.
 .RE
 .PP
-\fB\-k, \-\-kd\(emprf <kd\-prf type>\fR
+\fB\-k, \-\-kd\(emprf \fR\fB\fI<kd\-prf type>\fR\fR
 .RS 4
 key derivation pseudo random function
 
@@ -227,54 +227,54 @@ The pseudo random function which is used for calculating the session keys and se
 
 Possible values:
 .PP
-\fBnull\fR
+\fInull\fR
 .RS 4
 no random function, keys and salt are set to 0\&.\&.00
 .RE
 .PP
-\fBaes\-ctr\fR
+\fIaes\-ctr\fR
 .RS 4
 AES in counter mode with 128 Bits, default value
 .RE
 .PP
-\fBaes\-ctr\-128\fR
+\fIaes\-ctr\-128\fR
 .RS 4
 AES in counter mode with 128 Bits
 .RE
 .PP
-\fBaes\-ctr\-192\fR
+\fIaes\-ctr\-192\fR
 .RS 4
 AES in counter mode with 192 Bits
 .RE
 .PP
-\fBaes\-ctr\-256\fR
+\fIaes\-ctr\-256\fR
 .RS 4
 AES in counter mode with 256 Bits
 .RE
 .RE
 .PP
-\fB\-e, \-\-role <role>\fR
+\fB\-e, \-\-role \fR\fB\fI<role>\fR\fR
 .RS 4
 SATP uses different session keys for inbound and outbound traffic\&. The role parameter is used to determine which keys to use for outbound or inbound packets\&. On both sides of a vpn connection different roles have to be used\&. Possible values are
-\fBleft\fR
+\fIleft\fR
 and
-\fBright\fR\&. You may also use
-\fBalice\fR
+\fIright\fR\&. You may also use
+\fIalice\fR
 or
-\fBserver\fR
+\fIserver\fR
 as a replacement for
-\fBleft\fR
+\fIleft\fR
 and
-\fBbob\fR
+\fIbob\fR
 or
-\fBclient\fR
+\fIclient\fR
 as a replacement for
-\fBright\fR\&. By default
-\fBleft\fR
+\fIright\fR\&. By default
+\fIleft\fR
 is used\&.
 .RE
 .PP
-\fB\-E, \-\-passphrase <pass phrase>\fR
+\fB\-E, \-\-passphrase \fR\fB\fI<pass phrase>\fR\fR
 .RS 4
 This passphrase is used to generate the master key and master salt\&. For the master key the last n bits of the SHA256 digest of the passphrase (where n is the length of the master key in bits) is used\&. The master salt gets generated with the SHA1 digest\&. You may force a specific key and or salt by using
 \fB\-\-key\fR
@@ -282,21 +282,21 @@ and
 \fB\-\-salt\fR\&.
 .RE
 .PP
-\fB\-K, \-\-key <master key>\fR
+\fB\-K, \-\-key \fR\fB\fI<master key>\fR\fR
 .RS 4
 master key to use for key derivation
 
 Master key in hexadecimal notation, e\&.g\&. 01a2b3c4d5e6f708a9b0cadbecfd0fa1, with a mandatory length of 32, 48 or 64 characters (128, 192 or 256 bits)\&.
 .RE
 .PP
-\fB\-A, \-\-salt <master salt>\fR
+\fB\-A, \-\-salt \fR\fB\fI<master salt>\fR\fR
 .RS 4
 master salt to use for key derivation
 
 Master salt in hexadecimal notation, e\&.g\&. 01a2b3c4d5e6f708a9b0cadbecfd, with a mandatory length of 28 characters (14 bytes)\&.
 .RE
 .PP
-\fB\-c, \-\-cipher <cipher type>\fR
+\fB\-c, \-\-cipher \fR\fB\fI<cipher type>\fR\fR
 .RS 4
 payload encryption algorithm
 
@@ -304,33 +304,33 @@ Encryption algorithm used for encrypting the payload
 
 Possible values:
 .PP
-\fBnull\fR
+\fInull\fR
 .RS 4
 no encryption
 .RE
 .PP
-\fBaes\-ctr\fR
+\fIaes\-ctr\fR
 .RS 4
 AES in counter mode with 128 Bits, default value
 .RE
 .PP
-\fBaes\-ctr\-128\fR
+\fIaes\-ctr\-128\fR
 .RS 4
 AES in counter mode with 128 Bits
 .RE
 .PP
-\fBaes\-ctr\-192\fR
+\fIaes\-ctr\-192\fR
 .RS 4
 AES in counter mode with 192 Bits
 .RE
 .PP
-\fBaes\-ctr\-256\fR
+\fIaes\-ctr\-256\fR
 .RS 4
 AES in counter mode with 256 Bits
 .RE
 .RE
 .PP
-\fB\-a, \-\-auth\-algo <algo type>\fR
+\fB\-a, \-\-auth\-algo \fR\fB\fI<algo type>\fR\fR
 .RS 4
 message authentication algorithm
 
@@ -342,21 +342,21 @@ for more info\&.
 
 Possible values:
 .PP
-\fBnull\fR
+\fInull\fR
 .RS 4
 no message authentication
 .RE
 .PP
-\fBsha1\fR
+\fIsha1\fR
 .RS 4
 HMAC\-SHA1, default value
 .RE
 .RE
 .PP
-\fB\-b, \-\-auth\-tag\-length <length>\fR
+\fB\-b, \-\-auth\-tag\-length \fR\fB\fI<length>\fR\fR
 .RS 4
 The number of bytes to use for the auth tag\&. This value defaults to 10 bytes unless the
-\fBnull\fR
+\fInull\fR
 auth algo is used in which case it defaults to 0\&.
 .RE
 .SH "EXAMPLES"
@@ -417,4 +417,4 @@ Christian Pointner <equinox@anytun\&.org>
 Main web site: http://www\&.anytun\&.org/
 .SH "COPYING"
 .sp
-Copyright (C) 2008\-2009 Christian Pointner\&. This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version\&.
+Copyright (C) 2008\-2010 Christian Pointner\&. This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version\&.
