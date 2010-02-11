@@ -91,7 +91,7 @@ passed to the daemon:
    disabling log and 5 means debug messages are enabled. +
    The file target can be used more the once with different levels.
    If no target is provided at the command line a single target with the 
-   config *syslog:3,uanytun,daemon* is added. +
+   config 'syslog:3,uanytun,daemon' is added. +
    The following targets are supported:
 
    'syslog';; log to syslog daemon, parameters <level>[,<logname>[,<facility>]]
@@ -102,7 +102,7 @@ passed to the daemon:
 *-U, --debug*::
    This option instructs *uAnytun* to run in debug mode. It implicits *-D* 
    (don't daemonize) and adds a log target with the configuration
-   *stdout:5* (logging with maximum level). In future releases there might
+   'stdout:5' (logging with maximum level). In future releases there might
    be additional output when this option is supplied.
 
 *-i, --interface '<ip address>'*::
