@@ -1,8 +1,8 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          uanytun
-# Required-Start:    $network $named $syslog
-# Required-Stop:     
+# Required-Start:    $remote_fs $network $named $syslog
+# Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Start anycast tunneling daemon at boot time
