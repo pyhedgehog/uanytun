@@ -108,7 +108,7 @@ int uanytun_exec(const char* script, char* const argv[], char* const evp[])
   else if(WIFSIGNALED(status))
     log_printf(NOTICE, "script '%s' terminated after signal %d", script, WTERMSIG(status));
   else
-    log_printf(ERROR, "executing script '%s': unkown error", script);
+    log_printf(ERROR, "executing script '%s': unknown error", script);
 
   close(pipefd[0]);
   return status;
