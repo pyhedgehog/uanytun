@@ -222,7 +222,7 @@ fi
 
 VERSION=`cat ../version`
 if which svn >/dev/null; then
-  SVN_REV=`svn info | grep "^Revision: " | awk '{print($2)}'`
+  SVN_REV=`svn info 2> /dev/null | grep "^Revision: " | awk '{print($2)}'`
   if [ -n "$SVN_REV" ]; then
     VERSION="$VERSION (svn$SVN_REV)"
   fi
