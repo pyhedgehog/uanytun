@@ -79,7 +79,7 @@ int signal_init()
     }
   }
 
-  struct sigaction act, act_ign;
+  struct sigaction act, ign;
   act.sa_handler = sig_handler;
   sigfillset(&act.sa_mask);
   act.sa_flags = 0;
