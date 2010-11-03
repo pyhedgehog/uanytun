@@ -93,7 +93,7 @@ Uninstalling
 
 # sudo make remove
 
-This removes everytthing except for the config files
+This removes everything except for the config files
 
 # sudo make purge
 
