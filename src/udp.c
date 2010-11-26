@@ -258,7 +258,7 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
     break;
   default:
     asprintf(&ret, "unknown address type");
-    return ;
+    return ret;
   }
   addrstr = malloc(addrstr_len);
   if(!addrstr)
