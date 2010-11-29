@@ -56,7 +56,8 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
 
   sock->socks_ = NULL;
   sock->active_sock_ = NULL;
-  memset(&(sock->remote_end_), 0, sizeof(sock->remote_end_));
+  memset(&(sock->remote_end_.addr_), 0, sizeof(sock->remote_end_.addr_));
+  sock->remote_end_.len_ = sizeof(sock->remote_end_.addr_);
   sock->remote_end_set_ = 0;
 
   struct addrinfo hints, *res;
@@ -94,7 +95,8 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
       udp_close(sock);
       return -2;
     }
-    memset(&(new_sock->local_end_), 0, sizeof(new_sock->local_end_));
+    memset(&(new_sock->local_end_.addr_), 0, sizeof(new_sock->local_end_.addr_));
+    new_sock->local_end_.len_ = sizeof(new_sock->local_end_.addr_);
     new_sock->next_ = NULL;
 
     if(!sock->socks_) {
@@ -106,8 +108,9 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
       prev_sock = new_sock;
     }
     
-    memcpy(&(new_sock->local_end_), r->ai_addr, r->ai_addrlen);
-    new_sock->fd_ = socket(r->ai_family, SOCK_DGRAM, 0);
+    memcpy(&(new_sock->local_end_.addr_), r->ai_addr, r->ai_addrlen);
+    new_sock->local_end_.len_ = r->ai_addrlen;
+    new_sock->fd_ = socket(new_sock->local_end_.addr_.ss_family, SOCK_DGRAM, 0);
     if(new_sock->fd_ < 0) {
       log_printf(ERROR, "Error on opening udp socket: %s", strerror(errno));
       freeaddrinfo(res);
@@ -121,7 +124,7 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
         log_printf(ERROR, "Error on setting IPV6_V6ONLY socket option: %s", strerror(errno));
     }
 
-    errcode = bind(new_sock->fd_, r->ai_addr, r->ai_addrlen);
+    errcode = bind(new_sock->fd_, (struct sockaddr*)&(new_sock->local_end_.addr_), new_sock->local_end_.len_);
     if(errcode) {
       log_printf(ERROR, "Error on binding udp socket: %s", strerror(errno));
       freeaddrinfo(res);
@@ -183,13 +186,14 @@ int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resol
     log_printf(ERROR, "getaddrinfo returned no address for %s:%s", remote_addr, port);
     return -1;
   }
-  memcpy(&(sock->remote_end_), res->ai_addr, res->ai_addrlen);
+  memcpy(&(sock->remote_end_.addr_), res->ai_addr, res->ai_addrlen);
+  sock->remote_end_.len_ = res->ai_addrlen;
   sock->remote_end_set_ = 1;
 
   if(!sock->active_sock_) {
     udp_socket_t* s = sock->socks_;
     while(s) {
-      if((((struct sockaddr *)&s->local_end_)->sa_family) == res->ai_family) {
+      if(s->local_end_.addr_.ss_family == res->ai_family) {
         sock->active_sock_ = s;
         break;
       }
@@ -236,36 +240,21 @@ void udp_close(udp_t* sock)
 
 char* udp_endpoint_to_string(udp_endpoint_t e)
 {
-  void* ptr;
-  u_int16_t port;
   size_t addrstr_len = 0;
-  char* addrstr, *ret;
+  char addrstr[INET6_ADDRSTRLEN + 1], portstr[6], *ret;
   char addrport_sep = ':';
-
-  switch (((struct sockaddr *)&e)->sa_family)
+  
+  switch(e.addr_.ss_family)
   {
-  case AF_INET:
-    ptr = &((struct sockaddr_in *)&e)->sin_addr;
-    port = ntohs(((struct sockaddr_in *)&e)->sin_port);
-    addrstr_len = INET_ADDRSTRLEN + 1;
-    addrport_sep = ':';
-    break;
-  case AF_INET6:
-    ptr = &((struct sockaddr_in6 *)&e)->sin6_addr;
-    port = ntohs(((struct sockaddr_in6 *)&e)->sin6_port);
-    addrstr_len = INET6_ADDRSTRLEN + 1;
-    addrport_sep = '.';
-    break;
-  default:
-    asprintf(&ret, "unknown address type");
-    return ret;
+  case AF_INET: addrport_sep = ':'; break;
+  case AF_INET6: addrport_sep = '.'; break;
+  case AF_UNSPEC: return NULL;
+  default: asprintf(&ret, "unknown address type"); return ret;
   }
-  addrstr = malloc(addrstr_len);
-  if(!addrstr)
-    return NULL;
-  inet_ntop (((struct sockaddr *)&e)->sa_family, ptr, addrstr, addrstr_len);
-  asprintf(&ret, "%s%c%d", addrstr, addrport_sep ,port);
-  free(addrstr);
+
+  int errcode  = getnameinfo((struct sockaddr *)&(e.addr_), e.len_, addrstr, sizeof(addrstr), portstr, sizeof(portstr), NI_NUMERICHOST | NI_NUMERICSERV);
+  if (errcode != 0) return NULL;
+  asprintf(&ret, "%s%c%s", addrstr, addrport_sep ,portstr);
   return ret;
 }
 
@@ -282,8 +271,7 @@ int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* 
   if(!sock || !remote_end)
     return -1;
 
-  socklen_t socklen = sizeof(*remote_end);
-  return recvfrom(fd, buf, len, 0, (struct sockaddr *)remote_end, &socklen);
+  return recvfrom(fd, buf, len, 0, (struct sockaddr *)&(remote_end->addr_), &(remote_end->len_));
 }
 
 int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
@@ -291,12 +279,6 @@ int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
   if(!sock || !sock->remote_end_set_ || !sock->active_sock_)
     return 0;
 
-  socklen_t socklen = sizeof(sock->remote_end_);
-  if((((struct sockaddr *)&sock->active_sock_->local_end_)->sa_family) == AF_INET)
-    socklen = sizeof(struct sockaddr_in);
-  else if ((((struct sockaddr *)&sock->active_sock_->local_end_)->sa_family) == AF_INET6)
-    socklen = sizeof(struct sockaddr_in6);
-
-  return sendto(sock->active_sock_->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_), socklen);
+  return sendto(sock->active_sock_->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_.addr_), sock->remote_end_.len_);
 }
 

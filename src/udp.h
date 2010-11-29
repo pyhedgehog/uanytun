@@ -41,7 +41,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-typedef struct sockaddr_storage udp_endpoint_t;
+typedef struct {
+  socklen_t len_;
+  struct sockaddr_storage addr_;
+} udp_endpoint_t;
 
 struct udp_socket_struct {
   int fd_;

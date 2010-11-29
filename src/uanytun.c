@@ -147,7 +147,8 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   encrypted_packet_set_length(encrypted_packet, -1);
 
   udp_endpoint_t remote;
-  memset(&remote, 0, sizeof(udp_endpoint_t));
+  memset(&(remote.addr_), 0, sizeof(remote.addr_));
+  remote.len_ = sizeof(remote.addr_);
   int len = udp_read(sock, fd, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet), &remote);
   if(len == -1) {
     log_printf(ERROR, "error on receiving udp packet: %s", strerror(errno));
@@ -182,8 +183,8 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   }
    
   udp_set_active_sock(sock, fd);
-  if(memcmp(&remote, &(sock->remote_end_), sizeof(remote))) {
-    memcpy(&(sock->remote_end_), &remote, sizeof(remote));
+  if(remote.len_ != sock->remote_end_.len_ || memcmp(&(remote.addr_), &(sock->remote_end_.addr_), remote.len_)) {
+    memcpy(&(sock->remote_end_.addr_), &(remote.addr_), remote.len_);
     sock->remote_end_set_ = 1;
     char* addrstring = udp_endpoint_to_string(remote);
     log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
