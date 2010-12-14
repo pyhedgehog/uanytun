@@ -2,12 +2,12 @@
 .\"     Title: uanytun
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.1 <http://docbook.sf.net/>
-.\"      Date: 02/11/2010
+.\"      Date: 12/14/2010
 .\"    Manual: uanytun user manual
 .\"    Source: uanytun trunk
 .\"  Language: English
 .\"
-.TH "UANYTUN" "8" "02/11/2010" "uanytun trunk" "uanytun user manual"
+.TH "UANYTUN" "8" "12/14/2010" "uanytun trunk" "uanytun user manual"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -94,9 +94,9 @@ to write it\(cqs pid to this file\&. The default is to not create a pid file\&.
 .PP
 \fB\-L, \-\-log \fR\fB\fI<target>:<level>[,<param1>[,<param2>[\&.\&.]]]\fR\fR
 .RS 4
-add log target to logging system\&. This can be invoked several times in order to log to different targets at the same time\&. Every target hast its own log level which is a number between 0 and 5\&. Where 0 means disabling log and 5 means debug messages are enabled\&.
+add log target to logging system\&. This can be invoked several times in order to log to different targets at the same time\&. Every target has its own log level which is a number between 0 and 5\&. Where 0 means disabling log and 5 means debug messages are enabled\&.
 
-The file target can be used more the once with different levels\&. If no target is provided at the command line a single target with the config
+The file target can be used more than once with different levels\&. If no target is provided at the command line a single target with the config
 \fIsyslog:3,uanytun,daemon\fR
 is added\&.
 
