@@ -20,6 +20,9 @@ using ssl crypto library:
  build-essential
  libssl-dev
 
+if you want clang as compiler
+ clang
+
 if you want to rebuild the manpage:
 
  asciidoc

@@ -210,8 +210,6 @@ int cipher_aesctr_init(cipher_t* c)
   if(!c->params_)
     return -2;
 
-  cipher_aesctr_param_t* params = c->params_;
-
 #ifndef USE_SSL_CRYPTO
   int algo;
   switch(c->key_length_) {
@@ -224,6 +222,7 @@ int cipher_aesctr_init(cipher_t* c)
   }
   }
 
+  cipher_aesctr_param_t* params = c->params_;
   gcry_error_t err = gcry_cipher_open(&params->handle_, algo, GCRY_CIPHER_MODE_CTR, 0);
   if(err) {
     log_printf(ERROR, "failed to open cipher: %s", gcry_strerror(err));
@@ -240,9 +239,8 @@ void cipher_aesctr_close(cipher_t* c)
     return;
 
   if(c->params_) {
-    cipher_aesctr_param_t* params = c->params_;
-
 #ifndef USE_SSL_CRYPTO
+    cipher_aesctr_param_t* params = c->params_;
     if(params->handle_)
       gcry_cipher_close(params->handle_);
 #endif

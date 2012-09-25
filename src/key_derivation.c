@@ -158,7 +158,7 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
 #ifndef USE_SSL_CRYPTO
   gcry_md_hash_buffer(GCRY_MD_SHA256, digest.buf_, passphrase, strlen(passphrase));
 #else
-  SHA256(passphrase, strlen(passphrase), digest.buf_);
+  SHA256((const u_int8_t*)passphrase, strlen(passphrase), digest.buf_);
 #endif
 
   kd->master_key_.length_ = key_length/8;
@@ -213,7 +213,7 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
 #ifndef USE_SSL_CRYPTO
   gcry_md_hash_buffer(GCRY_MD_SHA1, digest.buf_, passphrase, strlen(passphrase));
 #else
-  SHA1(passphrase, strlen(passphrase), digest.buf_);
+  SHA1((const u_int8_t*)passphrase, strlen(passphrase), digest.buf_);
 #endif
 
   kd->master_salt_.length_ = salt_length/8;
@@ -385,9 +385,8 @@ void key_derivation_aesctr_close(key_derivation_t* kd)
     return;
 
   if(kd->params_) {
-    key_derivation_aesctr_param_t* params = kd->params_;
-
 #ifndef USE_SSL_CRYPTO
+    key_derivation_aesctr_param_t* params = kd->params_;
     if(params->handle_)
       gcry_cipher_close(params->handle_);
 #endif
