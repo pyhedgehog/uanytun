@@ -35,6 +35,7 @@
 
 #include "datatypes.h"
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -42,6 +43,7 @@
 #include <sys/wait.h>
 #include <sys/select.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "sysexec.h"
@@ -83,7 +85,8 @@ int uanytun_exec(const char* script, char* const argv[], char* const evp[])
         // if execve returns, an error occurred, but logging doesn't work 
         // because we closed all file descriptors, so just write errno to
         // pipe and call exit
-    write(pipefd[1], (void*)(&errno), sizeof(errno));
+    int ret = write(pipefd[1], (void*)(&errno), sizeof(errno));
+    if(ret == -1) exit(-1);
     exit(-1);
   }
   close(pipefd[1]);

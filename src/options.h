@@ -92,6 +92,7 @@ void options_parse_post(options_t* opt);
 void options_default(options_t* opt);
 void options_clear(options_t* opt);
 void options_print_usage();
+void options_print_version();
 void options_print(options_t* opt);
 
 #endif

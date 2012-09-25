@@ -33,6 +33,7 @@
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 
 #include "datatypes.h"
@@ -116,6 +117,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
 int tun_init_post(tun_device_t* dev)
 {
 // nothing yet
+  return 0;
 }
 
 void tun_close(tun_device_t* dev)
@@ -192,8 +194,8 @@ void tun_do_ifconfig(tun_device_t* dev)
     return;
 
   char* mtu_str = NULL;
-  asprintf(&mtu_str, "%d", dev->mtu_);
-  if(!mtu_str) {
+  int len = asprintf(&mtu_str, "%d", dev->mtu_);
+  if(len == -1) {
     log_printf(ERROR, "Execution of ifconfig failed");
     return;
   }

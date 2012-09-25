@@ -35,6 +35,7 @@
 
 #include "datatypes.h"
 
+#include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -246,7 +247,7 @@ void log_print_hex_dump(log_prio_t prio, const u_int8_t* buf, u_int32_t len)
     int offset = snprintf(msg, MSG_LENGTH_MAX, "dump(%d): ", len);
     if(offset < 0)
       return;
-    u_int8_t* ptr = &msg[offset];
+    char* ptr = &msg[offset];
     
     for(i=0; i < len; i++) {
       if(((i+1)*3) >= (MSG_LENGTH_MAX - offset))

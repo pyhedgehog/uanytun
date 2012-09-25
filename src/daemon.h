@@ -122,6 +122,8 @@ int do_chroot(const char* chrootdir)
     log_printf(ERROR, "can't change to /: %s", strerror(errno));
     return -1;
   }
+
+  return 0;
 }
 
 void daemonize()

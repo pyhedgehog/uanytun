@@ -236,7 +236,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
   int return_value = 0;
   int sig_fd = signal_init();
   if(sig_fd < 0)
-    return_value -1;
+    return_value = -1;
 
   FD_SET(sig_fd, &readfds);
   nfds = (nfds < sig_fd) ? sig_fd : nfds;
@@ -372,7 +372,7 @@ int main(int argc, char* argv[])
     log_printf(NOTICE, "executing post-up script '%s'", opt.post_up_script_);
     char* const argv[] = { opt.post_up_script_, dev.actual_name_, NULL };
     char* const evp[] = { NULL };
-    int ret = uanytun_exec(opt.post_up_script_, argv, evp);
+    uanytun_exec(opt.post_up_script_, argv, evp);
   }
 
 

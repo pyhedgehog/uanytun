@@ -38,7 +38,7 @@ TARGET=`uname -s`
 
 EBUILD_COMPAT=0
 
-CFLAGS='-g -O2'
+CFLAGS='-g -Wall -O2'
 LDFLAGS='-g -Wall -O2'
 
 CRYPTO_LIB='gcrypt'
