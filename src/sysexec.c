@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -82,7 +82,7 @@ int uanytun_exec(const char* script, char* const argv[], char* const evp[])
         log_printf(WARNING, "can't open stderr");
     }
     execve(script, argv, evp);
-        // if execve returns, an error occurred, but logging doesn't work 
+        // if execve returns, an error occurred, but logging doesn't work
         // because we closed all file descriptors, so just write errno to
         // pipe and call exit
     int ret = write(pipefd[1], (void*)(&errno), sizeof(errno));
@@ -107,7 +107,7 @@ int uanytun_exec(const char* script, char* const argv[], char* const evp[])
     }
   }
   if(WIFEXITED(status))
-    log_printf(NOTICE, "script '%s' returned %d", script, WEXITSTATUS(status));  
+    log_printf(NOTICE, "script '%s' returned %d", script, WEXITSTATUS(status));
   else if(WIFSIGNALED(status))
     log_printf(NOTICE, "script '%s' terminated after signal %d", script, WTERMSIG(status));
   else

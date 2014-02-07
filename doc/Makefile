@@ -13,9 +13,9 @@
 ##  message authentication based on the methodes used by SRTP.  It is
 ##  intended to deliver a generic, scaleable and secure solution for
 ##  tunneling and relaying of packets of any protocol.
-##  
 ##
-##  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+##
+##  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
 ##
 ##  This file is part of uAnytun.
 ##
@@ -35,21 +35,21 @@
 
 VERSION=$(shell cat ../version)
 
-.PHONY: clean 
+.PHONY: clean
 
 all: manpage
 
 uanytun.8: uanytun.8.txt
-	a2x -f manpage $<
-	@ sed -i -e 's/\[FIXME: source\]/uanytun ${VERSION}/' $@
-	@ sed -i -e 's/\[FIXME: manual\]/uanytun user manual/' $@
-	@ sed -i -e 's/^uanytun$$/\\fBuanytun\\fR/' $@
-	@ sed -i -e 's/^  \[ \([^ ]*\)/  [ \\fB\1\\fR/' $@
+  a2x -f manpage $<
+  @ sed -i -e 's/\[FIXME: source\]/uanytun ${VERSION}/' $@
+  @ sed -i -e 's/\[FIXME: manual\]/uanytun user manual/' $@
+  @ sed -i -e 's/^uanytun$$/\\fBuanytun\\fR/' $@
+  @ sed -i -e 's/^  \[ \([^ ]*\)/  [ \\fB\1\\fR/' $@
 
 manpage: uanytun.8
 
 clean:
-	rm -f uanytun.8.xml
+  rm -f uanytun.8.xml
 
 realclean: clean
-	rm -f uanytun.8
+  rm -f uanytun.8

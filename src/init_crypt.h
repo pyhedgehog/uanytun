@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -54,7 +54,7 @@ int init_crypt()
 
 #define MIN_GCRYPT_VERSION "1.2.0"
 
-int init_crypt() 
+int init_crypt()
 {
   if(!gcry_check_version(MIN_GCRYPT_VERSION)) {
     log_printf(NOTICE, "invalid Version of libgcrypt, should be >= %s", MIN_GCRYPT_VERSION);
@@ -81,7 +81,7 @@ int init_crypt()
 
 int init_crypt()
 {
-// nothing here 
+// nothing here
   return 0;
 }
 

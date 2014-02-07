@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -77,7 +77,7 @@ void plain_packet_set_length(plain_packet_t* packet, u_int32_t len)
 {
   if(!packet)
     return;
-  
+
   if(len > PLAIN_PACKET_SIZE_MAX)
     len = PLAIN_PACKET_SIZE_MAX - sizeof(payload_type_t);
   else if(len < sizeof(payload_type_t))
@@ -85,7 +85,7 @@ void plain_packet_set_length(plain_packet_t* packet, u_int32_t len)
   else
     len -= sizeof(payload_type_t);
 
-  packet->payload_length_ = len;  
+  packet->payload_length_ = len;
 }
 
 u_int8_t* plain_packet_get_payload(plain_packet_t* packet)

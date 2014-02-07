@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: uanytun
 .\"    Author: [see the "AUTHORS" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.1 <http://docbook.sf.net/>
-.\"      Date: 12/14/2010
-.\"    Manual: uanytun user manual
-.\"    Source: uanytun trunk
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/07/2014
+.\"    Manual: \ \&
+.\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "UANYTUN" "8" "12/14/2010" "uanytun trunk" "uanytun user manual"
+.TH "UANYTUN" "8" "02/07/2014" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -33,9 +42,9 @@ uanytun \- micro anycast tunneling daemon
   [ \fB\-L|\-\-log\fR <target>:<level>[,<param1>[,<param2>[\&.\&.]]] ]
   [ \fB\-U|\-\-debug\fR ]
   [ \fB\-i|\-\-interface\fR <ip\-address> ]
-  [ \fB\-p|\-\-port\fR <port> ]
+  [ \fB\-p|\-\-port\fR <port>[:<port>] ]
   [ \fB\-r|\-\-remote\-host\fR <hostname|ip> ]
-  [ \fB\-o|\-\-remote\-port\fR <port> ]
+  [ \fB\-o|\-\-remote\-port\fR <port>[:<port>] ]
   [ \fB\-4|\-\-ipv4\-only\fR ]
   [ \fB\-6|\-\-ipv6\-only\fR ]
   [ \fB\-d|\-\-dev\fR <name> ]
@@ -139,9 +148,13 @@ to run in debug mode\&. It implicits
 This IP address is used as the sender address for outgoing packets\&. The default is to not use a special inteface and just bind on all interfaces\&.
 .RE
 .PP
-\fB\-p, \-\-port \fR\fB\fI<port>\fR\fR
+\fB\-p, \-\-port \fR\fB\fI<port>[:<port>]\fR\fR
 .RS 4
-The local UDP port that is used to send and receive the payload data\&. The two tunnel endpoints can use different ports\&. default: 4444
+The local UDP port that is used to send and receive the payload data\&. The two tunnel endpoints can use different ports\&. The default port is 4444\&. You can also specify a port range which enables
+\fBRAIL\fR
+mode\&. See section
+\fBRAIL\fR
+below to find out what this is\&.
 .RE
 .PP
 \fB\-r, \-\-remote\-host \fR\fB\fI<hostname|ip>\fR\fR
@@ -149,9 +162,12 @@ The local UDP port that is used to send and receive the payload data\&. The two 
 This option can be used to specify the remote tunnel endpoint\&. In case of anycast tunnel endpoints, the anycast IP address has to be used\&. If you do not specify an address, it is automatically determined after receiving the first data packet\&.
 .RE
 .PP
-\fB\-o, \-\-remote\-port \fR\fB\fI<port>\fR\fR
+\fB\-o, \-\-remote\-port \fR\fB\fI<port>[:<port>]\fR\fR
 .RS 4
-The UDP port used for payload data by the remote host (specified with \-p on the remote host)\&. If you do not specify a port, it is automatically determined after receiving the first data packet\&.
+The UDP port used for payload data by the remote host (specified with \-p on the remote host)\&. If you do not specify a port, it is automatically determined after receiving the first data packet\&. When RAIL mode is enabled the port range must be of the same length as the range defined with
+\fB\-p, \-\-port\fR\&. See section
+\fBRAIL\fR
+below for more information about this mode\&.
 .RE
 .PP
 \fB\-4, \-\-ipv4\-only\fR
@@ -216,7 +232,7 @@ does not support synchronisation it can\(cqt be used as an anycast endpoint ther
 .RS 4
 seqence window size
 
-Sometimes, packets arrive out of order on the receiver side\&. This option defines the size of a list of received packets\' sequence numbers\&. If, according to this list, a received packet has been previously received or has been transmitted in the past, and is therefore not in the list anymore, this is interpreted as a replay attack and the packet is dropped\&. A value of 0 deactivates this list and, as a consequence, the replay protection employed by filtering packets according to their secuence number\&. By default the sequence window is disabled and therefore a window size of 0 is used\&.
+Sometimes, packets arrive out of order on the receiver side\&. This option defines the size of a list of received packets\*(Aq sequence numbers\&. If, according to this list, a received packet has been previously received or has been transmitted in the past, and is therefore not in the list anymore, this is interpreted as a replay attack and the packet is dropped\&. A value of 0 deactivates this list and, as a consequence, the replay protection employed by filtering packets according to their secuence number\&. By default the sequence window is disabled and therefore a window size of 0 is used\&.
 .RE
 .PP
 \fB\-k, \-\-kd\(emprf \fR\fB\fI<kd\-prf type>\fR\fR
@@ -359,6 +375,9 @@ The number of bytes to use for the auth tag\&. This value defaults to 10 bytes u
 \fInull\fR
 auth algo is used in which case it defaults to 0\&.
 .RE
+.SH "RAIL"
+.sp
+\fBRAIL\fR stands for Redundant Array of Inexpensive Links\&. Like RAID spreads the blocks of a disk volume over multiple physical disks, \fBRAIL\fR will spread the UDP packets over multiple physical links\&. More precisly for each packet \fBuAnytun\fR reads, from the TUN/TAP device, it will send out multiple UDP packets\&. All of those to the same host but with different destination ports\&. Using policy\-based routing mechanisms these packets can now be seperated and sent out on several interfaces\&. The server\-side will then pick the first of the packets that arrives and discards all others\&. For this to work the size of the sequence window (\fB\-w\fR) must not be set to 0\&. As soon as the server\-side learns the remote endpoints of all or some of the links it will as well send multiple UDP packets for each payload packet\&.
 .SH "EXAMPLES"
 .SS "P2P Setup between two unicast enpoints:"
 .sp
@@ -417,4 +436,4 @@ Christian Pointner <equinox@anytun\&.org>
 Main web site: http://www\&.anytun\&.org/
 .SH "COPYING"
 .sp
-Copyright (C) 2008\-2010 Christian Pointner\&. This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version\&.
+Copyright (C) 2008\-2014 Christian Pointner\&. This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version\&.

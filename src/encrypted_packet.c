@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -188,7 +188,7 @@ mux_t encrypted_packet_get_mux(encrypted_packet_t* packet)
 {
   if(!packet)
     return 0;
-  
+
   return MUX_T_NTOH(packet->data_.header_.mux_);
 }
 

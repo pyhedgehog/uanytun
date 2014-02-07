@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -42,7 +42,7 @@ static char* get_time_formatted()
 {
   char* time_string;
   time_t t = time(NULL);
-  if(t < 0) 
+  if(t < 0)
     time_string = "<time read error>";
   else {
     time_string = ctime(&t);
@@ -79,7 +79,7 @@ int log_target_syslog_init(log_target_t* self, const char* conf)
 {
   if(!self || (conf && conf[0] == 0))
     return -1;
-  
+
   self->param_ = malloc(sizeof(log_target_syslog_param_t));
   if(!self->param_)
     return -2;
@@ -95,7 +95,7 @@ int log_target_syslog_init(log_target_t* self, const char* conf)
       if(!len) {
         free(self->param_);
         return -1;
-      }  
+      }
       logname = malloc(len+1);
       if(logname) {
         strncpy(logname, conf, len);
@@ -116,13 +116,13 @@ int log_target_syslog_init(log_target_t* self, const char* conf)
     ((log_target_syslog_param_t*)(self->param_))->facility_ = DAEMON;
     return 0;
   }
-  
+
   if(end[1] == 0 || end[1] == ',') {
     free(logname);
     free(self->param_);
     return -1;
   }
-    
+
   const char* start = end + 1;
   end = strchr(start, ',');
   int i;
@@ -157,7 +157,7 @@ void log_target_syslog_log(log_target_t* self, log_prio_t prio, const char* msg)
   if(!self || !self->param_ || !self->opened_)
     return;
 
-  syslog((prio + 2) | ((log_target_syslog_param_t*)(self->param_))->facility_, "%s", msg);  
+  syslog((prio + 2) | ((log_target_syslog_param_t*)(self->param_))->facility_, "%s", msg);
 }
 
 void log_target_syslog_close(log_target_t* self)
@@ -209,7 +209,7 @@ int log_target_file_init(log_target_t* self, const char* conf)
 {
   if(!self || (conf && conf[0] == 0))
     return -1;
-  
+
   self->param_ = malloc(sizeof(log_target_file_param_t));
   if(!self->param_)
     return -2;
@@ -224,7 +224,7 @@ int log_target_file_init(log_target_t* self, const char* conf)
       if(!len) {
         free(self->param_);
         return -1;
-      }  
+      }
       logfilename = malloc(len+1);
       if(logfilename) {
         strncpy(logfilename, conf, len);

@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -59,44 +59,44 @@
 #include "sysexec.h"
 
 int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix){
-  if(!dev) 
+  if(!dev)
     return -1;
- 
+
   tun_conf(dev, dev_name, dev_type, ifcfg_addr, ifcfg_prefix, 1400);
   dev->actual_name_ = NULL;
 
-	dev->fd_ = open(DEFAULT_DEVICE, O_RDWR);
-	if(dev->fd_ < 0) {
+  dev->fd_ = open(DEFAULT_DEVICE, O_RDWR);
+  if(dev->fd_ < 0) {
     log_printf(ERROR, "can't open device file (%s): %s", DEFAULT_DEVICE, strerror(errno));
     tun_close(dev);
     return -1;
   }
 
-	struct ifreq ifr;
-	memset(&ifr, 0, sizeof(ifr));
+  struct ifreq ifr;
+  memset(&ifr, 0, sizeof(ifr));
 
   if(dev->type_ == TYPE_TUN) {
     ifr.ifr_flags = IFF_TUN;
     dev->with_pi_ = 1;
-  } 
+  }
   else if(dev->type_ == TYPE_TAP) {
     ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
     dev->with_pi_ = 0;
-  } 
+  }
   else {
     log_printf(ERROR, "unable to recognize type of device (tun or tap)");
     tun_close(dev);
     return -1;
   }
 
-	if(dev_name)
-		strncpy(ifr.ifr_name, dev_name, IFNAMSIZ);
+  if(dev_name)
+    strncpy(ifr.ifr_name, dev_name, IFNAMSIZ);
 
-	if(!ioctl(dev->fd_, TUNSETIFF, &ifr)) {
-		dev->actual_name_ = strdup(ifr.ifr_name);
-	} else if(!ioctl(dev->fd_, (('T' << 8) | 202), &ifr)) {
-		dev->actual_name_ = strdup(ifr.ifr_name);
-	} else {
+  if(!ioctl(dev->fd_, TUNSETIFF, &ifr)) {
+    dev->actual_name_ = strdup(ifr.ifr_name);
+  } else if(!ioctl(dev->fd_, (('T' << 8) | 202), &ifr)) {
+    dev->actual_name_ = strdup(ifr.ifr_name);
+  } else {
     log_printf(ERROR, "tun/tap device ioctl failed: %s", strerror(errno));
     tun_close(dev);
     return -1;
@@ -147,7 +147,7 @@ int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
   {
     struct iovec iov[2];
     struct tun_pi tpi;
-    
+
     iov[0].iov_base = &tpi;
     iov[0].iov_len = sizeof(tpi);
     iov[1].iov_base = buf;
@@ -171,13 +171,13 @@ int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
     struct iovec iov[2];
     struct tun_pi tpi;
     struct iphdr *hdr = (struct iphdr *)buf;
-    
+
     tpi.flags = 0;
     if(hdr->version == 4)
       tpi.proto = htons(ETH_P_IP);
     else
       tpi.proto = htons(ETH_P_IPV6);
-    
+
     iov[0].iov_base = &tpi;
     iov[0].iov_len = sizeof(tpi);
     iov[1].iov_base = buf;

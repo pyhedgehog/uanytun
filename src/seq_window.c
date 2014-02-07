@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -152,12 +152,12 @@ int seq_win_check_and_add(seq_win_t* win, sender_id_t sender_id, seq_nr_t seq_nr
           ptr->max_ -= SEQ_NR_MAX/2;
         else if(shifted == 2)
           ptr->max_ += SEQ_NR_MAX/2;
-        
+
         return 0;
       }
-      
+
       seq_nr_t diff = ptr->max_ - seq_nr;
-      window_size_t pos = diff > ptr->pos_ ? ptr->pos_ + win->size_ : ptr->pos_; 
+      window_size_t pos = diff > ptr->pos_ ? ptr->pos_ + win->size_ : ptr->pos_;
       pos -= diff;
 
       if(shifted == 1)
@@ -170,7 +170,7 @@ int seq_win_check_and_add(seq_win_t* win, sender_id_t sender_id, seq_nr_t seq_nr
       return ret;
     }
     ptr = ptr->next_;
-  }  
+  }
   if(!win->first_) {
     win->first_ = seq_win_new_element(sender_id, seq_nr, win->size_);
     if(!win->first_)
@@ -184,7 +184,7 @@ int seq_win_check_and_add(seq_win_t* win, sender_id_t sender_id, seq_nr_t seq_nr
     if(!ptr->next_)
       return -2;
   }
-  
+
   return 0;
 }
 
@@ -204,7 +204,7 @@ void seq_win_print(seq_win_t* win)
         printf("O");
       else
         printf(".");
-      
+
       if(i)
         i--;
       else

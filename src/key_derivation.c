@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -48,7 +48,7 @@
 
 int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, const char* passphrase, u_int8_t* key, u_int32_t key_len, u_int8_t* salt, u_int32_t salt_len)
 {
-  if(!kd) 
+  if(!kd)
     return -1;
 
   kd->role_ = role;
@@ -62,7 +62,7 @@ int key_derivation_init(key_derivation_t* kd, const char* type, role_t role, con
     if(type[7] == 0) {
       kd->key_length_ = KD_AESCTR_DEFAULT_KEY_LENGTH;
     }
-    else if(type[7] != '-') 
+    else if(type[7] != '-')
       return -1;
     else {
       const char* tmp = &type[8];
@@ -127,7 +127,7 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
   if(kd->master_key_.buf_) {
     log_printf(WARNING, "master key and passphrase provided, ignoring passphrase");
     return 0;
-  }    
+  }
   log_printf(NOTICE, "using passphrase to generate master key");
 
   if(!key_length || (key_length % 8)) {
@@ -183,7 +183,7 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
   if(kd->master_salt_.buf_) {
     log_printf(WARNING, "master salt and passphrase provided, ignoring passphrase");
     return 0;
-  }    
+  }
   log_printf(NOTICE, "using passphrase to generate master salt");
 
   if(!salt_length || (salt_length % 8)) {
@@ -247,7 +247,7 @@ void key_derivation_close(key_derivation_t* kd)
 
 int key_derivation_generate(key_derivation_t* kd, key_derivation_dir_t dir, satp_prf_label_t label, seq_nr_t seq_nr, u_int8_t* key, u_int32_t len)
 {
-  if(!kd || !key) 
+  if(!kd || !key)
     return -1;
 
   if(label >= LABEL_NIL) {
@@ -361,7 +361,7 @@ int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase)
   if(err) {
     log_printf(ERROR, "failed to open key derivation cipher: %s", gcry_strerror(err));
     return -1;
-  } 
+  }
 
   err = gcry_cipher_setkey(params->handle_, kd->master_key_.buf_, kd->master_key_.length_);
   if(err) {
@@ -457,6 +457,6 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_derivation_dir_t di
   memset(key, 0, len);
   AES_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
 #endif
-  
+
   return 0;
 }

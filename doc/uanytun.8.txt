@@ -21,9 +21,9 @@ uanytun
   [ -L|--log <target>:<level>[,<param1>[,<param2>[..]]] ]
   [ -U|--debug ]
   [ -i|--interface <ip-address> ]
-  [ -p|--port <port> ]
+  [ -p|--port <port>[:<port>] ]
   [ -r|--remote-host <hostname|ip> ]
-  [ -o|--remote-port <port> ]
+  [ -o|--remote-port <port>[:<port>] ]
   [ -4|--ipv4-only ]
   [ -6|--ipv6-only ]
   [ -d|--dev <name> ]
@@ -51,9 +51,9 @@ DESCRIPTION
 (SATP). It provides a complete VPN solution similar to OpenVPN or
 IPsec in tunnel mode. The main difference is that anycast enables the
 setup of tunnels between an arbitrary combination of anycast, unicast
-and multicast hosts. Unlike Anytun which is a full featured implementation 
-uAnytun has no support for multiple connections or synchronisation. It is a 
-small single threaded implementation intended to act as a client on small 
+and multicast hosts. Unlike Anytun which is a full featured implementation
+uAnytun has no support for multiple connections or synchronisation. It is a
+small single threaded implementation intended to act as a client on small
 platforms.
 
 
@@ -69,7 +69,7 @@ passed to the daemon:
    instead of becoming a daemon which is the default.
 
 *-u, --username '<username>'*::
-   run as this user. If no group is specified (*-g*) the default group of 
+   run as this user. If no group is specified (*-g*) the default group of
    the user is used. The default is to not drop privileges.
 
 *-g, --groupname '<groupname>'*::
@@ -77,30 +77,30 @@ passed to the daemon:
    The default is to not drop privileges.
 
 *-C, --chroot '<path>'*::
-   Instruct *uAnytun* to run in a chroot jail. The default is 
+   Instruct *uAnytun* to run in a chroot jail. The default is
    to not run in chroot.
 
 *-P, --write-pid <filename>*::
-   Instruct *uAnytun* to write it's pid to this file. The default is 
+   Instruct *uAnytun* to write it's pid to this file. The default is
    to not create a pid file.
 
 *-L, --log '<target>:<level>[,<param1>[,<param2>[..]]]'*::
    add log target to logging system. This can be invoked several times
-   in order to log to different targets at the same time. Every target 
+   in order to log to different targets at the same time. Every target
    has its own log level which is a number between 0 and 5. Where 0 means
    disabling log and 5 means debug messages are enabled. +
    The file target can be used more than once with different levels.
-   If no target is provided at the command line a single target with the 
+   If no target is provided at the command line a single target with the
    config 'syslog:3,uanytun,daemon' is added. +
    The following targets are supported:
 
    'syslog';; log to syslog daemon, parameters <level>[,<logname>[,<facility>]]
    'file';; log to file, parameters <level>[,<path>]
    'stdout';; log to standard output, parameters <level>
-   'stderr';; log to standard error, parameters <level> 
+   'stderr';; log to standard error, parameters <level>
 
 *-U, --debug*::
-   This option instructs *uAnytun* to run in debug mode. It implicits *-D* 
+   This option instructs *uAnytun* to run in debug mode. It implicits *-D*
    (don't daemonize) and adds a log target with the configuration
    'stdout:5' (logging with maximum level). In future releases there might
    be additional output when this option is supplied.
@@ -110,10 +110,12 @@ passed to the daemon:
    packets. The default is to not use a special inteface and just
    bind on all interfaces.
 
-*-p, --port '<port>'*::
+*-p, --port '<port>[:<port>]'*::
    The local UDP port that is used to send and receive the
    payload data. The two tunnel endpoints can use different
-   ports. default: 4444
+   ports. The default port is 4444.
+   You can also specify a port range which enables *RAIL* mode. See section
+   *RAIL* below to find out what this is.
 
 *-r, --remote-host '<hostname|ip>'*::
    This option can be used to specify the remote tunnel
@@ -122,11 +124,14 @@ passed to the daemon:
    an address, it is automatically determined after receiving
    the first data packet.
 
-*-o, --remote-port '<port>'*::
+*-o, --remote-port '<port>[:<port>]'*::
    The UDP port used for payload data by the remote host
    (specified with -p on the remote host). If you do not specify
    a port, it is automatically determined after receiving
    the first data packet.
+   When RAIL mode is enabled the port range must be of the same length
+   as the range defined with *-p, --port*.
+   See section *RAIL* below for more information about this mode.
 
 *-4, --ipv4-only*::
    Resolv to IPv4 addresses only. The default is to resolv both
@@ -155,7 +160,7 @@ passed to the daemon:
    '<prefix>';; the prefix length of the network
 
 *-x, --post-up-script '<script>'*::
-   This option instructs *uAnytun* to run this script after the interface 
+   This option instructs *uAnytun* to run this script after the interface
    is created. By default no script will be executed.
 
 *-m, --mux '<mux-id>'*::
@@ -164,9 +169,9 @@ passed to the daemon:
 *-s, --sender-id '<sender id>'*::
    Each anycast tunnel endpoint needs a unique sender id
    (1, 2, 3, ...). It is needed to distinguish the senders
-   in case of replay attacks. As *uAnytun* does not support 
-   synchronisation it can't be used as an anycast endpoint therefore 
-   this option is quite useless but implemented for compatibility 
+   in case of replay attacks. As *uAnytun* does not support
+   synchronisation it can't be used as an anycast endpoint therefore
+   this option is quite useless but implemented for compatibility
    reasons. default: 0
 
 *-w, --window-size '<window size>'*::
@@ -185,7 +190,7 @@ passed to the daemon:
 
 *-k, --kd--prf '<kd-prf type>'*::
    key derivation pseudo random function +
-   The pseudo random function which is used for calculating the 
+   The pseudo random function which is used for calculating the
    session keys and session salt. +
    Possible values:
 
@@ -198,16 +203,16 @@ passed to the daemon:
 *-e, --role '<role>'*::
    SATP uses different session keys for inbound and outbound traffic. The
    role parameter is used to determine which keys to use for outbound or
-   inbound packets. On both sides of a vpn connection different roles have 
-   to be used. Possible values are 'left' and 'right'. You may also use 
-   'alice' or 'server' as a replacement for 'left' and 'bob' or 'client' as 
+   inbound packets. On both sides of a vpn connection different roles have
+   to be used. Possible values are 'left' and 'right'. You may also use
+   'alice' or 'server' as a replacement for 'left' and 'bob' or 'client' as
    a replacement for 'right'. By default 'left' is used.
 
 *-E, --passphrase '<pass phrase>'*::
    This passphrase is used to generate the master key and master salt.
-   For the master key the last n bits of the SHA256 digest of the 
-   passphrase (where n is the length of the master key in bits) is used. 
-   The master salt gets generated with the SHA1 digest. 
+   For the master key the last n bits of the SHA256 digest of the
+   passphrase (where n is the length of the master key in bits) is used.
+   The master salt gets generated with the SHA1 digest.
    You may force a specific key and or salt by using *--key* and *--salt*.
 
 *-K, --key '<master key>'*::
@@ -236,7 +241,7 @@ passed to the daemon:
 *-a, --auth-algo '<algo type>'*::
    message authentication algorithm +
    This option sets the message authentication algorithm. +
-   If HMAC-SHA1 is used, the packet length is increased. The additional bytes 
+   If HMAC-SHA1 is used, the packet length is increased. The additional bytes
    contain the authentication data. see *--auth-tag-length* for more info. +
    Possible values:
 
@@ -244,8 +249,22 @@ passed to the daemon:
    'sha1';; HMAC-SHA1, default value
 
 *-b, --auth-tag-length '<length>'*::
-   The number of bytes to use for the auth tag. This value defaults to 10 bytes 
-   unless the 'null' auth algo is used in which case it defaults to 0. 
+   The number of bytes to use for the auth tag. This value defaults to 10 bytes
+   unless the 'null' auth algo is used in which case it defaults to 0.
+
+RAIL
+----
+
+*RAIL* stands for Redundant Array of Inexpensive Links. Like RAID spreads
+the blocks of a disk volume over multiple physical disks, *RAIL* will spread the
+UDP packets over multiple physical links. More precisly for each packet *uAnytun*
+reads, from the TUN/TAP device, it will send out multiple UDP packets. All of those to
+the same host but with different destination ports. Using policy-based routing mechanisms
+these packets can now be seperated and sent out on several interfaces.
+The server-side will then pick the first of the packets that arrives and discards all others.
+For this to work the size of the sequence window (*-w*) must not be set to 0.
+As soon as the server-side learns the remote endpoints of all or some of the links it will
+as well send multiple UDP packets for each payload packet.
 
 
 EXAMPLES
@@ -267,7 +286,7 @@ uanytun -r hosta.example.com -t tun -n 192.168.123.2/30 -c aes-ctr-256 -k aes-ct
 
 One unicast and one anycast tunnel endpoint:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- 
+
 Unicast tunnel endpoint:
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -300,7 +319,7 @@ Main web site: http://www.anytun.org/
 COPYING
 -------
 
-Copyright \(C) 2008-2010 Christian Pointner. This  program is  free 
-software: you can redistribute it and/or modify it under the terms 
-of the GNU General Public License as published by the Free Software 
+Copyright \(C) 2008-2014 Christian Pointner. This  program is  free
+software: you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or any later version.

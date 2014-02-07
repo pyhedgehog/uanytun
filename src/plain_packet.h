@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -41,7 +41,7 @@
 #define PAYLOAD_TYPE_TAP 0x6558
 #define PAYLOAD_TYPE_TUN 0x0000
 #define PAYLOAD_TYPE_TUN4 0x0800
-#define PAYLOAD_TYPE_TUN6 0x86DD 
+#define PAYLOAD_TYPE_TUN6 0x86DD
 #define PAYLOAD_TYPE_UNKNOWN 0xFFFF
 
 struct plain_packet_struct {

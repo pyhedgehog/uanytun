@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -47,7 +47,7 @@
 
 int cipher_init(cipher_t* c, const char* type)
 {
-  if(!c) 
+  if(!c)
     return -1;
 
   c->key_length_ = 0;
@@ -61,7 +61,7 @@ int cipher_init(cipher_t* c, const char* type)
     if(type[7] == 0) {
       c->key_length_ = C_AESCTR_DEFAULT_KEY_LENGTH;
     }
-    else if(type[7] != '-') 
+    else if(type[7] != '-')
       return -1;
     else {
       const char* tmp = &type[8];
@@ -113,12 +113,12 @@ void cipher_close(cipher_t* c)
 
 int cipher_encrypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, plain_packet_t* in, encrypted_packet_t* out, seq_nr_t seq_nr, sender_id_t sender_id, mux_t mux)
 {
-  if(!c) 
+  if(!c)
     return -1;
 
-	int32_t len;
+  int32_t len;
   if(c->type_ == c_null)
-    len = cipher_null_crypt(plain_packet_get_packet(in), plain_packet_get_length(in), 
+    len = cipher_null_crypt(plain_packet_get_packet(in), plain_packet_get_length(in),
                             encrypted_packet_get_payload(out), encrypted_packet_get_payload_length(out));
 #ifndef NO_CRYPT
   else if(c->type_ == c_aes_ctr)
@@ -134,7 +134,7 @@ int cipher_encrypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, 
   if(len < 0)
     return 0;
 
-	encrypted_packet_set_sender_id(out, sender_id);
+  encrypted_packet_set_sender_id(out, sender_id);
   encrypted_packet_set_seq_nr(out, seq_nr);
   encrypted_packet_set_mux(out, mux);
 
@@ -145,10 +145,10 @@ int cipher_encrypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, 
 
 int cipher_decrypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* in, plain_packet_t* out)
 {
-  if(!c) 
+  if(!c)
     return -1;
 
-	int32_t len;
+  int32_t len;
   if(c->type_ == c_null)
     len = cipher_null_crypt(encrypted_packet_get_payload(in), encrypted_packet_get_payload_length(in),
                             plain_packet_get_packet(out), plain_packet_get_length(out));
@@ -163,11 +163,11 @@ int cipher_decrypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, 
     log_printf(ERROR, "unknown cipher type");
     return -1;
   }
-  
+
   if(len < 0)
     return 0;
 
-	plain_packet_set_length(out, len);
+  plain_packet_set_length(out, len);
 
   return 0;
 }
@@ -176,7 +176,7 @@ int cipher_decrypt(cipher_t* c, key_derivation_t* kd, key_derivation_dir_t dir, 
 
 int32_t cipher_null_crypt(u_int8_t* in, u_int32_t ilen, u_int8_t* out, u_int32_t olen)
 {
-	memcpy(out, in, (ilen < olen) ? ilen : olen);
+  memcpy(out, in, (ilen < olen) ? ilen : olen);
   return (ilen < olen) ? ilen : olen;
 }
 
@@ -227,7 +227,7 @@ int cipher_aesctr_init(cipher_t* c)
   if(err) {
     log_printf(ERROR, "failed to open cipher: %s", gcry_strerror(err));
     return -1;
-  } 
+  }
 #endif
 
   return 0;
@@ -253,7 +253,7 @@ int cipher_aesctr_calc_ctr(cipher_t* c, key_derivation_t* kd, key_derivation_dir
 {
   if(!c || !c->params_)
     return -1;
-  
+
   cipher_aesctr_param_t* params = c->params_;
 
   int ret = key_derivation_generate(kd, dir, LABEL_SALT, seq_nr, c->salt_.buf_, C_AESCTR_SALT_LENGTH);
@@ -286,7 +286,7 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
   int ret = key_derivation_generate(kd, dir, LABEL_ENC, seq_nr, c->key_.buf_, c->key_.length_);
   if(ret < 0)
     return ret;
-  
+
 #ifdef USE_SSL_CRYPTO
   ret = AES_set_encrypt_key(c->key_.buf_, c->key_length_, &params->aes_key_);
   if(ret) {
@@ -306,7 +306,7 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
     log_printf(ERROR, "failed to calculate cipher CTR");
     return ret;
   }
-  
+
 #ifndef USE_SSL_CRYPTO
   err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
   if(err) {
@@ -329,6 +329,6 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
   AES_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
 #endif
 
-  return (ilen < olen) ? ilen : olen;  
+  return (ilen < olen) ? ilen : olen;
 }
 #endif

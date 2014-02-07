@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -57,7 +57,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
 int tun_init_post(tun_device_t* dev);
 void tun_do_ifconfig(tun_device_t* dev);
 void tun_close(tun_device_t* dev);
-  
+
 int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len);
 int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len);
 

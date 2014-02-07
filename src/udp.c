@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -54,7 +54,7 @@
 
 int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type)
 {
-  if(!sock || !port) 
+  if(!sock || !port)
     return -1;
 
   sock->socks_ = NULL;
@@ -110,7 +110,7 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
       prev_sock->next_ = new_sock;
       prev_sock = new_sock;
     }
-    
+
     memcpy(&(new_sock->local_end_.addr_), r->ai_addr, r->ai_addrlen);
     new_sock->local_end_.len_ = r->ai_addrlen;
     new_sock->fd_ = socket(new_sock->local_end_.addr_.ss_family, SOCK_DGRAM, 0);
@@ -134,7 +134,7 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
       udp_close(sock);
       return -1;
     }
-  
+
     char* local_string = udp_endpoint_to_string(new_sock->local_end_);
     if(local_string) {
       log_printf(NOTICE, "listening on: %s", local_string);
@@ -165,7 +165,7 @@ int udp_init_fd_set(udp_t* sock, fd_set* set)
 
 int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
 {
-  if(!sock || !remote_addr || !port) 
+  if(!sock || !remote_addr || !port)
     return -1;
 
   struct addrinfo hints, *res;
@@ -232,10 +232,10 @@ void udp_close(udp_t* sock)
   while(sock->socks_) {
     if(sock->socks_->fd_ > 0)
       close(sock->socks_->fd_);
-    
+
     udp_socket_t*s = sock->socks_;
     sock->socks_ = sock->socks_->next_;
-    
+
     free(s);
   }
   sock->socks_ = NULL;
@@ -245,13 +245,13 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
 {
   char addrstr[INET6_ADDRSTRLEN + 1], portstr[6], *ret;
   char addrport_sep = ':';
-  
+
   switch(e.addr_.ss_family)
   {
   case AF_INET: addrport_sep = ':'; break;
   case AF_INET6: addrport_sep = '.'; break;
   case AF_UNSPEC: return NULL;
-  default: return strdup("unknown address type"); 
+  default: return strdup("unknown address type");
   }
 
   int errcode  = getnameinfo((struct sockaddr *)&(e.addr_), e.len_, addrstr, sizeof(addrstr), portstr, sizeof(portstr), NI_NUMERICHOST | NI_NUMERICSERV);
@@ -268,7 +268,7 @@ char* udp_get_remote_end_string(udp_t* sock)
 
   return udp_endpoint_to_string(sock->remote_end_);
 }
- 
+
 int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
 {
   if(!sock || !remote_end)
@@ -284,4 +284,3 @@ int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
 
   return sendto(sock->active_sock_->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_.addr_), sock->remote_end_.len_);
 }
-

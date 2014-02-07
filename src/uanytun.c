@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -72,7 +72,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
     log_printf(ERROR, "could not initialize cipher of type %s", opt->cipher_);
     return ret;
   }
-  
+
 #ifndef NO_CRYPT
   ret = auth_algo_init(aa, opt->auth_algo_);
   if(ret) {
@@ -114,25 +114,25 @@ int process_tun_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packe
     log_printf(ERROR, "error on reading from device: %s", strerror(errno));
     return 0;
   }
-  
+
   plain_packet_set_payload_length(plain_packet, len);
-  
+
   if(dev->type_ == TYPE_TUN)
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TUN);
   else if(dev->type_ == TYPE_TAP)
-    plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TAP);    
+    plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TAP);
   else
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_UNKNOWN);
 
   if(!sock->remote_end_set_)
     return 0;
-  
-  cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
-  
+
+  cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, seq_nr, opt->sender_id_, opt->mux_);
+
 #ifndef NO_CRYPT
   auth_algo_generate(aa, kd, kd_outbound, encrypted_packet);
 #endif
- 
+
   len = udp_write(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet));
   if(len == -1)
     log_printf(ERROR, "error on sending udp packet: %s", strerror(errno));
@@ -166,12 +166,12 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
     return 0;
   }
 #endif
-  
+
   if(encrypted_packet_get_mux(encrypted_packet) != opt->mux_) {
     log_printf(WARNING, "wrong mux value, discarding packet");
     return 0;
   }
-  
+
   int result = seq_win_check_and_add(seq_win, encrypted_packet_get_sender_id(encrypted_packet), encrypted_packet_get_seq_nr(encrypted_packet));
   if(result > 0) {
     log_printf(WARNING, "detected replay attack, discarding packet");
@@ -181,7 +181,7 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
     log_printf(ERROR, "memory error at sequence window");
     return -2;
   }
-   
+
   udp_set_active_sock(sock, fd);
   if(remote.len_ != sock->remote_end_.len_ || memcmp(&(remote.addr_), &(sock->remote_end_.addr_), remote.len_)) {
     memcpy(&(sock->remote_end_.addr_), &(remote.addr_), remote.len_);
@@ -196,14 +196,14 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
     return 0;
   }
 
-  int ret = cipher_decrypt(c, kd, kd_inbound, encrypted_packet, plain_packet); 
-  if(ret) 
+  int ret = cipher_decrypt(c, kd, kd_inbound, encrypted_packet, plain_packet);
+  if(ret)
     return ret;
- 
+
   len = tun_write(dev, plain_packet_get_payload(plain_packet), plain_packet_get_payload_length(plain_packet));
   if(len == -1)
     log_printf(ERROR, "error on writing to device: %s", strerror(errno));
-  
+
   return 0;
 }
 
@@ -269,7 +269,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
     udp_socket_t* s = sock->socks_;
     while(s) {
       if(FD_ISSET(s->fd_, &readyfds)) {
-        return_value = process_sock_data(dev, s->fd_, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win); 
+        return_value = process_sock_data(dev, s->fd_, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win);
         if(return_value)
           break;
       }
@@ -311,7 +311,7 @@ int main(int argc, char* argv[])
       options_print_version();
     }
 
-    if(ret != -2 && ret != -5) 
+    if(ret != -2 && ret != -5)
       options_print_usage();
 
     if(ret == -1 || ret == -5)
@@ -331,7 +331,7 @@ int main(int argc, char* argv[])
       case -4: fprintf(stderr, "this log target is only allowed once: '%s', exitting\n", tmp->string_); break;
       default: fprintf(stderr, "syntax error near: '%s', exitting\n", tmp->string_); break;
       }
-        
+
       options_clear(&opt);
       log_close();
       exit(ret);
@@ -420,7 +420,7 @@ int main(int argc, char* argv[])
       options_clear(&opt);
       log_close();
       exit(-1);
-    }  
+    }
 
   if(opt.daemonize_) {
     pid_t oldpid = getpid();
