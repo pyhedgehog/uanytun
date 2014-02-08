@@ -49,7 +49,6 @@ uanytun.8: uanytun.8.txt
 manpage: uanytun.8
 
 clean:
-	rm -f uanytun.8
 	rm -f uanytun.8.xml
 
 realclean: clean
