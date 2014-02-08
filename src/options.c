@@ -433,14 +433,14 @@ void options_print_usage()
   printf("        [-C|--chroot] <path>                chroot to this directory\n");
   printf("        [-P|--write-pid] <path>             write pid to this file\n");
   printf("        [-i|--interface] <ip-address>       local ip address to bind to\n");
-  printf("        [-p|--port] <port>                  local port to bind to (use port:port for range - RAIL)\n");
+  printf("        [-p|--port] <port>[:<port>]         local port to bind to (use port:port for range - RAIL)\n");
   printf("        [-s|--sender-id ] <sender id>       the sender id to use\n");
   printf("        [-L|--log] <target>:<level>[,<param1>[,<param2>..]]\n");
   printf("                                            add a log target, can be invoked several times\n");
   printf("        [-U|--debug]                        don't daemonize and log to stdout with maximum log level\n");
 
   printf("        [-r|--remote-host] <hostname|ip>    remote host\n");
-  printf("        [-o|--remote-port] <port>           remote port (use port:port for range - RAIL)\n");
+  printf("        [-o|--remote-port] <port>[:<port>]  remote port (use port:port for range - RAIL)\n");
   printf("        [-4|--ipv4-only]                    always resolv IPv4 addresses\n");
   printf("        [-6|--ipv6-only]                    always resolv IPv6 addresses\n");
   printf("        [-d|--dev] <name>                   device name\n");
