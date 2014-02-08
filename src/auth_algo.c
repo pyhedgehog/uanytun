@@ -1,4 +1,4 @@
-w/*
+/*
  *  uAnytun
  *
  *  uAnytun is a tiny implementation of SATP. Unlike Anytun which is a full

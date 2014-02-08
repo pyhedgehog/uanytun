@@ -40,16 +40,17 @@ VERSION=$(shell cat ../version)
 all: manpage
 
 uanytun.8: uanytun.8.txt
-  a2x -f manpage $<
-  @ sed -i -e 's/\[FIXME: source\]/uanytun ${VERSION}/' $@
-  @ sed -i -e 's/\[FIXME: manual\]/uanytun user manual/' $@
-  @ sed -i -e 's/^uanytun$$/\\fBuanytun\\fR/' $@
-  @ sed -i -e 's/^  \[ \([^ ]*\)/  [ \\fB\1\\fR/' $@
+	a2x -f manpage $<
+	@ sed -i -e 's/\[FIXME: source\]/uanytun ${VERSION}/' $@
+	@ sed -i -e 's/\[FIXME: manual\]/uanytun user manual/' $@
+	@ sed -i -e 's/^uanytun$$/\\fBuanytun\\fR/' $@
+	@ sed -i -e 's/^  \[ \([^ ]*\)/  [ \\fB\1\\fR/' $@
 
 manpage: uanytun.8
 
 clean:
-  rm -f uanytun.8.xml
+	rm -f uanytun.8
+	rm -f uanytun.8.xml
 
 realclean: clean
-  rm -f uanytun.8
+	rm -f uanytun.8
