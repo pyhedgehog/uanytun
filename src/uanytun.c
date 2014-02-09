@@ -185,6 +185,7 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   udp_set_active_sock(sock, fd);
   if(remote.len_ != sock->remote_end_.len_ || memcmp(&(remote.addr_), &(sock->remote_end_.addr_), remote.len_)) {
     memcpy(&(sock->remote_end_.addr_), &(remote.addr_), remote.len_);
+    sock->remote_end_.len_ = remote.len_;
     sock->remote_end_set_ = 1;
     char* addrstring = udp_endpoint_to_string(remote);
     log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
