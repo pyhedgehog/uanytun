@@ -59,9 +59,6 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
 
   sock->socks_ = NULL;
   sock->active_sock_ = NULL;
-  memset(&(sock->remote_end_.addr_), 0, sizeof(sock->remote_end_.addr_));
-  sock->remote_end_.len_ = sizeof(sock->remote_end_.addr_);
-  sock->remote_end_set_ = 0;
 
   struct addrinfo hints, *res;
 
@@ -100,6 +97,9 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
     }
     memset(&(new_sock->local_end_.addr_), 0, sizeof(new_sock->local_end_.addr_));
     new_sock->local_end_.len_ = sizeof(new_sock->local_end_.addr_);
+    memset(&(new_sock->remote_end_.addr_), 0, sizeof(new_sock->remote_end_.addr_));
+    new_sock->remote_end_.len_ = sizeof(new_sock->remote_end_.addr_);
+    new_sock->remote_end_set_ = 0;
     new_sock->next_ = NULL;
 
     if(!sock->socks_) {
@@ -189,9 +189,6 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
     log_printf(ERROR, "getaddrinfo returned no address for %s:%s", remote_addr, port);
     return -1;
   }
-  memcpy(&(sock->remote_end_.addr_), res->ai_addr, res->ai_addrlen);
-  sock->remote_end_.len_ = res->ai_addrlen;
-  sock->remote_end_set_ = 1;
 
   if(!sock->active_sock_) {
     udp_socket_t* s = sock->socks_;
@@ -202,6 +199,11 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
       }
       s = s->next_;
     }
+  }
+  if(sock->active_sock_) {
+    memcpy(&(sock->active_sock_->remote_end_.addr_), res->ai_addr, res->ai_addrlen);
+    sock->active_sock_->remote_end_.len_ = res->ai_addrlen;
+    sock->active_sock_->remote_end_set_ = 1;
   }
 
   freeaddrinfo(res);
@@ -263,10 +265,10 @@ char* udp_endpoint_to_string(udp_endpoint_t e)
 
 char* udp_get_remote_end_string(udp_t* sock)
 {
-  if(!sock || !sock->remote_end_set_)
+  if(!sock || !sock->active_sock_->remote_end_set_)
     return NULL;
 
-  return udp_endpoint_to_string(sock->remote_end_);
+  return udp_endpoint_to_string(sock->active_sock_->remote_end_);
 }
 
 int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
@@ -279,8 +281,8 @@ int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* 
 
 int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
 {
-  if(!sock || !sock->remote_end_set_ || !sock->active_sock_)
+  if(!sock || !sock->active_sock_ || !sock->active_sock_->remote_end_set_)
     return 0;
 
-  return sendto(sock->active_sock_->fd_, buf, len, 0, (struct sockaddr *)&(sock->remote_end_.addr_), sock->remote_end_.len_);
+  return sendto(sock->active_sock_->fd_, buf, len, 0, (struct sockaddr *)&(sock->active_sock_->remote_end_.addr_), sock->active_sock_->remote_end_.len_);
 }

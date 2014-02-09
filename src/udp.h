@@ -49,6 +49,8 @@ typedef struct {
 struct udp_socket_struct {
   int fd_;
   udp_endpoint_t local_end_;
+  udp_endpoint_t remote_end_;
+  int remote_end_set_;
   struct udp_socket_struct* next_;
 };
 typedef struct udp_socket_struct udp_socket_t;
@@ -56,8 +58,6 @@ typedef struct udp_socket_struct udp_socket_t;
 struct udp_struct {
   udp_socket_t* socks_;
   udp_socket_t* active_sock_;
-  udp_endpoint_t remote_end_;
-  int remote_end_set_;
 };
 typedef struct udp_struct udp_t;
 

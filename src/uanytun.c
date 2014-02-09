@@ -124,7 +124,7 @@ int process_tun_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packe
   else
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_UNKNOWN);
 
-  if(!sock->remote_end_set_)
+  if(!sock->active_sock_ || !sock->active_sock_->remote_end_set_)
     return 0;
 
   cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, seq_nr, opt->sender_id_, opt->mux_);
@@ -183,12 +183,15 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   }
 
   udp_set_active_sock(sock, fd);
-  if(remote.len_ != sock->remote_end_.len_ || memcmp(&(remote.addr_), &(sock->remote_end_.addr_), remote.len_)) {
-    memcpy(&(sock->remote_end_.addr_), &(remote.addr_), remote.len_);
-    sock->remote_end_set_ = 1;
-    char* addrstring = udp_endpoint_to_string(remote);
-    log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
-    free(addrstring);
+  if(sock->active_sock_) {
+    if(remote.len_ != sock->active_sock_->remote_end_.len_ ||
+       memcmp(&(remote.addr_), &(sock->active_sock_->remote_end_.addr_), remote.len_)) {
+      memcpy(&(sock->active_sock_->remote_end_.addr_), &(remote.addr_), remote.len_);
+      sock->active_sock_->remote_end_set_ = 1;
+      char* addrstring = udp_endpoint_to_string(remote);
+      log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
+      free(addrstring);
+    }
   }
 
   if(encrypted_packet_get_payload_length(encrypted_packet) <= plain_packet_get_header_length()) {
