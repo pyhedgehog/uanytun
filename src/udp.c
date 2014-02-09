@@ -135,7 +135,7 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
       return -1;
     }
 
-    char* local_string = udp_endpoint_to_string(new_sock->local_end_);
+    char* local_string = udp_endpoint_to_string(&(new_sock->local_end_));
     if(local_string) {
       log_printf(NOTICE, "listening on: %s", local_string);
       free(local_string);
@@ -161,6 +161,14 @@ int udp_init_fd_set(udp_t* sock, fd_set* set)
   }
 
   return max_fd;
+}
+
+int udp_has_remote(udp_t* sock)
+{
+  if(!sock->active_sock_ || !sock->active_sock_->remote_end_set_)
+    return 0;
+
+  return 1;
 }
 
 int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
@@ -211,18 +219,35 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
   return 0;
 }
 
-void udp_set_active_sock(udp_t* sock, int fd)
+void udp_update_remote(udp_t* sock, int fd, udp_endpoint_t* remote)
 {
-  if(!sock || (sock->active_sock_ && sock->active_sock_->fd_ == fd))
+  if(!sock)
     return;
 
-  udp_socket_t* s = sock->socks_;
-  while(s) {
-    if(s->fd_ == fd) {
-      sock->active_sock_ = s;
-      return;
+  if(!(sock->active_sock_) || sock->active_sock_->fd_ == fd) {
+    udp_socket_t* s = sock->socks_;
+    while(s) {
+      if(s->fd_ == fd) {
+        sock->active_sock_ = s;
+        break;
+      }
+      s = s->next_;
     }
-    s = s->next_;
+  }
+
+  if(!remote)
+    return;
+
+  if(sock->active_sock_) {
+    if(remote->len_ != sock->active_sock_->remote_end_.len_ ||
+       memcmp(&(remote->addr_), &(sock->active_sock_->remote_end_.addr_), remote->len_)) {
+      memcpy(&(sock->active_sock_->remote_end_.addr_), &(remote->addr_), remote->len_);
+      sock->active_sock_->remote_end_.len_ = remote->len_;
+      sock->active_sock_->remote_end_set_ = 1;
+      char* addrstring = udp_endpoint_to_string(remote);
+      log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
+      free(addrstring);
+    }
   }
 }
 
@@ -243,20 +268,23 @@ void udp_close(udp_t* sock)
   sock->socks_ = NULL;
 }
 
-char* udp_endpoint_to_string(udp_endpoint_t e)
+char* udp_endpoint_to_string(udp_endpoint_t* e)
 {
+  if(!e)
+    return strdup("<null>");
+
   char addrstr[INET6_ADDRSTRLEN + 1], portstr[6], *ret;
   char addrport_sep = ':';
 
-  switch(e.addr_.ss_family)
+  switch(e->addr_.ss_family)
   {
   case AF_INET: addrport_sep = ':'; break;
   case AF_INET6: addrport_sep = '.'; break;
   case AF_UNSPEC: return NULL;
-  default: return strdup("unknown address type");
+  default: return strdup("<unknown address type>");
   }
 
-  int errcode  = getnameinfo((struct sockaddr *)&(e.addr_), e.len_, addrstr, sizeof(addrstr), portstr, sizeof(portstr), NI_NUMERICHOST | NI_NUMERICSERV);
+  int errcode  = getnameinfo((struct sockaddr *)&(e->addr_), e->len_, addrstr, sizeof(addrstr), portstr, sizeof(portstr), NI_NUMERICHOST | NI_NUMERICSERV);
   if (errcode != 0) return NULL;
   int len = asprintf(&ret, "%s%c%s", addrstr, addrport_sep ,portstr);
   if(len == -1) return NULL;
@@ -268,7 +296,7 @@ char* udp_get_remote_end_string(udp_t* sock)
   if(!sock || !sock->active_sock_->remote_end_set_)
     return NULL;
 
-  return udp_endpoint_to_string(sock->active_sock_->remote_end_);
+  return udp_endpoint_to_string(&(sock->active_sock_->remote_end_));
 }
 
 int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
