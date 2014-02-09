@@ -163,7 +163,7 @@ int udp_init_fd_set(udp_t* sock, fd_set* set)
   return max_fd;
 }
 
-int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
+int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
 {
   if(!sock || !remote_addr || !port)
     return -1;
