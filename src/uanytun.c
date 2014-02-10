@@ -104,7 +104,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
 }
 
 int process_tun_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
-                     cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_nr_t seq_nr)
+                     cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_nr_t* seq_nr)
 {
   plain_packet_set_payload_length(plain_packet, -1);
   encrypted_packet_set_length(encrypted_packet, -1);
@@ -127,8 +127,8 @@ int process_tun_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packe
   if(!udp_has_remote(sock))
     return 0;
 
-  cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, seq_nr, opt->sender_id_, opt->mux_);
-
+  cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, *seq_nr, opt->sender_id_, opt->mux_);
+  (*seq_nr)++;
 #ifndef NO_CRYPT
   auth_algo_generate(aa, kd, kd_outbound, encrypted_packet);
 #endif
@@ -253,8 +253,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
     }
 
     if(FD_ISSET(dev->fd_, &readyfds)) {
-      return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, seq_nr);
-      seq_nr++;
+      return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_nr);
       if(return_value)
         break;
     }
