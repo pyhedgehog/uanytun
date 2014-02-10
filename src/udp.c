@@ -52,13 +52,14 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type)
+int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type, int rail_mode)
 {
   if(!sock || !port)
     return -1;
 
   sock->socks_ = NULL;
   sock->active_sock_ = NULL;
+  sock->rail_mode_ = rail_mode;
 
   struct addrinfo hints, *res;
 
@@ -145,6 +146,9 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
   }
 
   freeaddrinfo(res);
+
+  if(sock->rail_mode_)
+    log_printf(NOTICE, "RAIL mode enabled");
 
   return 0;
 }

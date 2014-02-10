@@ -22,6 +22,7 @@ uanytun
   [ -U|--debug ]
   [ -i|--interface <ip-address> ]
   [ -p|--port <port>[:<port>] ]
+  [ -Y|--rail-mode ]
   [ -r|--remote-host <hostname|ip> ]
   [ -o|--remote-port <port>[:<port>] ]
   [ -4|--ipv4-only ]
@@ -114,7 +115,11 @@ passed to the daemon:
    The local UDP port that is used to send and receive the
    payload data. The two tunnel endpoints can use different
    ports. The default port is 4444.
-   You can also specify a port range which enables *RAIL* mode. See section
+   In *RAIL* mode you must specify a port range. See section
+   *RAIL* below to find out what this is.
+
+*-Y, --rail-mode*::
+   This option instructs *uAnytun* to run in RAIL mode. See section
    *RAIL* below to find out what this is.
 
 *-r, --remote-host '<hostname|ip>'*::

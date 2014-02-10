@@ -209,7 +209,6 @@ int options_parse_ifconfig(const char* arg, ifconfig_param_t* ifcfg)
   return 1;
 }
 
-
 int options_parse(options_t* opt, int argc, char* argv[])
 {
   if(!opt)
@@ -246,6 +245,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_INT_PARAM("-s","--sender-id", opt->sender_id_)
     PARSE_STRING_LIST("-L","--log", opt->log_targets_)
     PARSE_BOOL_PARAM("-U", "--debug", opt->debug_)
+    PARSE_BOOL_PARAM("-Y", "--rail-mode", opt->rail_mode_)
     PARSE_STRING_PARAM("-r","--remote-host", opt->remote_addr_)
     PARSE_STRING_PARAM("-o","--remote-port", opt->remote_port_)
     PARSE_BOOL_PARAM("-4","--ipv4-only", ipv4_only)
@@ -347,6 +347,7 @@ void options_default(options_t* opt)
   opt->local_addr_ = NULL;
   opt->local_port_ = strdup("4444");
   opt->sender_id_ = 0;
+  opt->rail_mode_ = 0;
   opt->remote_addr_ = NULL;
   opt->remote_port_ = strdup("4444");
   opt->resolv_addr_type_ = ANY;
@@ -439,6 +440,7 @@ void options_print_usage()
   printf("                                            add a log target, can be invoked several times\n");
   printf("        [-U|--debug]                        don't daemonize and log to stdout with maximum log level\n");
 
+  printf("        [-Y|--rail-mode]                    enable RAIL mode\n");
   printf("        [-r|--remote-host] <hostname|ip>    remote host\n");
   printf("        [-o|--remote-port] <port>[:<port>]  remote port (use port:port for range - RAIL)\n");
   printf("        [-4|--ipv4-only]                    always resolv IPv4 addresses\n");
@@ -487,6 +489,7 @@ void options_print(options_t* opt)
   printf("local_addr: '%s'\n", opt->local_addr_);
   printf("local_port: '%s'\n", opt->local_port_);
   printf("sender_id: %d\n", opt->sender_id_);
+  printf("rail-mode: %s\n", !opt->rail_mode_ ? "false" : "true");
   printf("remote_addr: '%s'\n", opt->remote_addr_);
   printf("remote_port: '%s'\n", opt->remote_port_);
   printf("resolv_addr_type: ");
