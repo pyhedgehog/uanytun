@@ -387,7 +387,7 @@ auth algo is used in which case it defaults to 0\&.
 .RE
 .SH "RAIL"
 .sp
-\fBRAIL\fR stands for Redundant Array of Inexpensive Links\&. Like RAID spreads the blocks of a disk volume over multiple physical disks, \fBRAIL\fR will spread the UDP packets over multiple physical links\&. More precisly for each packet \fBuAnytun\fR reads, from the TUN/TAP device, it will send out multiple UDP packets\&. All of those to the same host but with different destination ports\&. Using policy\-based routing mechanisms these packets can now be seperated and sent out on several interfaces\&. The server\-side will then pick the first of the packets that arrives and discards all others\&. For this to work the size of the sequence window (\fB\-w\fR) must not be set to 0\&. As soon as the server\-side learns the remote endpoints of all or some of the links it will as well send multiple UDP packets for each payload packet\&.
+\fBRAIL\fR stands for Redundant Array of Inexpensive Links\&. Like RAID spreads the blocks of a disk volume over multiple physical disks, \fBRAIL\fR will spread the UDP packets over multiple physical links\&. More precisly for each packet \fBuAnytun\fR reads, from the TUN/TAP device, it will send out multiple UDP packets\&. All of those to the same host but with different destination ports\&. Using policy\-based routing mechanisms these packets can now be seperated and sent out on several interfaces\&. The server\-side will then pick the first of the packets that arrive and discards all others\&. For this to work the size of the sequence window (\fB\-w\fR) must not be set to 0\&. As soon as the server\-side learns the remote endpoints of all or some of the links it will as well send multiple UDP packets for each payload packet\&.
 .SH "EXAMPLES"
 .SS "P2P Setup between two unicast enpoints:"
 .sp
@@ -399,7 +399,7 @@ auth algo is used in which case it defaults to 0\&.
 \fBHost A:\fR
 .RS 4
 .sp
-uanytun \-r hostb\&.example\&.com \-t tun \-n 192\&.168\&.123\&.1/30 \-c aes\-ctr\-256 \-k aes\-ctr\-256 \e \-E have_a_very_safe_and_productive_day \-e left
+uanytun \-r hostb\&.example\&.com \-t tun \-n 192\&.168\&.123\&.1/30 \-c aes\-ctr\-256 \-k aes\-ctr\-256 \-E have_a_very_safe_and_productive_day \-e left
 .RE
 .sp
 .it 1 an-trap
@@ -410,7 +410,7 @@ uanytun \-r hostb\&.example\&.com \-t tun \-n 192\&.168\&.123\&.1/30 \-c aes\-ct
 \fBHost B:\fR
 .RS 4
 .sp
-uanytun \-r hosta\&.example\&.com \-t tun \-n 192\&.168\&.123\&.2/30 \-c aes\-ctr\-256 \-k aes\-ctr\-256 \e \-E have_a_very_safe_and_productive_day \-e right
+uanytun \-r hosta\&.example\&.com \-t tun \-n 192\&.168\&.123\&.2/30 \-c aes\-ctr\-256 \-k aes\-ctr\-256 \-E have_a_very_safe_and_productive_day \-e right
 .RE
 .SS "One unicast and one anycast tunnel endpoint:"
 .sp

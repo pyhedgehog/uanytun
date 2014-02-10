@@ -257,6 +257,7 @@ passed to the daemon:
    The number of bytes to use for the auth tag. This value defaults to 10 bytes
    unless the 'null' auth algo is used in which case it defaults to 0.
 
+
 RAIL
 ----
 
@@ -266,7 +267,7 @@ UDP packets over multiple physical links. More precisly for each packet *uAnytun
 reads, from the TUN/TAP device, it will send out multiple UDP packets. All of those to
 the same host but with different destination ports. Using policy-based routing mechanisms
 these packets can now be seperated and sent out on several interfaces.
-The server-side will then pick the first of the packets that arrives and discards all others.
+The server-side will then pick the first of the packets that arrive and discards all others.
 For this to work the size of the sequence window (*-w*) must not be set to 0.
 As soon as the server-side learns the remote endpoints of all or some of the links it will
 as well send multiple UDP packets for each payload packet.
@@ -281,12 +282,12 @@ P2P Setup between two unicast enpoints:
 Host A:
 ^^^^^^^
 
-uanytun -r hostb.example.com -t tun -n 192.168.123.1/30 -c aes-ctr-256 -k aes-ctr-256 \
+uanytun -r hostb.example.com -t tun -n 192.168.123.1/30 -c aes-ctr-256 -k aes-ctr-256
         -E have_a_very_safe_and_productive_day -e left
 
 Host B:
 ^^^^^^^
-uanytun -r hosta.example.com -t tun -n 192.168.123.2/30 -c aes-ctr-256 -k aes-ctr-256 \
+uanytun -r hosta.example.com -t tun -n 192.168.123.2/30 -c aes-ctr-256 -k aes-ctr-256
         -E have_a_very_safe_and_productive_day -e right
 
 One unicast and one anycast tunnel endpoint:
