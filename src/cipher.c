@@ -241,10 +241,8 @@ void cipher_aesctr_close(cipher_t* c)
   if(c->params_) {
 #ifndef USE_SSL_CRYPTO
     cipher_aesctr_param_t* params = c->params_;
-    if(params->handle_)
-      gcry_cipher_close(params->handle_);
+    gcry_cipher_close(params->handle_);
 #endif
-
     free(c->params_);
   }
 }

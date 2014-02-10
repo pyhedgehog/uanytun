@@ -81,7 +81,7 @@ seq_win_element_t* seq_win_new_element(sender_id_t sender_id, seq_nr_t max, wind
   e->sender_id_ = sender_id;
   e->max_ = max;
   e->pos_ = 0;
-  e->window_ = malloc(sizeof(seq_nr_t)*size);
+  e->window_ = malloc(sizeof((*e->window_))*size);
   if(!e->window_) {
     free(e);
     return NULL;
