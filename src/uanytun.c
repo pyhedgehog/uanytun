@@ -153,12 +153,16 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   if(len == -1) {
     log_printf(ERROR, "error on receiving udp packet: %s", strerror(errno));
     return 0;
-  }
-  else if(len < encrypted_packet_get_minimum_length(encrypted_packet)) {
+  } else if(len < encrypted_packet_get_minimum_length(encrypted_packet)) {
     log_printf(WARNING, "received packet is too short");
     return 0;
   }
   encrypted_packet_set_length(encrypted_packet, len);
+
+  if(encrypted_packet_get_mux(encrypted_packet) != opt->mux_) {
+    log_printf(WARNING, "wrong mux value, discarding packet");
+    return 0;
+  }
 
 #ifndef NO_CRYPT
   if(!auth_algo_check_tag(aa, kd, kd_inbound, encrypted_packet)) {
@@ -167,17 +171,11 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   }
 #endif
 
-  if(encrypted_packet_get_mux(encrypted_packet) != opt->mux_) {
-    log_printf(WARNING, "wrong mux value, discarding packet");
-    return 0;
-  }
-
   int result = seq_win_check_and_add(seq_win, encrypted_packet_get_sender_id(encrypted_packet), encrypted_packet_get_seq_nr(encrypted_packet));
   if(result > 0) {
     log_printf(WARNING, "detected replay attack, discarding packet");
     return 0;
-  }
-  else if(result < 0) {
+  } else if(result < 0) {
     log_printf(ERROR, "memory error at sequence window");
     return -2;
   }
