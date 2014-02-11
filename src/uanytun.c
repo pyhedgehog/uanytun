@@ -171,6 +171,9 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   }
 #endif
 
+  if(sock->rail_mode_)
+    udp_update_remote(sock, fd, &remote);
+
   int result = seq_win_check_and_add(seq_win, encrypted_packet_get_sender_id(encrypted_packet), encrypted_packet_get_seq_nr(encrypted_packet));
   if(result > 0) {
     log_printf(WARNING, "detected replay attack, discarding packet");
@@ -180,7 +183,8 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
     return -2;
   }
 
-  udp_update_remote(sock, fd, &remote);
+  if(!sock->rail_mode_)
+    udp_update_remote(sock, fd, &remote);
 
   if(encrypted_packet_get_payload_length(encrypted_packet) <= plain_packet_get_header_length()) {
     log_printf(WARNING, "ignoring packet with zero length payload");
