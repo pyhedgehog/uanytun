@@ -143,6 +143,17 @@ static int udp_resolv_local(udp_t* sock, const char* local_addr, const char* por
   return 0;
 }
 
+static int udp_split_port_range(const char* port, const char* colon, u_int32_t* low, u_int32_t* high)
+{
+  *low = atoi(port);
+  *high = atoi(colon+1);
+  if(*low < 1 || *low > 65535 || *high < 1 || *high > 65535 || *high < *low) {
+    log_printf(ERROR, "illegal port range");
+    return -1;
+  }
+  return 0;
+}
+
 int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type, int rail_mode)
 {
   if(!sock || !port)
@@ -163,13 +174,8 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
     sock->rail_mode_ = 1;
 
     u_int32_t port_num, port_end;
-    port_num = atoi(port);
-    port_end = atoi(colon+1);
-    if(port_num < 1 || port_num > 65535 ||
-       port_end < 1 || port_end > 65535 || port_end < port_num) {
-      log_printf(ERROR, "illegal port range");
+    if(udp_split_port_range(port, colon, &port_num, &port_end))
       return -1;
-    }
     do {
       char port_str[10];
       snprintf(port_str, sizeof(port_str), "%d", port_num);
