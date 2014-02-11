@@ -80,7 +80,8 @@ static int udp_resolv_local(udp_t* sock, const char* local_addr, const char* por
   }
 
   struct addrinfo* r = res;
-  udp_socket_t* prev_sock = NULL;
+  udp_socket_t* prev_sock = sock->socks_;
+  while(prev_sock && prev_sock->next_) prev_sock = prev_sock->next_;
   while(r) {
     udp_socket_t* new_sock = malloc(sizeof(udp_socket_t));
     if(!new_sock) {
@@ -151,9 +152,34 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
   sock->active_sock_ = NULL;
   sock->rail_mode_ = rail_mode;
 
-  int ret = udp_resolv_local(sock, local_addr, port, resolv_type);
-  if(ret)
-    return ret;
+  const char* colon = strchr(port, ':');
+  if(!colon) {
+    int ret = udp_resolv_local(sock, local_addr, port, resolv_type);
+    if(ret)
+      return ret;
+  } else {
+    if(!rail_mode)
+      log_printf(WARNING, "A port range has been defined - enabling RAIL mode");
+    sock->rail_mode_ = 1;
+
+    u_int32_t port_num, port_end;
+    port_num = atoi(port);
+    port_end = atoi(colon+1);
+    if(port_num < 1 || port_num > 65535 ||
+       port_end < 1 || port_end > 65535 || port_end < port_num) {
+      log_printf(ERROR, "illegal port range");
+      return -1;
+    }
+    do {
+      char port_str[10];
+      snprintf(port_str, sizeof(port_str), "%d", port_num);
+      int ret = udp_resolv_local(sock, local_addr, port_str, resolv_type);
+      if(ret)
+        return ret;
+
+      port_num++;
+    } while(port_num <= port_end);
+  }
 
   if(sock->rail_mode_)
     log_printf(NOTICE, "RAIL mode enabled");
@@ -278,6 +304,7 @@ void udp_close(udp_t* sock)
     free(s);
   }
   sock->socks_ = NULL;
+  sock->active_sock_ = NULL;
 }
 
 char* udp_endpoint_to_string(udp_endpoint_t* e)
