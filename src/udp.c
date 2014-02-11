@@ -332,7 +332,7 @@ char* udp_endpoint_to_string(udp_endpoint_t* e)
 
 char* udp_get_remote_end_string(udp_t* sock)
 {
-  if(!sock || !sock->active_sock_->remote_end_set_)
+  if(!sock || !sock->active_sock_ || !sock->active_sock_->remote_end_set_)
     return NULL;
 
   return udp_endpoint_to_string(&(sock->active_sock_->remote_end_));
