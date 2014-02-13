@@ -248,10 +248,16 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
       continue;
 
     if(FD_ISSET(sig_fd, &readyfds)) {
-      if(signal_handle()) {
-        return_value = 1;
+      return_value = signal_handle();
+      if(return_value == 1)
         break;
+      else if(return_value == 2) {
+        seq_win_clear(&seq_win);
+        log_printf(NOTICE, "sequence window cleared");
+        return_value = 0;
       }
+      else
+        return_value = 0;
     }
 
     if(FD_ISSET(dev->fd_, &readyfds)) {
