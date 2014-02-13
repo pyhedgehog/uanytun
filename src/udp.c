@@ -224,11 +224,8 @@ int udp_has_remote(udp_t* sock)
   return 0;
 }
 
-int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
+static int udp_resolv_remote__(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
 {
-  if(!sock || !remote_addr || !port)
-    return -1;
-
   struct addrinfo hints, *res;
 
   res = NULL;
@@ -254,25 +251,23 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
   int found = 0;
   struct addrinfo* r = res;
   while(r) {
-    if(!sock->active_sock_) {
-      udp_socket_t* s = sock->socks_;
-      while(s) {
-        if(s->local_end_.addr_.ss_family == r->ai_family) {
-          sock->active_sock_ = s;
-          break;
-        }
-        s = s->next_;
+    udp_socket_t* s = sock->socks_;
+    while(s) {
+      if(s->local_end_.addr_.ss_family == r->ai_family && !(s->remote_end_set_)) {
+        sock->active_sock_ = s;
+        break;
       }
+      s = s->next_;
     }
 
-    if(sock->active_sock_) {
-      memcpy(&(sock->active_sock_->remote_end_.addr_), r->ai_addr, r->ai_addrlen);
-      sock->active_sock_->remote_end_.len_ = r->ai_addrlen;
-      sock->active_sock_->remote_end_set_ = 1;
+    if(s) {
+      memcpy(&(s->remote_end_.addr_), r->ai_addr, r->ai_addrlen);
+      s->remote_end_.len_ = r->ai_addrlen;
+      s->remote_end_set_ = 1;
       found = 1;
-      char* remote_string = udp_endpoint_to_string(&(sock->active_sock_->remote_end_));
+      char* remote_string = udp_endpoint_to_string(&(s->remote_end_));
       if(remote_string) {
-        log_printf(NOTICE, "socket[%d] set remote end to: %s", sock->active_sock_->idx_, remote_string);
+        log_printf(NOTICE, "socket[%d] set remote end to: %s", s->idx_, remote_string);
         free(remote_string);
       }
       break;
@@ -283,7 +278,37 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
   freeaddrinfo(res);
 
   if(!found)
-    log_printf(WARNING, "no remote address found that fits any of the local address families");
+    log_printf(WARNING, "no remote address for '%s' found that fits any of the local address families", remote_addr);
+
+  return 0;
+}
+
+int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
+{
+  if(!sock || !remote_addr || !port)
+    return -1;
+
+  const char* colon = strchr(port, ':');
+  if(!colon) {
+    return udp_resolv_remote__(sock, remote_addr, port, resolv_type);
+  } else {
+    if(!sock->rail_mode_)
+      log_printf(WARNING, "A port range has been defined - enabling RAIL mode");
+    sock->rail_mode_ = 1;
+
+    u_int32_t port_num, port_end;
+    if(udp_split_port_range(port, colon, &port_num, &port_end))
+      return -1;
+    do {
+      char port_str[10];
+      snprintf(port_str, sizeof(port_str), "%d", port_num);
+      int ret = udp_resolv_remote__(sock, remote_addr, port_str, resolv_type);
+      if(ret)
+        return ret;
+
+      port_num++;
+    } while(port_num <= port_end);
+  }
 
   return 0;
 }
