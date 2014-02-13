@@ -225,7 +225,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 
   FD_ZERO(&readfds);
   FD_SET(dev->fd_, &readfds);
-  int nfds = udp_init_fd_set(sock, &readfds);
+  int nfds = udp_fill_fd_set(sock, &readfds);
   nfds = dev->fd_ > nfds ? dev->fd_ : nfds;
 
   int return_value = 0;

@@ -195,7 +195,7 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
   return 0;
 }
 
-int udp_init_fd_set(udp_t* sock, fd_set* set)
+int udp_fill_fd_set(udp_t* sock, fd_set* set)
 {
   int max_fd = 0;
 
