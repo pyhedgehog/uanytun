@@ -48,6 +48,7 @@ typedef struct {
 
 struct udp_socket_struct {
   int fd_;
+  unsigned int idx_;
   udp_endpoint_t local_end_;
   udp_endpoint_t remote_end_;
   int remote_end_set_;

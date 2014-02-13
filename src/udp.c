@@ -52,7 +52,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-static int udp_resolv_local(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type)
+static int udp_resolv_local(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type, unsigned int* idx)
 {
   struct addrinfo hints, *res;
 
@@ -96,6 +96,7 @@ static int udp_resolv_local(udp_t* sock, const char* local_addr, const char* por
     new_sock->remote_end_.len_ = sizeof(new_sock->remote_end_.addr_);
     new_sock->remote_end_set_ = 0;
     new_sock->next_ = NULL;
+    new_sock->idx_ = (*idx)++;
 
     if(!sock->socks_) {
       sock->socks_ = new_sock;
@@ -132,7 +133,7 @@ static int udp_resolv_local(udp_t* sock, const char* local_addr, const char* por
 
     char* local_string = udp_endpoint_to_string(&(new_sock->local_end_));
     if(local_string) {
-      log_printf(NOTICE, "listening on: %s", local_string);
+      log_printf(NOTICE, "socket[%d] listening on: %s", new_sock->idx_, local_string);
       free(local_string);
     }
 
@@ -163,9 +164,10 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
   sock->active_sock_ = NULL;
   sock->rail_mode_ = rail_mode;
 
+  unsigned int idx = 0;
   const char* colon = strchr(port, ':');
   if(!colon) {
-    int ret = udp_resolv_local(sock, local_addr, port, resolv_type);
+    int ret = udp_resolv_local(sock, local_addr, port, resolv_type, &idx);
     if(ret)
       return ret;
   } else {
@@ -179,7 +181,7 @@ int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_
     do {
       char port_str[10];
       snprintf(port_str, sizeof(port_str), "%d", port_num);
-      int ret = udp_resolv_local(sock, local_addr, port_str, resolv_type);
+      int ret = udp_resolv_local(sock, local_addr, port_str, resolv_type, &idx);
       if(ret)
         return ret;
 
@@ -249,6 +251,7 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
     return -1;
   }
 
+  int found = 0;
   struct addrinfo* r = res;
   while(r) {
     if(!sock->active_sock_) {
@@ -266,9 +269,10 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
       memcpy(&(sock->active_sock_->remote_end_.addr_), r->ai_addr, r->ai_addrlen);
       sock->active_sock_->remote_end_.len_ = r->ai_addrlen;
       sock->active_sock_->remote_end_set_ = 1;
+      found = 1;
       char* remote_string = udp_endpoint_to_string(&(sock->active_sock_->remote_end_));
       if(remote_string) {
-        log_printf(NOTICE, "set remote end to: %s", remote_string);
+        log_printf(NOTICE, "socket[%d] set remote end to: %s", sock->active_sock_->idx_, remote_string);
         free(remote_string);
       }
       break;
@@ -276,8 +280,10 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
 
     r = r->ai_next;
   }
-
   freeaddrinfo(res);
+
+  if(!found)
+    log_printf(WARNING, "no remote address found that fits any of the local address families");
 
   return 0;
 }
@@ -308,7 +314,7 @@ void udp_update_remote(udp_t* sock, int fd, udp_endpoint_t* remote)
       sock->active_sock_->remote_end_.len_ = remote->len_;
       sock->active_sock_->remote_end_set_ = 1;
       char* addrstring = udp_endpoint_to_string(remote);
-      log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
+      log_printf(NOTICE, "socket[%d] autodetected remote host changed %s", sock->active_sock_->idx_, addrstring);
       free(addrstring);
     }
   }
