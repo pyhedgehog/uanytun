@@ -209,10 +209,17 @@ int udp_init_fd_set(udp_t* sock, fd_set* set)
 
 int udp_has_remote(udp_t* sock)
 {
-  if(!sock->active_sock_ || !sock->active_sock_->remote_end_set_)
+  if(!sock->rail_mode_ && (!sock->active_sock_ || !sock->active_sock_->remote_end_set_))
     return 0;
 
-  return 1;
+  udp_socket_t* s = sock->socks_;
+  while(s) {
+    if(s->remote_end_set_)
+      return 1;
+    s = s->next_;
+  }
+
+  return 0;
 }
 
 int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
@@ -259,6 +266,11 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
       memcpy(&(sock->active_sock_->remote_end_.addr_), r->ai_addr, r->ai_addrlen);
       sock->active_sock_->remote_end_.len_ = r->ai_addrlen;
       sock->active_sock_->remote_end_set_ = 1;
+      char* remote_string = udp_endpoint_to_string(&(sock->active_sock_->remote_end_));
+      if(remote_string) {
+        log_printf(NOTICE, "set remote end to: %s", remote_string);
+        free(remote_string);
+      }
       break;
     }
 
@@ -343,26 +355,48 @@ char* udp_endpoint_to_string(udp_endpoint_t* e)
   return ret;
 }
 
-char* udp_get_remote_end_string(udp_t* sock)
-{
-  if(!sock || !(sock->active_sock_) || !(sock->active_sock_->remote_end_set_))
-    return NULL;
-
-  return udp_endpoint_to_string(&(sock->active_sock_->remote_end_));
-}
 
 int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end)
 {
-  if(!sock || !remote_end)
+  if(!sock || !buf || !remote_end)
     return -1;
 
   return recvfrom(fd, buf, len, 0, (struct sockaddr *)&(remote_end->addr_), &(remote_end->len_));
 }
 
-int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
+
+static int udp_write_active_sock(udp_t* sock, u_int8_t* buf, u_int32_t len)
 {
-  if(!sock || !sock->active_sock_ || !sock->active_sock_->remote_end_set_)
+  if(!sock->active_sock_ || !sock->active_sock_->remote_end_set_)
     return 0;
 
   return sendto(sock->active_sock_->fd_, buf, len, 0, (struct sockaddr *)&(sock->active_sock_->remote_end_.addr_), sock->active_sock_->remote_end_.len_);
+}
+
+static int udp_write_rail(udp_t* sock, u_int8_t* buf, u_int32_t len)
+{
+  int i=0;
+
+  udp_socket_t* s = sock->socks_;
+  while(s) {
+    if(s->remote_end_set_) {
+      sendto(s->fd_, buf, len, 0, (struct sockaddr *)&(s->remote_end_.addr_), s->remote_end_.len_);
+      i++;
+    }
+    s = s->next_;
+  }
+
+  log_printf(DEBUG, "sent %d Bytes to %d sockets", len, i);
+  return len;
+}
+
+int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
+{
+  if(!sock || !buf)
+    return 0;
+
+  if(sock->rail_mode_)
+    return udp_write_rail(sock, buf, len);
+
+  return udp_write_active_sock(sock, buf, len);
 }

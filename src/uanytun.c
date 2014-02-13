@@ -380,15 +380,8 @@ int main(int argc, char* argv[])
     exit(ret);
   }
 
-  if(opt.remote_addr_) {
-    if(!udp_resolv_remote(&sock, opt.remote_addr_, opt.remote_port_, opt.resolv_addr_type_)) {
-      char* remote_string = udp_get_remote_end_string(&sock);
-      if(remote_string) {
-        log_printf(NOTICE, "set remote end to: %s", remote_string);
-        free(remote_string);
-      }
-    }
-  }
+  if(opt.remote_addr_)
+    udp_resolv_remote(&sock, opt.remote_addr_, opt.remote_port_, opt.resolv_addr_type_);
 
 
   FILE* pid_file = NULL;
