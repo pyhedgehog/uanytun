@@ -417,7 +417,6 @@ static int udp_write_rail(udp_t* sock, u_int8_t* buf, u_int32_t len)
     s = s->next_;
   }
 
-  log_printf(DEBUG, "sent %d Bytes to %d sockets", len, i);
   return len;
 }
 
