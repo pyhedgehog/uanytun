@@ -318,7 +318,7 @@ void udp_update_remote(udp_t* sock, int fd, udp_endpoint_t* remote)
   if(!sock)
     return;
 
-  if(!(sock->active_sock_) || sock->active_sock_->fd_ == fd) {
+  if(!(sock->active_sock_) || sock->active_sock_->fd_ != fd) {
     udp_socket_t* s = sock->socks_;
     while(s) {
       if(s->fd_ == fd) {
