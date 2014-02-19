@@ -253,6 +253,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
         break;
       else if(return_value == 2) {
         seq_win_clear(&seq_win);
+        seq_nr = 0;
         log_printf(NOTICE, "sequence window cleared");
         return_value = 0;
       }
