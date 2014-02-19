@@ -176,7 +176,8 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
 
   int result = seq_win_check_and_add(seq_win, encrypted_packet_get_sender_id(encrypted_packet), encrypted_packet_get_seq_nr(encrypted_packet));
   if(result > 0) {
-    log_printf(WARNING, "detected replay attack, discarding packet");
+    if(!(sock->rail_mode_))
+      log_printf(WARNING, "detected replay attack, discarding packet");
     return 0;
   } else if(result < 0) {
     log_printf(ERROR, "memory error at sequence window");
