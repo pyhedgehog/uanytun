@@ -67,9 +67,11 @@ void seq_win_clear(seq_win_t* win)
 
     free(to_free);
   }
+
+  win->first_ = NULL;
 }
 
-seq_win_element_t* seq_win_new_element(sender_id_t sender_id, seq_nr_t max, window_size_t size)
+static seq_win_element_t* seq_win_new_element(sender_id_t sender_id, seq_nr_t max, window_size_t size)
 {
   if(!size)
     return NULL;
