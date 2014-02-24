@@ -60,6 +60,7 @@ print_usage() {
   echo "          --no-manpage              dont't install manpage"
   echo "          --examplesdir=<DIR>       the path to the examples files (default: $PREFIX/share/examples)"
   echo "          --no-examples             dont't install example files"
+  echo "          --use-gcrypt              use libgcrypt (this is the default)"
   echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
   echo "          --no-crypto               disable crypto at all (only NULL cipher)"
   echo "          --disable-passphrase      disable master key and salt passphrase"
@@ -96,6 +97,9 @@ do
   ;;
   --no-examples)
     INSTALLEXAMPLES=0
+  ;;
+  --use-gcrypt)
+    CRYPTO_LIB='gcrypt'
   ;;
   --use-ssl-crypto)
     CRYPTO_LIB='ssl'

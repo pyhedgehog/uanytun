@@ -224,7 +224,9 @@ int options_parse(options_t* opt, int argc, char* argv[])
 
   argc--;
 
+#ifndef NO_CRYPT
   char* role = NULL;
+#endif
   int i, ipv4_only = 0, ipv6_only = 0;
   for(i=1; argc > 0; ++i)
   {
