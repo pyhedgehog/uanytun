@@ -290,6 +290,7 @@ Host B:
 uanytun -r hosta.example.com -t tun -n 192.168.123.2/30 -c aes-ctr-256 -k aes-ctr-256
         -E have_a_very_safe_and_productive_day -e right
 
+
 One unicast and one anycast tunnel endpoint:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -304,8 +305,24 @@ As *uAnytun* can't work as an anycast endpoint it can't be used for this purpose
 have to use *Anytun* for that job.
 
 
+Rail Setup for 3 links:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Client:
+^^^^^^^
+
+uanytun -t tun -n 192.168.42.2/30 -c aes-ctr-256 -k aes-ctr-256 -E rail_MODE_is_VERY_cool
+        -e client -w 64 -Y -r rail.example.com -o 4440:4442
+
+Server:
+^^^^^^^
+uanytun -t tun -n 192.168.42.1/30 -c aes-ctr-256 -k aes-ctr-256 -E rail_MODE_is_VERY_cool
+        -e server -w 64 -Y -p 4440:4442
+
+
 BUGS
 ----
+
 Most likely there are some bugs in *uAnytun*. If you find a bug, please let
 the developers know at uanytun@anytun.org. Of course, patches are preferred.
 

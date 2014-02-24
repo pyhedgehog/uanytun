@@ -2,12 +2,12 @@
 .\"     Title: uanytun
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 02/10/2014
+.\"      Date: 02/24/2014
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "UANYTUN" "8" "02/10/2014" "\ \&" "\ \&"
+.TH "UANYTUN" "8" "02/24/2014" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -434,6 +434,29 @@ uanytun \-r anycast\&.anytun\&.org \-d anytun0 \-t tun \-n 192\&.0\&.2\&.2/30 \-
 .RS 4
 .sp
 As \fBuAnytun\fR can\(cqt work as an anycast endpoint it can\(cqt be used for this purpose\&. You have to use \fBAnytun\fR for that job\&.
+.RE
+.SS "Rail Setup for 3 links:"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBClient:\fR
+.RS 4
+.sp
+uanytun \-t tun \-n 192\&.168\&.42\&.2/30 \-c aes\-ctr\-256 \-k aes\-ctr\-256 \-E rail_MODE_is_VERY_cool \-e client \-w 64 \-Y \-r rail\&.example\&.com \-o 4440:4442
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBServer:\fR
+.RS 4
+.sp
+uanytun \-t tun \-n 192\&.168\&.42\&.1/30 \-c aes\-ctr\-256 \-k aes\-ctr\-256 \-E rail_MODE_is_VERY_cool \-e server \-w 64 \-Y \-p 4440:4442
 .RE
 .SH "BUGS"
 .sp
