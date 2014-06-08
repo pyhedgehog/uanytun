@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -43,7 +43,7 @@ void string_list_init(string_list_t* list)
 {
   if(!list)
     return;
-  
+
   list->first_ = NULL;
 }
 
@@ -104,7 +104,7 @@ void string_list_print(string_list_t* list, const char* head, const char* tail)
 {
   if(!list)
     return;
-  
+
   string_list_element_t* tmp = list->first_;
   while(tmp) {
     printf("%s%s%s", head, tmp->string_, tail);

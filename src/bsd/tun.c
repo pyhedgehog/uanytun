@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -58,9 +58,9 @@
 
 int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix)
 {
-  if(!dev) 
+  if(!dev)
     return -1;
- 
+
   tun_conf(dev, dev_name, dev_type, ifcfg_addr, ifcfg_prefix, 1400);
   dev->actual_name_ = NULL;
 
@@ -109,7 +109,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
         tun_close(dev);
         return -2;
       }
-        
+
       dev->fd_ = open(device_file_tmp, O_RDWR);
       free(device_file_tmp);
       if(dev->fd_ >= 0)
@@ -125,7 +125,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
       log_printf(ERROR, "can't open device file dynamically: no unused node left");
     else
       log_printf(ERROR, "can't open device file (%s): %s", device_file, strerror(errno));
-    
+
     tun_close(dev);
     return -1;
   }
@@ -164,18 +164,18 @@ int tun_init_post(tun_device_t* dev)
   dev->with_pi_ = 1;
   if(dev->type_ == TYPE_TAP)
     dev->with_pi_ = 0;
-  
-  struct tuninfo ti;  
+
+  struct tuninfo ti;
 
   if(ioctl(dev->fd_, TUNGIFINFO, &ti) < 0) {
     log_printf(ERROR, "can't enable multicast for interface: %s", strerror(errno));
     return -1;
-  }  
+  }
 
   ti.flags |= IFF_MULTICAST;
   if(dev->type_ == TYPE_TUN)
     ti.flags &= ~IFF_POINTOPOINT;
-  
+
   if(ioctl(dev->fd_, TUNSIFINFO, &ti) < 0) {
     log_printf(ERROR, "can't enable multicast for interface: %s", strerror(errno));
     return -1;
@@ -199,20 +199,20 @@ int tun_init_post(tun_device_t* dev)
     if(ioctl(dev->fd_, TUNSLMODE, &arg) < 0) {
       log_printf(ERROR, "can't disable link-layer mode for interface: %s", strerror(errno));
       return -1;
-    }  
+    }
 
     arg = 1;
     if(ioctl(dev->fd_, TUNSIFHEAD, &arg) < 0) {
       log_printf(ERROR, "can't enable multi-af mode for interface: %s", strerror(errno));
       return -1;
-    }  
+    }
 
     arg = IFF_BROADCAST;
     arg |= IFF_MULTICAST;
     if(ioctl(dev->fd_, TUNSIFMODE, &arg) < 0) {
       log_printf(ERROR, "can't enable multicast for interface: %s", strerror(errno));
       return -1;
-    }  
+    }
   }
 
   return 0;
@@ -268,7 +268,7 @@ int tun_read(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
   {
     struct iovec iov[2];
     u_int32_t type;
-    
+
     iov[0].iov_base = &type;
     iov[0].iov_len = sizeof(type);
     iov[1].iov_base = buf;
@@ -292,13 +292,13 @@ int tun_write(tun_device_t* dev, u_int8_t* buf, u_int32_t len)
     struct iovec iov[2];
     u_int32_t type;
     struct ip *hdr = (struct ip*)buf;
-    
+
     type = 0;
     if(hdr->ip_v == 4)
       type = htonl(AF_INET);
     else
       type = htonl(AF_INET6);
-    
+
     iov[0].iov_base = &type;
     iov[0].iov_len = sizeof(type);
     iov[1].iov_base = buf;

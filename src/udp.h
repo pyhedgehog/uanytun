@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -48,7 +48,10 @@ typedef struct {
 
 struct udp_socket_struct {
   int fd_;
+  unsigned int idx_;
   udp_endpoint_t local_end_;
+  udp_endpoint_t remote_end_;
+  int remote_end_set_;
   struct udp_socket_struct* next_;
 };
 typedef struct udp_socket_struct udp_socket_t;
@@ -56,19 +59,17 @@ typedef struct udp_socket_struct udp_socket_t;
 struct udp_struct {
   udp_socket_t* socks_;
   udp_socket_t* active_sock_;
-  udp_endpoint_t remote_end_;
-  int remote_end_set_;
 };
 typedef struct udp_struct udp_t;
 
 int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type);
-int udp_init_fd_set(udp_t* sock, fd_set* set);
-int udp_set_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type);
-void udp_set_active_sock(udp_t* sock, int fd);
+int udp_fill_fd_set(udp_t* sock, fd_set* set);
+int udp_has_remote(udp_t* sock);
+int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type);
+void udp_update_remote(udp_t* sock, int fd, udp_endpoint_t* remote);
 void udp_close(udp_t* sock);
 
-char* udp_endpoint_to_string(udp_endpoint_t e);
-char* udp_get_remote_end_string(udp_t* sock);
+char* udp_endpoint_to_string(udp_endpoint_t* e);
 
 int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* remote_end);
 int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len);

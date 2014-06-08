@@ -1,3 +1,8 @@
+2014.06.08 -- Version 0.3.5
+
+* fixed build issues for clang
+* refactored the multi socket support
+
 2010.02.16 -- Version 0.3.3
 
 * added -v|--version option
@@ -18,11 +23,11 @@
 * improved script execution
 * added signal handling without races
 * all log_targets print time now too
-	
+
 2009.05.01 -- Version 0.3
 
 * updated to new protocol specification (extended label and crypto role)
-  Mind that due this protocol changes this version is incompatible to older 
+  Mind that due this protocol changes this version is incompatible to older
   version of anytun and uanytun
 * the auth tag length can now be configured
 * added extended logging support (syslog, file, stdout and stderr)
@@ -40,7 +45,7 @@
 
 * fixed bug which prevents the daemon from using the right cipher
   key when using a key derivation rate other than 1
-	
+
 2009.01.11 -- Version 0.2
 
 * added crypto support using libgcrypt or openssl

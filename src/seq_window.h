@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -53,7 +53,6 @@ typedef struct seq_win_struct seq_win_t;
 
 int seq_win_init(seq_win_t* win, window_size_t size);
 void seq_win_clear(seq_win_t* win);
-seq_win_element_t* seq_win_new_element(sender_id_t sender_id, seq_nr_t max, window_size_t size);
 int seq_win_check_and_add(seq_win_t* win, sender_id_t sender_id, seq_nr_t seq_nr);
 
 void seq_win_print(seq_win_t* win);

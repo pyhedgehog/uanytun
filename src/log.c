@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -85,7 +85,7 @@ int log_targets_target_exists(log_targets_t* targets, log_target_type_t type)
     if(tmp->type_ == type)
       return 1;
     tmp = tmp->next_;
-  }  
+  }
   return 0;
 }
 
@@ -148,7 +148,7 @@ int log_targets_add(log_targets_t* targets, const char* conf)
     log_target_t* tmp = targets->first_;
     while(tmp->next_)
       tmp = tmp->next_;
-    
+
     tmp->next_ = new_target;
   }
   return 0;
@@ -248,7 +248,7 @@ void log_print_hex_dump(log_prio_t prio, const u_int8_t* buf, u_int32_t len)
     if(offset < 0)
       return;
     char* ptr = &msg[offset];
-    
+
     for(i=0; i < len; i++) {
       if(((i+1)*3) >= (MSG_LENGTH_MAX - offset))
         break;

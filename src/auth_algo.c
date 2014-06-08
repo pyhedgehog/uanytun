@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -50,7 +50,7 @@ auth_algo_type_t auth_algo_get_type(const char* type)
     return aa_null;
   else if(!strcmp(type, "sha1"))
     return aa_sha1;
-  
+
   return aa_unknown;
 }
 
@@ -65,7 +65,7 @@ u_int32_t auth_algo_get_max_length(const char* type)
 
 int auth_algo_init(auth_algo_t* aa, const char* type)
 {
-  if(!aa) 
+  if(!aa)
     return -1;
 
   aa->type_ = auth_algo_get_type(type);
@@ -103,7 +103,7 @@ void auth_algo_close(auth_algo_t* aa)
 
 void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet)
 {
-  if(!aa) 
+  if(!aa)
     return;
 
   if(aa->type_ == aa_null)
@@ -118,7 +118,7 @@ void auth_algo_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivation_di
 
 int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivation_dir_t dir, encrypted_packet_t* packet)
 {
-  if(!aa) 
+  if(!aa)
     return 0;
 
   if(aa->type_ == aa_null)
@@ -159,7 +159,7 @@ int auth_algo_sha1_init(auth_algo_t* aa)
   if(err) {
     log_printf(ERROR, "failed to open message digest algo: %s", gcry_strerror(err));
     return -1;
-  } 
+  }
 #else
   HMAC_CTX_init(&params->ctx_);
   HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
@@ -181,7 +181,7 @@ void auth_algo_sha1_close(auth_algo_t* aa)
       gcry_md_close(params->handle_);
 #else
     HMAC_CTX_cleanup(&params->ctx_);
-#endif    
+#endif
 
     free(aa->params_);
   }
@@ -212,8 +212,8 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   if(err) {
     log_printf(ERROR, "failed to set hmac key: %s", gcry_strerror(err));
     return;
-  } 
-  
+  }
+
   gcry_md_reset(params->handle_);
   gcry_md_write(params->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   gcry_md_final(params->handle_);
@@ -260,7 +260,7 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   if(err) {
     log_printf(ERROR, "failed to set hmac key: %s", gcry_strerror(err));
     return -1;
-  } 
+  }
 
   gcry_md_reset(params->handle_);
   gcry_md_write(params->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
@@ -280,11 +280,11 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   if(length > SHA1_LENGTH) {
     u_int32_t i;
     for(i=0; i < (encrypted_packet_get_auth_tag_length(packet) - SHA1_LENGTH); ++i)
-      if(tag[i]) return 0; 
+      if(tag[i]) return 0;
   }
-  
+
   int result = memcmp(&tag[encrypted_packet_get_auth_tag_length(packet) - length], &hmac[SHA1_LENGTH - length], length);
-  
+
   if(result)
     return 0;
 

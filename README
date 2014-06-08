@@ -1,8 +1,8 @@
 Dependencies
 ============
 
-uAnytun can be built by using either libgcrypt or the openssl-crypto library. 
-The latter is more performant in most cases but there are some license 
+uAnytun can be built by using either libgcrypt or the openssl-crypto library.
+The latter is more performant in most cases but there are some license
 issues when using this library. It also needs more space when installed.
 
 
@@ -11,7 +11,7 @@ Linux
 (this includes Debian with FreeBSD Kernel)
 
 using libgcrypt:
- 
+
  build-essential
  libgcrypt11-dev
 
@@ -46,7 +46,7 @@ if you want to rebuild the manpage:
  textproc/libxslt
  textproc/docbook-xsl
  sysutils/readlink
- misc/getopt 
+ misc/getopt
 
 
 
@@ -75,7 +75,7 @@ using ssl crypto library:
 # ./configure --use-ssl-crypto
 # make
 
-Notes: 
+Notes:
   - try './configure --help' for further information
   - if using openssl pre 0.9.8 you have to disable passphrase
     because openssl had no SHA256 implementation prior to this
@@ -110,20 +110,20 @@ Usage:
 init.d script
 -------------
 
-The init.d script can be used to start uanytun at boot time. It searches for 
+The init.d script can be used to start uanytun at boot time. It searches for
 configuration files which reside at $CONFIG_DIR. For each instance of uanytun
 which should be started there must be a directory containing at least a file
 named config. This file must contain all command line parameter which should
 be used when starting the daemon. One line for each parameter. Empty lines and
 lines starting with # are ignored. Besides the config file there may be a script
-named post-up.sh which will be called when the tun/tap device comes up. 
+named post-up.sh which will be called when the tun/tap device comes up.
 This is an example of how the init.d script can be used to start uanytun:
 
 # /etc/init.d/uanytun start client1 p2p-a
 
 In this case the script will start 2 instances of uanytun using the config files
-$CONFIG_DIR/client1/config and $CONFIG_DIR/p2p-a/config. 
+$CONFIG_DIR/client1/config and $CONFIG_DIR/p2p-a/config.
 If no instance name is specified the script will use the file $CONFIG_DIR/autostart
-to determine which instances to start or stop. This file must contain a list 
-of instance names which should be used when no names are specified at the command 
+to determine which instances to start or stop. This file must contain a list
+of instance names which should be used when no names are specified at the command
 line. One line for each name. Empty lines and lines starting with # are ignored.

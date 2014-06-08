@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -152,9 +152,9 @@ int options_parse_hex_string(const char* hex, buffer_t* buffer)
   if(hex_len%2)
     return 1;
 
-  if(buffer->buf_) 
+  if(buffer->buf_)
     free(buffer->buf_);
-  
+
   buffer->length_ = hex_len/2;
   buffer->buf_ = malloc(buffer->length_);
   if(!buffer->buf_) {
@@ -189,7 +189,7 @@ int options_parse_ifconfig(const char* arg, ifconfig_param_t* ifcfg)
         free(str);
         return 1;
       }
-      
+
       ifcfg->prefix_length_ = atoi(ptr);
       ifcfg->net_addr_ = strdup(str);
       free(str);
@@ -209,7 +209,6 @@ int options_parse_ifconfig(const char* arg, ifconfig_param_t* ifcfg)
   return 1;
 }
 
-
 int options_parse(options_t* opt, int argc, char* argv[])
 {
   if(!opt)
@@ -225,7 +224,9 @@ int options_parse(options_t* opt, int argc, char* argv[])
 
   argc--;
 
+#ifndef NO_CRYPT
   char* role = NULL;
+#endif
   int i, ipv4_only = 0, ipv6_only = 0;
   for(i=1; argc > 0; ++i)
   {
@@ -268,7 +269,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
     PARSE_INT_PARAM("-b","--auth-tag-length", opt->auth_tag_length_)
 #endif
-    else 
+    else
       return i;
   }
   if(ipv4_only && ipv6_only)
@@ -308,13 +309,13 @@ void options_parse_post(options_t* opt)
     return;
 
 #ifndef NO_CRYPT
-  if(!strcmp(opt->cipher_, "null") && !strcmp(opt->auth_algo_, "null") && 
+  if(!strcmp(opt->cipher_, "null") && !strcmp(opt->auth_algo_, "null") &&
      strcmp(opt->kd_prf_, "null")) {
     if(opt->kd_prf_)
       free(opt->kd_prf_);
     opt->kd_prf_ = strdup("null");
   }
-  if((strcmp(opt->cipher_, "null") || strcmp(opt->auth_algo_, "null")) && 
+  if((strcmp(opt->cipher_, "null") || strcmp(opt->auth_algo_, "null")) &&
      !strcmp(opt->kd_prf_, "null")) {
     log_printf(WARNING, "using NULL key derivation with encryption and or authentication enabled!");
   }

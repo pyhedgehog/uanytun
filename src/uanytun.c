@@ -13,9 +13,9 @@
  *  message authentication based on the methodes used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
- *  
  *
- *  Copyright (C) 2007-2010 Christian Pointner <equinox@anytun.org>
+ *
+ *  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
  *
  *  This file is part of uAnytun.
  *
@@ -72,7 +72,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
     log_printf(ERROR, "could not initialize cipher of type %s", opt->cipher_);
     return ret;
   }
-  
+
 #ifndef NO_CRYPT
   ret = auth_algo_init(aa, opt->auth_algo_);
   if(ret) {
@@ -104,7 +104,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
 }
 
 int process_tun_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packet_t* plain_packet, encrypted_packet_t* encrypted_packet,
-                     cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_nr_t seq_nr)
+                     cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_nr_t* seq_nr)
 {
   plain_packet_set_payload_length(plain_packet, -1);
   encrypted_packet_set_length(encrypted_packet, -1);
@@ -114,25 +114,25 @@ int process_tun_data(tun_device_t* dev, udp_t* sock, options_t* opt, plain_packe
     log_printf(ERROR, "error on reading from device: %s", strerror(errno));
     return 0;
   }
-  
+
   plain_packet_set_payload_length(plain_packet, len);
-  
+
   if(dev->type_ == TYPE_TUN)
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TUN);
   else if(dev->type_ == TYPE_TAP)
-    plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TAP);    
+    plain_packet_set_type(plain_packet, PAYLOAD_TYPE_TAP);
   else
     plain_packet_set_type(plain_packet, PAYLOAD_TYPE_UNKNOWN);
 
-  if(!sock->remote_end_set_)
+  if(!udp_has_remote(sock))
     return 0;
-  
-  cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, seq_nr, opt->sender_id_, opt->mux_); 
-  
+
+  cipher_encrypt(c, kd, kd_outbound, plain_packet, encrypted_packet, *seq_nr, opt->sender_id_, opt->mux_);
+  (*seq_nr)++;
 #ifndef NO_CRYPT
   auth_algo_generate(aa, kd, kd_outbound, encrypted_packet);
 #endif
- 
+
   len = udp_write(sock, encrypted_packet_get_packet(encrypted_packet), encrypted_packet_get_length(encrypted_packet));
   if(len == -1)
     log_printf(ERROR, "error on sending udp packet: %s", strerror(errno));
@@ -153,12 +153,16 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   if(len == -1) {
     log_printf(ERROR, "error on receiving udp packet: %s", strerror(errno));
     return 0;
-  }
-  else if(len < encrypted_packet_get_minimum_length(encrypted_packet)) {
+  } else if(len < encrypted_packet_get_minimum_length(encrypted_packet)) {
     log_printf(WARNING, "received packet is too short");
     return 0;
   }
   encrypted_packet_set_length(encrypted_packet, len);
+
+  if(encrypted_packet_get_mux(encrypted_packet) != opt->mux_) {
+    log_printf(WARNING, "wrong mux value, discarding packet");
+    return 0;
+  }
 
 #ifndef NO_CRYPT
   if(!auth_algo_check_tag(aa, kd, kd_inbound, encrypted_packet)) {
@@ -166,45 +170,31 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
     return 0;
   }
 #endif
-  
-  if(encrypted_packet_get_mux(encrypted_packet) != opt->mux_) {
-    log_printf(WARNING, "wrong mux value, discarding packet");
-    return 0;
-  }
-  
+
   int result = seq_win_check_and_add(seq_win, encrypted_packet_get_sender_id(encrypted_packet), encrypted_packet_get_seq_nr(encrypted_packet));
   if(result > 0) {
     log_printf(WARNING, "detected replay attack, discarding packet");
     return 0;
-  }
-  else if(result < 0) {
+  } else if(result < 0) {
     log_printf(ERROR, "memory error at sequence window");
     return -2;
   }
-   
-  udp_set_active_sock(sock, fd);
-  if(remote.len_ != sock->remote_end_.len_ || memcmp(&(remote.addr_), &(sock->remote_end_.addr_), remote.len_)) {
-    memcpy(&(sock->remote_end_.addr_), &(remote.addr_), remote.len_);
-    sock->remote_end_.len_ = remote.len_;
-    sock->remote_end_set_ = 1;
-    char* addrstring = udp_endpoint_to_string(remote);
-    log_printf(NOTICE, "autodetected remote host changed %s", addrstring);
-    free(addrstring);
-  }
+
+  udp_update_remote(sock, fd, &remote);
 
   if(encrypted_packet_get_payload_length(encrypted_packet) <= plain_packet_get_header_length()) {
     log_printf(WARNING, "ignoring packet with zero length payload");
     return 0;
   }
 
-  int ret = cipher_decrypt(c, kd, kd_inbound, encrypted_packet, plain_packet); 
-  if(ret) 
+  int ret = cipher_decrypt(c, kd, kd_inbound, encrypted_packet, plain_packet);
+  if(ret)
     return ret;
- 
+
   len = tun_write(dev, plain_packet_get_payload(plain_packet), plain_packet_get_payload_length(plain_packet));
   if(len == -1)
     log_printf(ERROR, "error on writing to device: %s", strerror(errno));
-  
+
   return 0;
 }
 
@@ -231,7 +221,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 
   FD_ZERO(&readfds);
   FD_SET(dev->fd_, &readfds);
-  int nfds = udp_init_fd_set(sock, &readfds);
+  int nfds = udp_fill_fd_set(sock, &readfds);
   nfds = dev->fd_ > nfds ? dev->fd_ : nfds;
 
   int return_value = 0;
@@ -254,15 +244,21 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
       continue;
 
     if(FD_ISSET(sig_fd, &readyfds)) {
-      if(signal_handle()) {
-        return_value = 1;
+      return_value = signal_handle();
+      if(return_value == 1)
         break;
+      else if(return_value == 2) {
+        seq_win_clear(&seq_win);
+        seq_nr = 0;
+        log_printf(NOTICE, "sequence window cleared");
+        return_value = 0;
       }
+      else
+        return_value = 0;
     }
 
     if(FD_ISSET(dev->fd_, &readyfds)) {
-      return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, seq_nr);
-      seq_nr++;
+      return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_nr);
       if(return_value)
         break;
     }
@@ -270,7 +266,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
     udp_socket_t* s = sock->socks_;
     while(s) {
       if(FD_ISSET(s->fd_, &readyfds)) {
-        return_value = process_sock_data(dev, s->fd_, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win); 
+        return_value = process_sock_data(dev, s->fd_, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win);
         if(return_value)
           break;
       }
@@ -312,7 +308,7 @@ int main(int argc, char* argv[])
       options_print_version();
     }
 
-    if(ret != -2 && ret != -5) 
+    if(ret != -2 && ret != -5)
       options_print_usage();
 
     if(ret == -1 || ret == -5)
@@ -332,7 +328,7 @@ int main(int argc, char* argv[])
       case -4: fprintf(stderr, "this log target is only allowed once: '%s', exitting\n", tmp->string_); break;
       default: fprintf(stderr, "syntax error near: '%s', exitting\n", tmp->string_); break;
       }
-        
+
       options_clear(&opt);
       log_close();
       exit(ret);
@@ -387,15 +383,8 @@ int main(int argc, char* argv[])
     exit(ret);
   }
 
-  if(opt.remote_addr_) {
-    if(!udp_set_remote(&sock, opt.remote_addr_, opt.remote_port_, opt.resolv_addr_type_)) {
-      char* remote_string = udp_get_remote_end_string(&sock);
-      if(remote_string) {
-        log_printf(NOTICE, "set remote end to: %s", remote_string);
-        free(remote_string);
-      }
-    }
-  }
+  if(opt.remote_addr_)
+    udp_resolv_remote(&sock, opt.remote_addr_, opt.remote_port_, opt.resolv_addr_type_);
 
 
   FILE* pid_file = NULL;
@@ -421,7 +410,7 @@ int main(int argc, char* argv[])
       options_clear(&opt);
       log_close();
       exit(-1);
-    }  
+    }
 
   if(opt.daemonize_) {
     pid_t oldpid = getpid();
