@@ -2,6 +2,11 @@
 
 * added RAIL mode
 
+2014.06.08 -- Version 0.3.5
+
+* fixed build issues for clang
+* refactored the multi socket support
+
 2010.02.16 -- Version 0.3.3
 
 * added -v|--version option
