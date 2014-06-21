@@ -152,15 +152,14 @@ int auth_algo_sha1_init(auth_algo_t* aa)
   if(!aa->params_)
     return -2;
 
-  auth_algo_sha1_param_t* params = aa->params_;
-
 #if defined(USE_SSL_CRYPTO)
+  auth_algo_sha1_param_t* params = aa->params_;
   HMAC_CTX_init(&params->ctx_);
   HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  // nothing here
 #else  // USE_GCRYPT is the default
+  auth_algo_sha1_param_t* params = aa->params_;
   gcry_error_t err = gcry_md_open(&params->handle_, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
   if(err) {
     log_printf(ERROR, "failed to open message digest algo: %s", gcry_strerror(err));
@@ -177,14 +176,13 @@ void auth_algo_sha1_close(auth_algo_t* aa)
     return;
 
   if(aa->params_) {
-    auth_algo_sha1_param_t* params = aa->params_;
-
 #if defined(USE_SSL_CRYPTO)
+    auth_algo_sha1_param_t* params = aa->params_;
     HMAC_CTX_cleanup(&params->ctx_);
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+    // nothing here
 #else  // USE_GCRYPT is the default
+    auth_algo_sha1_param_t* params = aa->params_;
     if(params->handle_)
       gcry_md_close(params->handle_);
 #endif
@@ -220,9 +218,11 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   HMAC_Final(&params->ctx_, hmac, NULL);
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-  u_int8_t hmac[SHA1_LENGTH];
+  hmac_sha1_set_key(&params->ctx_, aa->key_.length_, aa->key_.buf_);
 
+  u_int8_t hmac[SHA1_LENGTH];
+  hmac_sha1_update(&params->ctx_, encrypted_packet_get_auth_portion_length(packet), encrypted_packet_get_auth_portion(packet));
+  hmac_sha1_digest(&params->ctx_, SHA1_LENGTH, hmac);
 #else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
   if(err) {
@@ -272,9 +272,11 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   HMAC_Final(&params->ctx_, hmac, NULL);
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-  u_int8_t hmac[SHA1_LENGTH];
+  hmac_sha1_set_key(&params->ctx_, aa->key_.length_, aa->key_.buf_);
 
+  u_int8_t hmac[SHA1_LENGTH];
+  hmac_sha1_update(&params->ctx_, encrypted_packet_get_auth_portion_length(packet), encrypted_packet_get_auth_portion(packet));
+  hmac_sha1_digest(&params->ctx_, SHA1_LENGTH, hmac);
 #else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
   if(err) {

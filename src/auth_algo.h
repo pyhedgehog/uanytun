@@ -71,8 +71,7 @@ struct auth_algo_sha1_param_struct {
 #if defined(USE_SSL_CRYPTO)
   HMAC_CTX ctx_;
 #elif defined(USE_NETTLE)
-      // TOOD: nettle
-
+  struct hmac_sha1_ctx ctx_;
 #else  // USE_GCRYPT is the default
   gcry_md_hd_t handle_;
 #endif
