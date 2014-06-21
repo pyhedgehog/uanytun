@@ -303,7 +303,7 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
     return -1;
   }
 #elif defined(USE_NETTLE)
-  aes_set_encrypt_key(&params->ctx_, c->key_length_, c->key_.buf_);
+  aes_set_encrypt_key(&params->ctx_, c->key_.length_, c->key_.buf_);
 #else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
   if(err) {

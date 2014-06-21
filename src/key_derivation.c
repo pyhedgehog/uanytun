@@ -42,6 +42,7 @@
 #elif defined(USE_NETTLE)
 #include <nettle/sha1.h>
 #include <nettle/sha2.h>
+#include <nettle/ctr.h>
 #endif
 
 #include "log.h"
@@ -165,8 +166,10 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
 #if defined(USE_SSL_CRYPTO)
   SHA256((const u_int8_t*)passphrase, strlen(passphrase), digest.buf_);
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  struct sha256_ctx ctx;
+  sha256_init(&ctx);
+  sha256_update(&ctx, strlen(passphrase), (const u_int8_t*)passphrase);
+  sha256_digest(&ctx, digest.length_, digest.buf_);
 #else  // USE_GCRYPT is the default
   gcry_md_hash_buffer(GCRY_MD_SHA256, digest.buf_, passphrase, strlen(passphrase));
 #endif
@@ -227,8 +230,10 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
 #if defined(USE_SSL_CRYPTO)
   SHA1((const u_int8_t*)passphrase, strlen(passphrase), digest.buf_);
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  struct sha1_ctx ctx;
+  sha1_init(&ctx);
+  sha1_update(&ctx, strlen(passphrase), (const u_int8_t*)passphrase);
+  sha1_digest(&ctx, digest.length_, digest.buf_);
 #else  // USE_GCRYPT is the default
   gcry_md_hash_buffer(GCRY_MD_SHA1, digest.buf_, passphrase, strlen(passphrase));
 #endif
@@ -369,8 +374,7 @@ int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase)
     return -1;
   }
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  aes_set_encrypt_key(&params->ctx_, kd->master_key_.length_, kd->master_key_.buf_);
 #else  // USE_GCRYPT is the default
   int algo;
   switch(kd->key_length_) {
@@ -458,8 +462,12 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_derivation_dir_t di
   memset(key, 0, len);
   AES_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  if(KD_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
+    log_printf(ERROR, "failed to set cipher CTR: size doesn't fit");
+    return -1;
+  }
+  memset(key, 0, len);
+  ctr_crypt(&params->ctx_, (nettle_crypt_func *)(aes_encrypt), AES_BLOCK_SIZE, params->ctr_.buf_, len, key, key);
 #else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_cipher_reset(params->handle_);
   if(err) {

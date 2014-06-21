@@ -109,8 +109,7 @@ struct key_derivation_aesctr_param_struct {
   AES_KEY aes_key_;
   u_int8_t ecount_buf_[AES_BLOCK_SIZE];
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  struct aes_ctx ctx_;
 #else  // USE_GCRYPT is the default
   gcry_cipher_hd_t handle_;
 #endif
