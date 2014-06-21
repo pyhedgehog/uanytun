@@ -36,10 +36,12 @@
 #ifndef UANYTUN_auth_algo_h_INCLUDED
 #define UANYTUN_auth_algo_h_INCLUDED
 
-#ifndef USE_SSL_CRYPTO
-#include <gcrypt.h>
-#else
+#if defined(USE_SSL_CRYPTO)
 #include <openssl/hmac.h>
+#elif defined(USE_NETTLE)
+#include <nettle/hmac.h>
+#else  // USE_GCRYPT is the default
+#include <gcrypt.h>
 #endif
 #include "key_derivation.h"
 #include "encrypted_packet.h"
@@ -66,10 +68,12 @@ int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivation_di
 #define SHA1_LENGTH 20
 
 struct auth_algo_sha1_param_struct {
-#ifndef USE_SSL_CRYPTO
-  gcry_md_hd_t handle_;
-#else
+#if defined(USE_SSL_CRYPTO)
   HMAC_CTX ctx_;
+#elif defined(USE_NETTLE)
+  struct hmac_sha1_ctx ctx_;
+#else  // USE_GCRYPT is the default
+  gcry_md_hd_t handle_;
 #endif
 };
 typedef struct auth_algo_sha1_param_struct auth_algo_sha1_param_t;

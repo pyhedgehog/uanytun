@@ -61,7 +61,8 @@ print_usage() {
   echo "          --examplesdir=<DIR>       the path to the examples files (default: $PREFIX/share/examples)"
   echo "          --no-examples             dont't install example files"
   echo "          --use-gcrypt              use libgcrypt (this is the default)"
-  echo "          --use-ssl-crypto          use ssl crypto library instead of libgcrypt"
+  echo "          --use-nettle              use libnettle instead of libgcrypt"
+  echo "          --use-ssl-crypto          use openssl crypto library instead of libgcrypt"
   echo "          --no-crypto               disable crypto at all (only NULL cipher)"
   echo "          --disable-passphrase      disable master key and salt passphrase"
   echo "          --enable-passphrase       enable master key and salt passphrase"
@@ -100,6 +101,9 @@ do
   ;;
   --use-gcrypt)
     CRYPTO_LIB='gcrypt'
+  ;;
+  --use-nettle)
+    CRYPTO_LIB='nettle'
   ;;
   --use-ssl-crypto)
     CRYPTO_LIB='ssl'
@@ -169,8 +173,14 @@ esac
 
 case $CRYPTO_LIB in
   gcrypt)
+    CFLAGS=$CFLAGS' -DUSE_GCRYPT'
     LDFLAGS=$LDFLAGS' -lgcrypt'
-    echo "using libgcrypt library"
+    echo "using gcrypt library"
+  ;;
+  nettle)
+    CFLAGS=$CFLAGS' -DUSE_NETTLE'
+    LDFLAGS=$LDFLAGS' -lnettle'
+    echo "using nettle library"
   ;;
   ssl)
     CFLAGS=$CFLAGS' -DUSE_SSL_CRYPTO'
