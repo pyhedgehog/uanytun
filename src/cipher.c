@@ -39,6 +39,9 @@
 #include "encrypted_packet.h"
 
 #include "cipher.h"
+#if defined(USE_NETTLE)
+#include <nettle/ctr.h>
+#endif
 
 #include "log.h"
 
@@ -213,8 +216,7 @@ int cipher_aesctr_init(cipher_t* c)
 #if defined(USE_SSL_CRYPTO)
   // nothing here
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  // nothing here
 #else  // USE_GCRYPT is the default
   int algo;
   switch(c->key_length_) {
@@ -247,8 +249,7 @@ void cipher_aesctr_close(cipher_t* c)
 #if defined(USE_SSL_CRYPTO)
     // nothing here
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+    // nothing here
 #else  // USE_GCRYPT is the default
     cipher_aesctr_param_t* params = c->params_;
     gcry_cipher_close(params->handle_);
@@ -302,8 +303,7 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
     return -1;
   }
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  aes_set_encrypt_key(&params->ctx_, c->key_length_, c->key_.buf_);
 #else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
   if(err) {
@@ -327,8 +327,11 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
   memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
   AES_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
 #elif defined(USE_NETTLE)
-      // TODO: nettle
-
+  if(C_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
+    log_printf(ERROR, "failed to set cipher CTR: size doesn't fit");
+    return -1;
+  }
+  ctr_crypt(&params->ctx_, (nettle_crypt_func *)(aes_encrypt), AES_BLOCK_SIZE, params->ctr_.buf_, (ilen < olen) ? ilen : olen, out, in);
 #else  // USE_GCRYPT is the default
   err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
   if(err) {
