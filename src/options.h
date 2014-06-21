@@ -10,7 +10,7 @@
  *  tunnel endpoints.  It has less protocol overhead than IPSec in Tunnel
  *  mode and allows tunneling of every ETHER TYPE protocol (e.g.
  *  ethernet, ip, arp ...). satp directly includes cryptography and
- *  message authentication based on the methodes used by SRTP.  It is
+ *  message authentication based on the methods used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
  *
