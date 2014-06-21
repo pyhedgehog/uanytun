@@ -37,8 +37,11 @@
 
 #include "key_derivation.h"
 
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
 #include <openssl/sha.h>
+#elif defined(USE_NETTLE)
+#include <nettle/sha1.h>
+#include <nettle/sha2.h>
 #endif
 
 #include "log.h"
@@ -135,8 +138,10 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
     return -1;
   }
 
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
   if(key_length > (SHA256_DIGEST_LENGTH * 8)) {
+#elif defined(USE_NETTLE)
+  if(key_length > (SHA256_DIGEST_SIZE * 8)) {
 #else  // USE_GCRYPT is the default
   if(key_length > (gcry_md_get_algo_dlen(GCRY_MD_SHA256) * 8)) {
 #endif
@@ -145,8 +150,10 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
   }
 
   buffer_t digest;
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
   digest.length_ = SHA256_DIGEST_LENGTH;
+#elif defined(USE_NETTLE)
+  digest.length_ = SHA256_DIGEST_SIZE;
 #else  // USE_GCRYPT is the default
   digest.length_ = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
 #endif
@@ -155,8 +162,11 @@ int key_derivation_generate_master_key(key_derivation_t* kd, const char* passphr
     return -2;
 
 
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
   SHA256((const u_int8_t*)passphrase, strlen(passphrase), digest.buf_);
+#elif defined(USE_NETTLE)
+      // TODO: nettle
+
 #else  // USE_GCRYPT is the default
   gcry_md_hash_buffer(GCRY_MD_SHA256, digest.buf_, passphrase, strlen(passphrase));
 #endif
@@ -191,8 +201,10 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
     return -1;
   }
 
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
   if(salt_length > (SHA_DIGEST_LENGTH * 8)) {
+#elif defined(USE_NETTLE)
+  if(salt_length > (SHA1_DIGEST_SIZE * 8)) {
 #else  // USE_GCRYPT is the default
   if(salt_length > (gcry_md_get_algo_dlen(GCRY_MD_SHA1) * 8)) {
 #endif
@@ -201,8 +213,10 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
   }
 
   buffer_t digest;
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
   digest.length_ = SHA_DIGEST_LENGTH;
+#elif defined(USE_NETTLE)
+  digest.length_ = SHA1_DIGEST_SIZE;
 #else  // USE_GCRYPT is the default
   digest.length_ = gcry_md_get_algo_dlen(GCRY_MD_SHA1);
 #endif
@@ -210,8 +224,11 @@ int key_derivation_generate_master_salt(key_derivation_t* kd, const char* passph
   if(!digest.buf_)
     return -2;
 
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
   SHA1((const u_int8_t*)passphrase, strlen(passphrase), digest.buf_);
+#elif defined(USE_NETTLE)
+      // TODO: nettle
+
 #else  // USE_GCRYPT is the default
   gcry_md_hash_buffer(GCRY_MD_SHA1, digest.buf_, passphrase, strlen(passphrase));
 #endif
@@ -345,12 +362,15 @@ int key_derivation_aesctr_init(key_derivation_t* kd, const char* passphrase)
   }
 #endif
 
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
   int ret = AES_set_encrypt_key(kd->master_key_.buf_, kd->master_key_.length_*8, &params->aes_key_);
   if(ret) {
     log_printf(ERROR, "failed to set key derivation ssl aes-key (code: %d)", ret);
     return -1;
   }
+#elif defined(USE_NETTLE)
+      // TODO: nettle
+
 #else  // USE_GCRYPT is the default
   int algo;
   switch(kd->key_length_) {
@@ -428,7 +448,7 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_derivation_dir_t di
     return -1;
   }
 
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
   if(KD_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
     log_printf(ERROR, "failed to set key derivation CTR: size don't fits");
     return -1;
@@ -437,6 +457,9 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_derivation_dir_t di
   memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
   memset(key, 0, len);
   AES_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
+#elif defined(USE_NETTLE)
+      // TODO: nettle
+
 #else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_cipher_reset(params->handle_);
   if(err) {

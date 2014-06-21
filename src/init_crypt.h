@@ -48,7 +48,15 @@ int init_crypt()
 #else
 
 
-#ifdef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
+
+int init_crypt()
+{
+// nothing here
+  return 0;
+}
+
+#elif defined(USE_NETTLE)
 
 int init_crypt()
 {
