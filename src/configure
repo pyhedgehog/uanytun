@@ -169,6 +169,7 @@ esac
 
 case $CRYPTO_LIB in
   gcrypt)
+    CFLAGS=$CFLAGS' -DUSE_GCRYPT'
     LDFLAGS=$LDFLAGS' -lgcrypt'
     echo "using libgcrypt library"
   ;;

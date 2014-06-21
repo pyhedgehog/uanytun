@@ -36,10 +36,10 @@
 #ifndef UANYTUN_key_derivation_h_INCLUDED
 #define UANYTUN_key_derivation_h_INCLUDED
 
-#ifndef USE_SSL_CRYPTO
-#include <gcrypt.h>
-#else
+#ifdef USE_SSL_CRYPTO
 #include <openssl/aes.h>
+#else  // USE_GCRYPT is the default
+#include <gcrypt.h>
 #endif
 
 #include "options.h"
@@ -103,11 +103,11 @@ union __attribute__((__packed__)) key_derivation_aesctr_ctr_union {
 typedef union key_derivation_aesctr_ctr_union key_derivation_aesctr_ctr_t;
 
 struct key_derivation_aesctr_param_struct {
-#ifndef USE_SSL_CRYPTO
-  gcry_cipher_hd_t handle_;
-#else
+#ifdef USE_SSL_CRYPTO
   AES_KEY aes_key_;
   u_int8_t ecount_buf_[AES_BLOCK_SIZE];
+#else  // USE_GCRYPT is the default
+  gcry_cipher_hd_t handle_;
 #endif
   key_derivation_aesctr_ctr_t ctr_;
 };

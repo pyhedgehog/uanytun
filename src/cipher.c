@@ -210,7 +210,7 @@ int cipher_aesctr_init(cipher_t* c)
   if(!c->params_)
     return -2;
 
-#ifndef USE_SSL_CRYPTO
+#ifdef USE_GCRYPT
   int algo;
   switch(c->key_length_) {
   case 128: algo = GCRY_CIPHER_AES128; break;
@@ -239,7 +239,7 @@ void cipher_aesctr_close(cipher_t* c)
     return;
 
   if(c->params_) {
-#ifndef USE_SSL_CRYPTO
+#ifdef USE_GCRYPT
     cipher_aesctr_param_t* params = c->params_;
     gcry_cipher_close(params->handle_);
 #endif
@@ -288,10 +288,10 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
 #ifdef USE_SSL_CRYPTO
   ret = AES_set_encrypt_key(c->key_.buf_, c->key_length_, &params->aes_key_);
   if(ret) {
-    log_printf(ERROR, "failed to set cipher ssl aes-key (code: %d)", ret);
+    log_printf(ERROR, "failed to set cipher key (code: %d)", ret);
     return -1;
   }
-#else
+#else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_cipher_setkey(params->handle_, c->key_.buf_, c->key_.length_);
   if(err) {
     log_printf(ERROR, "failed to set cipher key: %s", gcry_strerror(err));
@@ -305,7 +305,15 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
     return ret;
   }
 
-#ifndef USE_SSL_CRYPTO
+#ifdef USE_SSL_CRYPTO
+  if(C_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
+    log_printf(ERROR, "failed to set cipher CTR: size doesn't fit");
+    return -1;
+  }
+  u_int32_t num = 0;
+  memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
+  AES_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
+#else  // USE_GCRYPT is the default
   err = gcry_cipher_setctr(params->handle_, params->ctr_.buf_, C_AESCTR_CTR_LENGTH);
   if(err) {
     log_printf(ERROR, "failed to set cipher CTR: %s", gcry_strerror(err));
@@ -317,14 +325,6 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
     log_printf(ERROR, "failed to de/encrypt packet: %s", gcry_strerror(err));
     return -1;
   }
-#else
-  if(C_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
-    log_printf(ERROR, "failed to set cipher CTR: size don't fits");
-    return -1;
-  }
-  u_int32_t num = 0;
-  memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
-  AES_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
 #endif
 
   return (ilen < olen) ? ilen : olen;

@@ -48,7 +48,15 @@ int init_crypt()
 #else
 
 
-#ifndef USE_SSL_CRYPTO
+#ifdef USE_SSL_CRYPTO
+
+int init_crypt()
+{
+// nothing here
+  return 0;
+}
+
+#else  // USE_GCRYPT is the default
 
 #include <gcrypt.h>
 
@@ -74,14 +82,6 @@ int init_crypt()
   }
 
   log_printf(NOTICE, "libgcrypt init finished");
-  return 0;
-}
-
-#else
-
-int init_crypt()
-{
-// nothing here
   return 0;
 }
 

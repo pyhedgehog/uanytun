@@ -38,9 +38,9 @@
 
 #ifndef NO_CRYPT
 #ifndef USE_SSL_CRYPTO
-#include <gcrypt.h>
-#else
 #include <openssl/aes.h>
+#else  // USE_GCRYPT is the default
+#include <gcrypt.h>
 #endif
 #include "key_derivation.h"
 #else
@@ -94,11 +94,11 @@ union __attribute__((__packed__)) cipher_aesctr_ctr_union {
 typedef union cipher_aesctr_ctr_union cipher_aesctr_ctr_t;
 
 struct cipher_aesctr_param_struct {
-#ifndef USE_SSL_CRYPTO
-  gcry_cipher_hd_t handle_;
-#else
+#ifdef USE_SSL_CRYPTO
   AES_KEY aes_key_;
   u_int8_t ecount_buf_[AES_BLOCK_SIZE];
+#else  // USE_GCRYPT is the default
+  gcry_cipher_hd_t handle_;
 #endif
   cipher_aesctr_ctr_t ctr_;
 };
