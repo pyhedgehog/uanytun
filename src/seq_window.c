@@ -214,7 +214,7 @@ void seq_win_print(seq_win_t* win)
   while(ptr) {
     printf(" [%u]: (%u)-", ptr->sender_id_, ptr->max_);
     window_size_t i = ptr->pos_;
-    while(1) {
+    for(;;) {
       if(ptr->window_[i])
         printf("O");
       else
