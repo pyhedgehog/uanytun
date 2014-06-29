@@ -83,14 +83,23 @@ int unixdomain_init(unixdomain_t* sock, const char* path)
 
   strncpy(sock->server_addr_.sun_path, path, sizeof(sock->server_addr_.sun_path)-1);
 
-  unlink(sock->server_addr_.sun_path); // remove stale socket
-      // TODO: error handling
+  if(unlink(sock->server_addr_.sun_path)) {
+    if(errno != ENOENT)
+      log_printf(WARNING, "unix domain socket '%s' unlink(): %s", sock->server_addr_.sun_path, strerror(errno));
+  }
 
-  bind(sock->server_fd_, (struct sockaddr*)&(sock->server_addr_), sizeof(sock->server_addr_));
-      // TODO: error handling
+  if(bind(sock->server_fd_, (struct sockaddr*)&(sock->server_addr_), sizeof(sock->server_addr_))) {
+    log_printf(ERROR, "unix domain socket '%s' bind(): %s", sock->server_addr_.sun_path, strerror(errno));
+    unixdomain_close(sock);
+    return -1;
+  }
+      // TODO: permissions
 
-  listen(sock->server_fd_, 1);
-      // TODO: error handling
+  if(listen(sock->server_fd_, 1)) {
+    log_printf(ERROR, "unix domain socket '%s' listen(): %s", sock->server_addr_.sun_path, strerror(errno));
+    unixdomain_close(sock);
+    return -1;
+  }
 
   log_printf(NOTICE, "unixdomain socket listening on: %s", sock->server_addr_.sun_path);
 
@@ -123,8 +132,10 @@ void unixdomain_close(unixdomain_t* sock)
     close(sock->client_fd_);
   if(sock->server_fd_ >= 0) {
     close(sock->server_fd_);
-    unlink(sock->server_addr_.sun_path);
-        // TODO: error handling?
+    if(unlink(sock->server_addr_.sun_path)) {
+      if(errno != ENOENT)
+        log_printf(WARNING, "unix domain socket '%s' unlink(): %s", sock->server_addr_.sun_path, strerror(errno));
+    }
   }
 }
 
@@ -135,7 +146,7 @@ int unixdomain_accept(unixdomain_t* sock)
 
   int new_client = accept(sock->server_fd_, NULL, NULL);
   if(new_client < 0) {
-        //  TODO: error HANDLING
+    log_printf(ERROR, "unix domain socket '%s' accept(): %s", sock->server_addr_.sun_path, strerror(errno));
     return -1;
   }
 

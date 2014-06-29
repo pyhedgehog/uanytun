@@ -219,7 +219,9 @@ int process_key_exchange(unixdomain_t* sock, fd_set* readyfds)
 {
   if(FD_ISSET(sock->server_fd_, readyfds)) {
     int old_fd = sock->client_fd_;
-    unixdomain_accept(sock);
+    if(unixdomain_accept(sock)) {
+      return -1;
+    }
     if(old_fd != sock->client_fd_) {
       log_printf(INFO, "key exchange: new client");
     }
