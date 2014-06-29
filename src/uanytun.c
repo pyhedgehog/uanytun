@@ -235,6 +235,7 @@ int process_key_exchange(unixdomain_t* sock, fd_set* readyfds)
     } else {
       buf[len] = 0;
       log_printf(DEBUG, "key exchange: received string '%s'", buf);
+      unixdomain_write(sock, buf, len);
     }
   }
 
