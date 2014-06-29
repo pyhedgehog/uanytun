@@ -58,7 +58,8 @@ int keyexchange_init(keyexchange_t* kx, const char* path_control, const char* pa
   if(!kx)
     return -1;
 
-  int ret = unixdomain_init(&(kx->control_interface_), path_control);
+//  int ret = unixdomain_init(&(kx->control_interface_), path_control);
+  int ret = unixdomain_init(&(kx->control_interface_), NULL); // ignore control interface for now
   if(ret) return ret;
 
   ret = unixdomain_init(&(kx->data_interface_), path_data);
