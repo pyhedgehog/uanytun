@@ -62,9 +62,8 @@ Installation
 Getting the source via subversion:
 ----------------------------------
 
-svn co https://svn.anytun.org/uanytun/trunk uanytun
+svn co http://svn.anytun.org/uanytun/trunk uanytun
 cd uanytun
-
 
 Building from source
 --------------------
@@ -80,6 +79,7 @@ using ssl crypto library:
 # cd src
 # ./configure --use-ssl-crypto
 # make
+
 
 Notes:
   - try './configure --help' for further information
