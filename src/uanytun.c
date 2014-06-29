@@ -65,6 +65,7 @@
 
 #include "seq_window.h"
 
+#include "keyexchange.h"
 #include "cipher.h"
 #ifndef NO_CRYPT
 #include "key_derivation.h"
@@ -77,14 +78,19 @@ typedef u_int8_t auth_algo_t;
 #include "daemon.h"
 #include "sysexec.h"
 
-#include "unixdomain.h"
 
-
-int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
+int init_main_loop(options_t* opt, keyexchange_t* kx, cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
-  int ret = cipher_init(c, opt->cipher_);
+  int ret = keyexchange_init(kx, opt->kx_control_interface_, opt->kx_data_interface_);
+  if(ret) {
+    log_printf(ERROR, "could not initialize key exchange interface");
+    return ret;
+  }
+
+  ret = cipher_init(c, opt->cipher_);
   if(ret) {
     log_printf(ERROR, "could not initialize cipher of type %s", opt->cipher_);
+    keyexchange_close(kx);
     return ret;
   }
 
@@ -92,6 +98,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
   ret = auth_algo_init(aa, opt->auth_algo_);
   if(ret) {
     log_printf(ERROR, "could not initialize auth algo of type %s", opt->auth_algo_);
+    keyexchange_close(kx);
     cipher_close(c);
     return ret;
   }
@@ -99,6 +106,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
   ret = key_derivation_init(kd, opt->kd_prf_, opt->role_, opt->passphrase_, opt->key_.buf_, opt->key_.length_, opt->salt_.buf_, opt->salt_.length_);
   if(ret) {
     log_printf(ERROR, "could not initialize key derivation of type %s", opt->kd_prf_);
+    keyexchange_close(kx);
     cipher_close(c);
     auth_algo_close(aa);
     return ret;
@@ -108,6 +116,7 @@ int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_
   ret = seq_win_init(seq_win, opt->seq_window_size_);
   if(ret) {
     printf("could not initialize sequence window");
+    keyexchange_close(kx);
     cipher_close(c);
 #ifndef NO_CRYPT
     auth_algo_close(aa);
@@ -214,38 +223,6 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
 }
 
 
-
-int process_key_exchange(unixdomain_t* sock, fd_set* readyfds)
-{
-  if(FD_ISSET(sock->server_fd_, readyfds)) {
-    int old_fd = sock->client_fd_;
-    if(unixdomain_accept(sock)) {
-      return -1;
-    }
-    if(old_fd != sock->client_fd_) {
-      log_printf(INFO, "key exchange: new client");
-    }
-  }
-  if(FD_ISSET(sock->client_fd_, readyfds)) {
-    u_int8_t buf[100];
-    int len = unixdomain_read(sock, buf, sizeof(buf));
-    if(len < 0) {
-      log_printf(ERROR, "key exchange: client error!!!!!");
-    } if(!len) {
-      log_printf(INFO, "key exchange: client disconnected");
-      sock->client_fd_ = -1;
-    } else {
-      buf[len] = 0;
-      log_printf(DEBUG, "key exchange: received string '%s'", buf);
-      unixdomain_write(sock, buf, len);
-    }
-  }
-
-  return 0;
-}
-
-
-
 int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 {
   log_printf(INFO, "entering main loop");
@@ -257,19 +234,15 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
   seq_nr_t seq_nr = 0;
   fd_set readfds, readyfds;
 
+  keyexchange_t kx;
   cipher_t c;
   auth_algo_t aa;
   key_derivation_t kd;
   seq_win_t seq_win;
 
-  int ret = init_main_loop(opt, &c, &aa, &kd, &seq_win);
+  int ret = init_main_loop(opt, &kx, &c, &aa, &kd, &seq_win);
   if(ret)
     return ret;
-
-
-  unixdomain_t kx_data;
-  unixdomain_init(&kx_data, opt->kx_data_interface_);
-
 
   FD_ZERO(&readfds);
   FD_SET(dev->fd_, &readfds);
@@ -286,7 +259,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 
   while(!return_value) {
     memcpy(&readyfds, &readfds, sizeof(readyfds));
-    int kx_max_fd = unixdomain_fill_fd_set(&kx_data, &readyfds);
+    int kx_max_fd = keyexchange_fill_fd_set(&kx, &readyfds, NULL);
     int tmp = (nfds < kx_max_fd) ? kx_max_fd : nfds;
     int ret = select(tmp + 1, &readyfds, NULL, NULL, NULL);
     if(ret == -1 && errno != EINTR) {
@@ -317,12 +290,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
         break;
     }
 
-    if(FD_ISSET(kx_data.server_fd_, &readyfds) || FD_ISSET(kx_data.server_fd_, &readyfds) ||
-       FD_ISSET(kx_data.client_fd_, &readyfds) || FD_ISSET(kx_data.client_fd_, &readyfds)) {
-      return_value = process_key_exchange(&kx_data, &readyfds);
-      if(return_value)
-        break;
-    }
+    keyexchange_handle(&kx, &readyfds, NULL);
 
     udp_socket_t* s = sock->socks_;
     while(s) {
@@ -335,8 +303,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
     }
   }
 
-  unixdomain_close(&kx_data);
-
+  keyexchange_close(&kx);
   cipher_close(&c);
 #ifndef NO_CRYPT
   auth_algo_close(&aa);

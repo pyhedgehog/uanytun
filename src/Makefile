@@ -66,6 +66,7 @@ OBJ := log.o \
        seq_window.o \
        cipher.o \
        unixdomain.o \
+       keyexchange.o \
        uanytun.o
 
 
