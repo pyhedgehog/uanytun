@@ -214,6 +214,35 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
 }
 
 
+
+int process_key_exchange(unixdomain_t* sock, fd_set* readyfds)
+{
+  if(FD_ISSET(sock->server_fd_, readyfds)) {
+    int old_fd = sock->client_fd_;
+    unixdomain_accept(sock);
+    if(old_fd != sock->client_fd_) {
+      log_printf(INFO, "key exchange: new client");
+    }
+  }
+  if(FD_ISSET(sock->client_fd_, readyfds)) {
+    u_int8_t buf[100];
+    int len = unixdomain_read(sock, buf, sizeof(buf));
+    if(len < 0) {
+      log_printf(ERROR, "key exchange: client error!!!!!");
+    } if(!len) {
+      log_printf(INFO, "key exchange: client disconnected");
+      sock->client_fd_ = -1;
+    } else {
+      buf[len] = 0;
+      log_printf(DEBUG, "key exchange: received string '%s'", buf);
+    }
+  }
+
+  return 0;
+}
+
+
+
 int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 {
   log_printf(INFO, "entering main loop");
@@ -254,7 +283,9 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 
   while(!return_value) {
     memcpy(&readyfds, &readfds, sizeof(readyfds));
-    int ret = select(nfds + 1, &readyfds, NULL, NULL, NULL);
+    int kx_max_fd = unixdomain_fill_fd_set(&kx_data, &readyfds);
+    int tmp = (nfds < kx_max_fd) ? kx_max_fd : nfds;
+    int ret = select(tmp + 1, &readyfds, NULL, NULL, NULL);
     if(ret == -1 && errno != EINTR) {
       log_printf(ERROR, "select returned with error: %s", strerror(errno));
       return_value = -1;
@@ -279,6 +310,13 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 
     if(FD_ISSET(dev->fd_, &readyfds)) {
       return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_nr);
+      if(return_value)
+        break;
+    }
+
+    if(FD_ISSET(kx_data.server_fd_, &readyfds) || FD_ISSET(kx_data.server_fd_, &readyfds) ||
+       FD_ISSET(kx_data.client_fd_, &readyfds) || FD_ISSET(kx_data.client_fd_, &readyfds)) {
+      return_value = process_key_exchange(&kx_data, &readyfds);
       if(return_value)
         break;
     }
