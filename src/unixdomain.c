@@ -61,7 +61,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-
 int unixdomain_init(unixdomain_t* sock, const char* path)
 {
   if(!sock)
@@ -93,7 +92,6 @@ int unixdomain_init(unixdomain_t* sock, const char* path)
     unixdomain_close(sock);
     return -1;
   }
-      // TODO: permissions
 
   if(listen(sock->server_fd_, 1)) {
     log_printf(ERROR, "unix domain socket '%s' listen(): %s", sock->server_addr_.sun_path, strerror(errno));
