@@ -90,6 +90,8 @@ struct options_struct {
   char* auth_algo_;
   char* passphrase_;
   role_t role_;
+  char* kx_control_interface_;
+  char* kx_data_interface_;
 #endif
   u_int32_t auth_tag_length_;
   buffer_t key_;

@@ -281,6 +281,8 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
     PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
     PARSE_INT_PARAM("-b","--auth-tag-length", opt->auth_tag_length_)
+    PARSE_STRING_PARAM("-z","--kx-control", opt->kx_control_interface_)
+    PARSE_STRING_PARAM("-Z","--kx-data", opt->kx_data_interface_)
 #endif
     else
       return i;
@@ -378,6 +380,8 @@ void options_default(options_t* opt)
   opt->cipher_ = strdup("aes-ctr");
   opt->auth_algo_ = strdup("sha1");
   opt->auth_tag_length_ = 10;
+  opt->kx_control_interface_ = NULL;
+  opt->kx_data_interface_ = NULL;
 #else
   opt->cipher_ = strdup("null");
   opt->auth_tag_length_ = 0;
@@ -429,6 +433,10 @@ void options_clear(options_t* opt)
     free(opt->kd_prf_);
   if(opt->passphrase_)
     free(opt->passphrase_);
+  if(opt->kx_control_interface_)
+    free(opt->kx_control_interface_);
+  if(opt->kx_data_interface_)
+    free(opt->kx_data_interface_);
 #endif
   if(opt->key_.buf_)
     free(opt->key_.buf_);
@@ -475,6 +483,9 @@ void options_print_usage()
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
   printf("        [-b|--auth-tag-length] <length>     length of the auth tag\n");
+  printf("        [-z|--kx-control] <path>            path to the key exchange control socket\n");
+  printf("        [-Z|--kx-data] <path>               path to the key exchange data socket\n");
+
 #endif
 }
 
@@ -489,54 +500,57 @@ void options_print(options_t* opt)
   if(!opt)
     return;
 
-  printf("progname: '%s'\n", opt->progname_);
-  printf("daemonize: %d\n", opt->daemonize_);
-  printf("username: '%s'\n", opt->username_);
-  printf("groupname: '%s'\n", opt->groupname_);
-  printf("chroot_dir: '%s'\n", opt->chroot_dir_);
-  printf("pid_file: '%s'\n", opt->pid_file_);
-  printf("log_targets: \n");
-  string_list_print(&opt->log_targets_, "  '", "'\n");
-  printf("debug: %s\n", !opt->debug_ ? "false" : "true");
-  printf("local_addr: '%s'\n", opt->local_addr_);
-  printf("local_port: '%s'\n", opt->local_port_);
-  printf("sender_id: %d\n", opt->sender_id_);
-  printf("remote_addr: '%s'\n", opt->remote_addr_);
-  printf("remote_port: '%s'\n", opt->remote_port_);
-  printf("resolv_addr_type: ");
+  printf("command line options:\n");
+  printf("  progname: '%s'\n", opt->progname_);
+  printf("  daemonize: %d\n", opt->daemonize_);
+  printf("  username: '%s'\n", opt->username_);
+  printf("  groupname: '%s'\n", opt->groupname_);
+  printf("  chroot_dir: '%s'\n", opt->chroot_dir_);
+  printf("  pid_file: '%s'\n", opt->pid_file_);
+  printf("  log_targets: \n");
+  string_list_print(&opt->log_targets_, "    '", "'\n");
+  printf("  debug: %s\n", !opt->debug_ ? "false" : "true");
+  printf("  local_addr: '%s'\n", opt->local_addr_);
+  printf("  local_port: '%s'\n", opt->local_port_);
+  printf("  sender_id: %d\n", opt->sender_id_);
+  printf("  remote_addr: '%s'\n", opt->remote_addr_);
+  printf("  remote_port: '%s'\n", opt->remote_port_);
+  printf("  resolv_addr_type: ");
   switch(opt->resolv_addr_type_) {
   case ANY: printf("any\n"); break;
   case IPV4_ONLY: printf("ipv4-only\n"); break;
   case IPV6_ONLY: printf("ipv6-only\n"); break;
   default: printf("??\n"); break;
   }
-  printf("dev_name: '%s'\n", opt->dev_name_);
-  printf("dev_type: '%s'\n", opt->dev_type_);
-  printf("ifconfig_net_addr: '%s'\n", opt->ifconfig_param_.net_addr_);
-  printf("ifconfig_prefix_length: %d\n", opt->ifconfig_param_.prefix_length_);
-  printf("post_up_script: '%s'\n", opt->post_up_script_);
-  printf("mux: %d\n", opt->mux_);
-  printf("seq_window_size: %d\n", opt->seq_window_size_);
-  printf("cipher: '%s'\n", opt->cipher_);
+  printf("  dev_name: '%s'\n", opt->dev_name_);
+  printf("  dev_type: '%s'\n", opt->dev_type_);
+  printf("  ifconfig_net_addr: '%s'\n", opt->ifconfig_param_.net_addr_);
+  printf("  ifconfig_prefix_length: %d\n", opt->ifconfig_param_.prefix_length_);
+  printf("  post_up_script: '%s'\n", opt->post_up_script_);
+  printf("  mux: %d\n", opt->mux_);
+  printf("  seq_window_size: %d\n", opt->seq_window_size_);
+  printf("  cipher: '%s'\n", opt->cipher_);
 #ifndef NO_CRYPT
-  printf("auth_algo: '%s'\n", opt->auth_algo_);
-  printf("auth_tag_length: %d\n", opt->auth_tag_length_);
-  printf("kd_prf: '%s'\n", opt->kd_prf_);
-  printf("passphrase: '%s'\n", opt->passphrase_);
-  printf("role: ");
+  printf("  auth_algo: '%s'\n", opt->auth_algo_);
+  printf("  auth_tag_length: %d\n", opt->auth_tag_length_);
+  printf("  kd_prf: '%s'\n", opt->kd_prf_);
+  printf("  passphrase: '%s'\n", opt->passphrase_);
+  printf("  role: ");
   switch(opt->role_) {
   case ROLE_LEFT: printf("left\n"); break;
   case ROLE_RIGHT: printf("right\n"); break;
   default: printf("??\n"); break;
   }
+  printf("  kx_control: '%s'\n", opt->kx_control_interface_);
+  printf("  kx_data: '%s'\n", opt->kx_data_interface_);
 #endif
 
   u_int32_t i;
-  printf("key_[%d]: '", opt->key_.length_);
+  printf("  key_[%d]: '", opt->key_.length_);
   for(i=0; i<opt->key_.length_; ++i) printf("%02X", opt->key_.buf_[i]);
   printf("'\n");
 
-  printf("salt_[%d]: '", opt->salt_.length_);
+  printf("  salt_[%d]: '", opt->salt_.length_);
   for(i=0; i<opt->salt_.length_; ++i) printf("%02X", opt->salt_.buf_[i]);
   printf("'\n");
 }

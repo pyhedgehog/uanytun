@@ -352,6 +352,9 @@ int main(int argc, char* argv[])
   log_printf(NOTICE, "just started...");
   options_parse_post(&opt);
 
+  if(opt.debug_)
+    options_print(&opt);
+
   priv_info_t priv;
   if(opt.username_)
     if(priv_init(&priv, opt.username_, opt.groupname_)) {
