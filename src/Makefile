@@ -65,6 +65,7 @@ OBJ := log.o \
        encrypted_packet.o \
        seq_window.o \
        cipher.o \
+       unixdomain.o \
        uanytun.o
 
 

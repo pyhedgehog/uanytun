@@ -77,6 +77,8 @@ typedef u_int8_t auth_algo_t;
 #include "daemon.h"
 #include "sysexec.h"
 
+#include "unixdomain.h"
+
 
 int init_main_loop(options_t* opt, cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
@@ -232,6 +234,11 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
   if(ret)
     return ret;
 
+
+  unixdomain_t kx_data;
+  unixdomain_init(&kx_data, opt->kx_data_interface_);
+
+
   FD_ZERO(&readfds);
   FD_SET(dev->fd_, &readfds);
   int nfds = udp_fill_fd_set(sock, &readfds);
@@ -286,6 +293,8 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
       s = s->next_;
     }
   }
+
+  unixdomain_close(&kx_data);
 
   cipher_close(&c);
 #ifndef NO_CRYPT
