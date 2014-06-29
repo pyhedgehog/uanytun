@@ -10,7 +10,7 @@
  *  tunnel endpoints.  It has less protocol overhead than IPSec in Tunnel
  *  mode and allows tunneling of every ETHER TYPE protocol (e.g.
  *  ethernet, ip, arp ...). satp directly includes cryptography and
- *  message authentication based on the methodes used by SRTP.  It is
+ *  message authentication based on the methods used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
  *
@@ -31,6 +31,19 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  In addition, as a special exception, the copyright holders give
+ *  permission to link the code of portions of this program with the
+ *  OpenSSL library under certain conditions as described in each
+ *  individual source file, and distribute linked combinations
+ *  including the two.
+ *  You must obey the GNU General Public License in all respects
+ *  for all of the code used other than OpenSSL.  If you modify
+ *  file(s) with this exception, you may extend this exception to your
+ *  version of the file(s), but you are not obligated to do so.  If you
+ *  do not wish to do so, delete this exception statement from your
+ *  version.  If you delete this exception statement from all source
+ *  files in the program, then also delete it here.
  */
 
 #include "datatypes.h"
@@ -152,17 +165,19 @@ int auth_algo_sha1_init(auth_algo_t* aa)
   if(!aa->params_)
     return -2;
 
+#if defined(USE_SSL_CRYPTO)
   auth_algo_sha1_param_t* params = aa->params_;
-
-#ifndef USE_SSL_CRYPTO
+  HMAC_CTX_init(&params->ctx_);
+  HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
+#elif defined(USE_NETTLE)
+  // nothing here
+#else  // USE_GCRYPT is the default
+  auth_algo_sha1_param_t* params = aa->params_;
   gcry_error_t err = gcry_md_open(&params->handle_, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
   if(err) {
     log_printf(ERROR, "failed to open message digest algo: %s", gcry_strerror(err));
     return -1;
   }
-#else
-  HMAC_CTX_init(&params->ctx_);
-  HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
 #endif
 
   return 0;
@@ -174,13 +189,15 @@ void auth_algo_sha1_close(auth_algo_t* aa)
     return;
 
   if(aa->params_) {
+#if defined(USE_SSL_CRYPTO)
     auth_algo_sha1_param_t* params = aa->params_;
-
-#ifndef USE_SSL_CRYPTO
+    HMAC_CTX_cleanup(&params->ctx_);
+#elif defined(USE_NETTLE)
+    // nothing here
+#else  // USE_GCRYPT is the default
+    auth_algo_sha1_param_t* params = aa->params_;
     if(params->handle_)
       gcry_md_close(params->handle_);
-#else
-    HMAC_CTX_cleanup(&params->ctx_);
 #endif
 
     free(aa->params_);
@@ -207,7 +224,19 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   if(ret < 0)
     return;
 
-#ifndef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
+  HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
+
+  u_int8_t hmac[SHA1_LENGTH];
+  HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
+  HMAC_Final(&params->ctx_, hmac, NULL);
+#elif defined(USE_NETTLE)
+  hmac_sha1_set_key(&params->ctx_, aa->key_.length_, aa->key_.buf_);
+
+  u_int8_t hmac[SHA1_LENGTH];
+  hmac_sha1_update(&params->ctx_, encrypted_packet_get_auth_portion_length(packet), encrypted_packet_get_auth_portion(packet));
+  hmac_sha1_digest(&params->ctx_, SHA1_LENGTH, hmac);
+#else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
   if(err) {
     log_printf(ERROR, "failed to set hmac key: %s", gcry_strerror(err));
@@ -218,12 +247,6 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   gcry_md_write(params->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   gcry_md_final(params->handle_);
   u_int8_t* hmac = gcry_md_read(params->handle_, 0);
-#else
-  HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
-
-  u_int8_t hmac[SHA1_LENGTH];
-  HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
-  HMAC_Final(&params->ctx_, hmac, NULL);
 #endif
 
   u_int8_t* tag = encrypted_packet_get_auth_tag(packet);
@@ -255,7 +278,19 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   if(ret < 0)
     return 0;
 
-#ifndef USE_SSL_CRYPTO
+#if defined(USE_SSL_CRYPTO)
+  HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
+
+  u_int8_t hmac[SHA1_LENGTH];
+  HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
+  HMAC_Final(&params->ctx_, hmac, NULL);
+#elif defined(USE_NETTLE)
+  hmac_sha1_set_key(&params->ctx_, aa->key_.length_, aa->key_.buf_);
+
+  u_int8_t hmac[SHA1_LENGTH];
+  hmac_sha1_update(&params->ctx_, encrypted_packet_get_auth_portion_length(packet), encrypted_packet_get_auth_portion(packet));
+  hmac_sha1_digest(&params->ctx_, SHA1_LENGTH, hmac);
+#else  // USE_GCRYPT is the default
   gcry_error_t err = gcry_md_setkey(params->handle_, aa->key_.buf_, aa->key_.length_);
   if(err) {
     log_printf(ERROR, "failed to set hmac key: %s", gcry_strerror(err));
@@ -266,12 +301,6 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivati
   gcry_md_write(params->handle_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
   gcry_md_final(params->handle_);
   u_int8_t* hmac = gcry_md_read(params->handle_, 0);
-#else
-  HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
-
-  u_int8_t hmac[SHA1_LENGTH];
-  HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
-  HMAC_Final(&params->ctx_, hmac, NULL);
 #endif
 
   u_int8_t* tag = encrypted_packet_get_auth_tag(packet);

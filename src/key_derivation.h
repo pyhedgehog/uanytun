@@ -10,7 +10,7 @@
  *  tunnel endpoints.  It has less protocol overhead than IPSec in Tunnel
  *  mode and allows tunneling of every ETHER TYPE protocol (e.g.
  *  ethernet, ip, arp ...). satp directly includes cryptography and
- *  message authentication based on the methodes used by SRTP.  It is
+ *  message authentication based on the methods used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
  *
@@ -31,15 +31,30 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  In addition, as a special exception, the copyright holders give
+ *  permission to link the code of portions of this program with the
+ *  OpenSSL library under certain conditions as described in each
+ *  individual source file, and distribute linked combinations
+ *  including the two.
+ *  You must obey the GNU General Public License in all respects
+ *  for all of the code used other than OpenSSL.  If you modify
+ *  file(s) with this exception, you may extend this exception to your
+ *  version of the file(s), but you are not obligated to do so.  If you
+ *  do not wish to do so, delete this exception statement from your
+ *  version.  If you delete this exception statement from all source
+ *  files in the program, then also delete it here.
  */
 
 #ifndef UANYTUN_key_derivation_h_INCLUDED
 #define UANYTUN_key_derivation_h_INCLUDED
 
-#ifndef USE_SSL_CRYPTO
-#include <gcrypt.h>
-#else
+#if defined(USE_SSL_CRYPTO)
 #include <openssl/aes.h>
+#elif defined(USE_NETTLE)
+#include <nettle/aes.h>
+#else  // USE_GCRYPT is the default
+#include <gcrypt.h>
 #endif
 
 #include "options.h"
@@ -103,11 +118,13 @@ union __attribute__((__packed__)) key_derivation_aesctr_ctr_union {
 typedef union key_derivation_aesctr_ctr_union key_derivation_aesctr_ctr_t;
 
 struct key_derivation_aesctr_param_struct {
-#ifndef USE_SSL_CRYPTO
-  gcry_cipher_hd_t handle_;
-#else
+#if defined(USE_SSL_CRYPTO)
   AES_KEY aes_key_;
   u_int8_t ecount_buf_[AES_BLOCK_SIZE];
+#elif defined(USE_NETTLE)
+  struct aes_ctx ctx_;
+#else  // USE_GCRYPT is the default
+  gcry_cipher_hd_t handle_;
 #endif
   key_derivation_aesctr_ctr_t ctr_;
 };

@@ -10,7 +10,7 @@
  *  tunnel endpoints.  It has less protocol overhead than IPSec in Tunnel
  *  mode and allows tunneling of every ETHER TYPE protocol (e.g.
  *  ethernet, ip, arp ...). satp directly includes cryptography and
- *  message authentication based on the methodes used by SRTP.  It is
+ *  message authentication based on the methods used by SRTP.  It is
  *  intended to deliver a generic, scaleable and secure solution for
  *  tunneling and relaying of packets of any protocol.
  *
@@ -31,15 +31,30 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with uAnytun. If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  In addition, as a special exception, the copyright holders give
+ *  permission to link the code of portions of this program with the
+ *  OpenSSL library under certain conditions as described in each
+ *  individual source file, and distribute linked combinations
+ *  including the two.
+ *  You must obey the GNU General Public License in all respects
+ *  for all of the code used other than OpenSSL.  If you modify
+ *  file(s) with this exception, you may extend this exception to your
+ *  version of the file(s), but you are not obligated to do so.  If you
+ *  do not wish to do so, delete this exception statement from your
+ *  version.  If you delete this exception statement from all source
+ *  files in the program, then also delete it here.
  */
 
 #ifndef UANYTUN_auth_algo_h_INCLUDED
 #define UANYTUN_auth_algo_h_INCLUDED
 
-#ifndef USE_SSL_CRYPTO
-#include <gcrypt.h>
-#else
+#if defined(USE_SSL_CRYPTO)
 #include <openssl/hmac.h>
+#elif defined(USE_NETTLE)
+#include <nettle/hmac.h>
+#else  // USE_GCRYPT is the default
+#include <gcrypt.h>
 #endif
 #include "key_derivation.h"
 #include "encrypted_packet.h"
@@ -66,10 +81,12 @@ int auth_algo_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivation_di
 #define SHA1_LENGTH 20
 
 struct auth_algo_sha1_param_struct {
-#ifndef USE_SSL_CRYPTO
-  gcry_md_hd_t handle_;
-#else
+#if defined(USE_SSL_CRYPTO)
   HMAC_CTX ctx_;
+#elif defined(USE_NETTLE)
+  struct hmac_sha1_ctx ctx_;
+#else  // USE_GCRYPT is the default
+  gcry_md_hd_t handle_;
 #endif
 };
 typedef struct auth_algo_sha1_param_struct auth_algo_sha1_param_t;

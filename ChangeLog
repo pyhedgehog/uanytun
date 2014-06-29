@@ -2,7 +2,12 @@
 
 * added RAIL mode
 
-2014.06.08 -- Version 0.3.5
+2014.06.21 -- Version 0.3.5
+
+* added support for libnettle as crypt library
+* added an exception to the license which allows linking with OpenSSL
+
+2014.06.08 -- Version 0.3.4
 
 * fixed build issues for clang
 * refactored the multi socket support

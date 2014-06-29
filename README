@@ -1,8 +1,8 @@
 Dependencies
 ============
 
-uAnytun can be built by using either libgcrypt or the openssl-crypto library.
-The latter is more performant in most cases but there are some license
+uAnytun can be built by using either libgcrypt, libnettle or the openssl-crypto
+library. The latter is more performant in most cases but there are some license
 issues when using this library. It also needs more space when installed.
 
 
@@ -20,7 +20,13 @@ using ssl crypto library:
  build-essential
  libssl-dev
 
+using nettle crypto library:
+
+ build-essential
+ nettle-dev
+
 if you want clang as compiler
+
  clang
 
 if you want to rebuild the manpage:
@@ -56,9 +62,8 @@ Installation
 Getting the source via subversion:
 ----------------------------------
 
-svn co https://svn.anytun.org/uanytun/trunk uanytun
+svn co http://svn.anytun.org/uanytun/trunk uanytun
 cd uanytun
-
 
 Building from source
 --------------------
@@ -74,6 +79,7 @@ using ssl crypto library:
 # cd src
 # ./configure --use-ssl-crypto
 # make
+
 
 Notes:
   - try './configure --help' for further information
