@@ -52,6 +52,8 @@
 #include "unixdomain.h"
 
 struct keyexchange_struct {
+  u_int8_t data_buf_[2048]; // TODO: constant...
+  u_int32_t data_buf_len_;
   unixdomain_t data_interface_;
   unixdomain_t control_interface_;
 };

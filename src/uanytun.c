@@ -232,7 +232,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
   encrypted_packet_t encrypted_packet;
   encrypted_packet_init(&encrypted_packet, opt->auth_tag_length_);
   seq_nr_t seq_nr = 0;
-  fd_set readfds, readyfds;
+  fd_set readfds, rreadyfds, wreadyfds;
 
   keyexchange_t kx;
   cipher_t c;
@@ -258,10 +258,12 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
   nfds = (nfds < sig_fd) ? sig_fd : nfds;
 
   while(!return_value) {
-    memcpy(&readyfds, &readfds, sizeof(readyfds));
-    int kx_max_fd = keyexchange_fill_fd_set(&kx, &readyfds, NULL);
-    int tmp = (nfds < kx_max_fd) ? kx_max_fd : nfds;
-    int ret = select(tmp + 1, &readyfds, NULL, NULL, NULL);
+    FD_ZERO(&wreadyfds);
+    memcpy(&rreadyfds, &readfds, sizeof(rreadyfds));
+    int kx_max_fd = keyexchange_fill_fd_set(&kx, &rreadyfds, &wreadyfds);
+    int maxfd = (nfds < kx_max_fd) ? kx_max_fd : nfds;
+
+    int ret = select(maxfd + 1, &rreadyfds, &wreadyfds, NULL, NULL);
     if(ret == -1 && errno != EINTR) {
       log_printf(ERROR, "select returned with error: %s", strerror(errno));
       return_value = -1;
@@ -270,7 +272,7 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
     if(!ret || ret == -1)
       continue;
 
-    if(FD_ISSET(sig_fd, &readyfds)) {
+    if(FD_ISSET(sig_fd, &rreadyfds)) {
       return_value = signal_handle();
       if(return_value == 1)
         break;
@@ -284,17 +286,17 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
         return_value = 0;
     }
 
-    if(FD_ISSET(dev->fd_, &readyfds)) {
+    if(FD_ISSET(dev->fd_, &rreadyfds)) {
       return_value = process_tun_data(dev, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_nr);
       if(return_value)
         break;
     }
 
-    keyexchange_handle(&kx, &readyfds, NULL);
+    keyexchange_handle(&kx, &rreadyfds, &wreadyfds);
 
     udp_socket_t* s = sock->socks_;
     while(s) {
-      if(FD_ISSET(s->fd_, &readyfds)) {
+      if(FD_ISSET(s->fd_, &rreadyfds)) {
         return_value = process_sock_data(dev, s->fd_, sock, opt, &plain_packet, &encrypted_packet, &c, &aa, &kd, &seq_win);
         if(return_value)
           break;

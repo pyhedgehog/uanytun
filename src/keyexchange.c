@@ -50,14 +50,18 @@
 #include "datatypes.h"
 
 #include "keyexchange.h"
-
 #include "log.h"
+
+#include <errno.h>
+#include <string.h>
 
 int keyexchange_init(keyexchange_t* kx, const char* path_control, const char* path_data)
 {
   if(!kx)
     return -1;
 
+  memset(kx->data_buf_, 0, sizeof(kx->data_buf_));
+  kx->data_buf_len_ = 0;
 //  int ret = unixdomain_init(&(kx->control_interface_), path_control);
   int ret = unixdomain_init(&(kx->control_interface_), NULL); // ignore control interface for now
   if(ret) return ret;
@@ -71,8 +75,14 @@ int keyexchange_init(keyexchange_t* kx, const char* path_control, const char* pa
 
 int keyexchange_fill_fd_set(keyexchange_t* kx, fd_set* read, fd_set* write)
 {
-  return unixdomain_fill_fd_set(&(kx->data_interface_), read);
-      // ignoreing writes and control interface for now
+  int maxfd = unixdomain_fill_fd_set(&(kx->data_interface_), read);
+  if(kx->data_buf_len_) {
+    FD_SET(kx->data_interface_.client_fd_, write);
+    maxfd = (kx->data_interface_.client_fd_ > maxfd) ? kx->data_interface_.client_fd_ : maxfd;
+  }
+
+      // ignoring control interface for now
+  return maxfd;
 }
 
 void keyexchange_close(keyexchange_t* kx)
@@ -81,43 +91,62 @@ void keyexchange_close(keyexchange_t* kx)
   unixdomain_close(&(kx->data_interface_));
 }
 
-static int keyexchange_handle_read(keyexchange_t* kx, fd_set* readyfds)
+static int keyexchange_handle_accept(keyexchange_t* kx, unixdomain_t* sock)
 {
-  if(FD_ISSET(kx->data_interface_.server_fd_, readyfds)) {
-    int old_fd = kx->data_interface_.client_fd_;
-    if(unixdomain_accept(&(kx->data_interface_))) {
-      return -1;
-    }
-    if(old_fd != kx->data_interface_.client_fd_) {
-      log_printf(INFO, "key exchange: new client");
-    }
+  int old_fd = sock->client_fd_;
+  if(unixdomain_accept(sock)) {
+    return -1;
   }
-  if(FD_ISSET(kx->data_interface_.client_fd_, readyfds)) {
-    u_int8_t buf[100];
-    int len = unixdomain_read(&(kx->data_interface_), buf, sizeof(buf));
-    if(len < 0) {
-      log_printf(ERROR, "key exchange: client error!!!!!");
-    } if(!len) {
-      log_printf(INFO, "key exchange: client disconnected");
-      kx->data_interface_.client_fd_ = -1;
-    } else {
-      buf[len] = 0;
-      log_printf(DEBUG, "key exchange: received string '%s'", buf);
-      unixdomain_write(&(kx->data_interface_), buf, len);
-    }
+  if(old_fd != sock->client_fd_) {
+    log_printf(INFO, "key exchange: new client");
+  }
+  return 0;
+}
+
+static int keyexchange_handle_read_data(keyexchange_t* kx)
+{
+      // TODO: don't overwrite existing data
+      //       fix sizeof
+  int len = unixdomain_read(&(kx->data_interface_), kx->data_buf_, sizeof(kx->data_buf_) - 1);
+  if(len <= 0) {
+    if(!len)
+      log_printf(INFO, "key exchange: data interface disconnected");
+    else
+      log_printf(ERROR, "key exchange: data interface error: %s", strerror(errno));
+    kx->data_interface_.client_fd_ = -1;
+  } else {
+        // TODO: this is a temporary fix for strings ending with linefeed
+    if(kx->data_buf_[len-1] == '\n')
+      kx->data_buf_len_ = len - 1;
+    else
+      kx->data_buf_len_ = len;
+
+    kx->data_buf_[kx->data_buf_len_] = 0;
+    log_printf(DEBUG, "key exchange: data interface received string '%s'", kx->data_buf_);
   }
 
   return 0;
 }
 
-/* static int keyexchange_handle_write(keyexchange_t* kx, fd_set* readyfds) */
-/* { */
-/*       // TODO: implement this */
-/*   return 0; */
-/* } */
+static int keyexchange_handle_write_data(keyexchange_t* kx)
+{
+  int ret = unixdomain_write(&(kx->data_interface_), kx->data_buf_, kx->data_buf_len_);
+      // TODO: handle partial writes
+  kx->data_buf_len_ = 0;
+  return ret;
+}
 
 int keyexchange_handle(keyexchange_t* kx, fd_set* rreadyfds, fd_set* wreadyfds)
 {
-  return keyexchange_handle_read(kx, rreadyfds);
-      // ignoreing writes for now
+  if(FD_ISSET(kx->data_interface_.server_fd_, rreadyfds))
+    return keyexchange_handle_accept(kx, &(kx->data_interface_));
+
+  if(FD_ISSET(kx->data_interface_.client_fd_, rreadyfds))
+    return keyexchange_handle_read_data(kx);
+
+  if(FD_ISSET(kx->data_interface_.client_fd_, wreadyfds))
+    return keyexchange_handle_write_data(kx);
+
+      // control interface for now
+  return 0;
 }
