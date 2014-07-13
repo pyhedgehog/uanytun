@@ -88,7 +88,7 @@ static int keyexchange_handle_accept(keyexchange_t* kx, unixdomain_t* sock)
     return -1;
   }
   if(old_fd != sock->client_fd_) {
-    log_printf(INFO, "key exchange: new client");
+    log_printf(INFO, "key exchange: connection established");
   }
   return 0;
 }
@@ -100,9 +100,9 @@ static int keyexchange_handle_read_data(keyexchange_t* kx)
   int len = unixdomain_read(&(kx->socket_), kx->data_buf_, sizeof(kx->data_buf_) - 1);
   if(len <= 0) {
     if(!len)
-      log_printf(INFO, "key exchange: data interface disconnected");
+      log_printf(INFO, "key exchange: disconnected");
     else
-      log_printf(ERROR, "key exchange: data interface error: %s", strerror(errno));
+      log_printf(ERROR, "key exchange: read error: %s", strerror(errno));
     kx->socket_.client_fd_ = -1;
   } else {
         // TODO: this is a temporary fix for strings ending with linefeed
@@ -112,7 +112,7 @@ static int keyexchange_handle_read_data(keyexchange_t* kx)
       kx->data_buf_len_ = len;
 
     kx->data_buf_[kx->data_buf_len_] = 0;
-    log_printf(DEBUG, "key exchange: data interface received string '%s'", kx->data_buf_);
+    log_printf(DEBUG, "key exchange: received string '%s'", kx->data_buf_);
   }
 
   return 0;
