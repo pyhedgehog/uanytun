@@ -55,40 +55,30 @@
 #include <errno.h>
 #include <string.h>
 
-int keyexchange_init(keyexchange_t* kx, const char* path_control, const char* path_data)
+int keyexchange_init(keyexchange_t* kx, const char* socket_path)
 {
   if(!kx)
     return -1;
 
   memset(kx->data_buf_, 0, sizeof(kx->data_buf_));
   kx->data_buf_len_ = 0;
-//  int ret = unixdomain_init(&(kx->control_interface_), path_control);
-  int ret = unixdomain_init(&(kx->control_interface_), NULL); // ignore control interface for now
-  if(ret) return ret;
-
-  ret = unixdomain_init(&(kx->data_interface_), path_data);
-  if(ret)
-    unixdomain_close(&(kx->control_interface_));
-
-  return ret;
+  return unixdomain_init(&(kx->socket_), socket_path);
 }
 
 int keyexchange_fill_fd_set(keyexchange_t* kx, fd_set* read, fd_set* write)
 {
-  int maxfd = unixdomain_fill_fd_set(&(kx->data_interface_), read);
+  int maxfd = unixdomain_fill_fd_set(&(kx->socket_), read);
   if(kx->data_buf_len_) {
-    FD_SET(kx->data_interface_.client_fd_, write);
-    maxfd = (kx->data_interface_.client_fd_ > maxfd) ? kx->data_interface_.client_fd_ : maxfd;
+    FD_SET(kx->socket_.client_fd_, write);
+    maxfd = (kx->socket_.client_fd_ > maxfd) ? kx->socket_.client_fd_ : maxfd;
   }
 
-      // ignoring control interface for now
   return maxfd;
 }
 
 void keyexchange_close(keyexchange_t* kx)
 {
-  unixdomain_close(&(kx->control_interface_));
-  unixdomain_close(&(kx->data_interface_));
+  unixdomain_close(&(kx->socket_));
 }
 
 static int keyexchange_handle_accept(keyexchange_t* kx, unixdomain_t* sock)
@@ -107,13 +97,13 @@ static int keyexchange_handle_read_data(keyexchange_t* kx)
 {
       // TODO: don't overwrite existing data
       //       fix sizeof
-  int len = unixdomain_read(&(kx->data_interface_), kx->data_buf_, sizeof(kx->data_buf_) - 1);
+  int len = unixdomain_read(&(kx->socket_), kx->data_buf_, sizeof(kx->data_buf_) - 1);
   if(len <= 0) {
     if(!len)
       log_printf(INFO, "key exchange: data interface disconnected");
     else
       log_printf(ERROR, "key exchange: data interface error: %s", strerror(errno));
-    kx->data_interface_.client_fd_ = -1;
+    kx->socket_.client_fd_ = -1;
   } else {
         // TODO: this is a temporary fix for strings ending with linefeed
     if(kx->data_buf_[len-1] == '\n')
@@ -130,7 +120,7 @@ static int keyexchange_handle_read_data(keyexchange_t* kx)
 
 static int keyexchange_handle_write_data(keyexchange_t* kx)
 {
-  int ret = unixdomain_write(&(kx->data_interface_), kx->data_buf_, kx->data_buf_len_);
+  int ret = unixdomain_write(&(kx->socket_), kx->data_buf_, kx->data_buf_len_);
       // TODO: handle partial writes
   kx->data_buf_len_ = 0;
   return ret;
@@ -138,15 +128,14 @@ static int keyexchange_handle_write_data(keyexchange_t* kx)
 
 int keyexchange_handle(keyexchange_t* kx, fd_set* rreadyfds, fd_set* wreadyfds)
 {
-  if(FD_ISSET(kx->data_interface_.server_fd_, rreadyfds))
-    return keyexchange_handle_accept(kx, &(kx->data_interface_));
+  if(FD_ISSET(kx->socket_.server_fd_, rreadyfds))
+    return keyexchange_handle_accept(kx, &(kx->socket_));
 
-  if(FD_ISSET(kx->data_interface_.client_fd_, rreadyfds))
+  if(FD_ISSET(kx->socket_.client_fd_, rreadyfds))
     return keyexchange_handle_read_data(kx);
 
-  if(FD_ISSET(kx->data_interface_.client_fd_, wreadyfds))
+  if(FD_ISSET(kx->socket_.client_fd_, wreadyfds))
     return keyexchange_handle_write_data(kx);
 
-      // control interface for now
   return 0;
 }

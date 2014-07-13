@@ -81,7 +81,7 @@ typedef u_int8_t auth_algo_t;
 
 int init_main_loop(options_t* opt, keyexchange_t* kx, cipher_t* c, auth_algo_t* aa, key_derivation_t* kd, seq_win_t* seq_win)
 {
-  int ret = keyexchange_init(kx, opt->kx_control_interface_, opt->kx_data_interface_);
+  int ret = keyexchange_init(kx, opt->kx_socket_);
   if(ret) {
     log_printf(ERROR, "could not initialize key exchange interface");
     return ret;

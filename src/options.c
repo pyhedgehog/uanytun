@@ -281,8 +281,7 @@ int options_parse(options_t* opt, int argc, char* argv[])
     PARSE_STRING_PARAM("-c","--cipher", opt->cipher_)
     PARSE_STRING_PARAM("-a","--auth-algo", opt->auth_algo_)
     PARSE_INT_PARAM("-b","--auth-tag-length", opt->auth_tag_length_)
-    PARSE_STRING_PARAM("-z","--kx-control", opt->kx_control_interface_)
-    PARSE_STRING_PARAM("-Z","--kx-data", opt->kx_data_interface_)
+    PARSE_STRING_PARAM("-z","--kx-socket", opt->kx_socket_)
 #endif
     else
       return i;
@@ -380,8 +379,7 @@ void options_default(options_t* opt)
   opt->cipher_ = strdup("aes-ctr");
   opt->auth_algo_ = strdup("sha1");
   opt->auth_tag_length_ = 10;
-  opt->kx_control_interface_ = NULL;
-  opt->kx_data_interface_ = NULL;
+  opt->kx_socket_ = NULL;
 #else
   opt->cipher_ = strdup("null");
   opt->auth_tag_length_ = 0;
@@ -433,10 +431,8 @@ void options_clear(options_t* opt)
     free(opt->kd_prf_);
   if(opt->passphrase_)
     free(opt->passphrase_);
-  if(opt->kx_control_interface_)
-    free(opt->kx_control_interface_);
-  if(opt->kx_data_interface_)
-    free(opt->kx_data_interface_);
+  if(opt->kx_socket_)
+    free(opt->kx_socket_);
 #endif
   if(opt->key_.buf_)
     free(opt->key_.buf_);
@@ -483,8 +479,7 @@ void options_print_usage()
   printf("        [-c|--cipher] <cipher type>         payload encryption algorithm\n");
   printf("        [-a|--auth-algo] <algo type>        message authentication algorithm\n");
   printf("        [-b|--auth-tag-length] <length>     length of the auth tag\n");
-  printf("        [-z|--kx-control] <path>            path to the key exchange control socket\n");
-  printf("        [-Z|--kx-data] <path>               path to the key exchange data socket\n");
+  printf("        [-z|--kx-socket] <path>             path to the key exchange control socket\n");
 
 #endif
 }
@@ -541,8 +536,7 @@ void options_print(options_t* opt)
   case ROLE_RIGHT: printf("right\n"); break;
   default: printf("??\n"); break;
   }
-  printf("  kx_control: '%s'\n", opt->kx_control_interface_);
-  printf("  kx_data: '%s'\n", opt->kx_data_interface_);
+  printf("  kx_socket: '%s'\n", opt->kx_socket_);
 #endif
 
   u_int32_t i;

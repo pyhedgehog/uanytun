@@ -54,12 +54,11 @@
 struct keyexchange_struct {
   u_int8_t data_buf_[2048]; // TODO: constant...
   u_int32_t data_buf_len_;
-  unixdomain_t data_interface_;
-  unixdomain_t control_interface_;
+  unixdomain_t socket_;
 };
 typedef struct keyexchange_struct keyexchange_t;
 
-int keyexchange_init(keyexchange_t* kx, const char* path_control, const char* path_data);
+int keyexchange_init(keyexchange_t* kx, const char* socket_path);
 int keyexchange_fill_fd_set(keyexchange_t* kx, fd_set* read, fd_set* write);
 void keyexchange_close(keyexchange_t* kx);
 
