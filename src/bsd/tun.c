@@ -46,13 +46,14 @@
  *  files in the program, then also delete it here.
  */
 
+#define _GNU_SOURCE
+#include <stdio.h>
+
 #include "datatypes.h"
 
 #include "tun.h"
 
 #include "tun_helper.h"
-
-#include "log.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -68,6 +69,9 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #define DEVICE_FILE_MAX 255
+
+#include "log.h"
+#include "sysexec.h"
 
 int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, const char* ifcfg_addr, u_int16_t ifcfg_prefix)
 {
