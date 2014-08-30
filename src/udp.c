@@ -65,6 +65,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#ifndef AI_ADDRCONFIG 
+#define AI_ADDRCONFIG 0 
+#endif
+
 static int udp_resolv_local(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type, unsigned int* idx)
 {
   struct addrinfo hints, *res;
