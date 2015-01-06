@@ -307,21 +307,17 @@ int main(int argc, char* argv[])
   if(ret) {
     if(ret > 0) {
       fprintf(stderr, "syntax error near: %s\n\n", argv[ret]);
-    }
-    if(ret == -2) {
+    } else if(ret == -2) {
       fprintf(stderr, "memory error on options_parse, exitting\n");
-    }
-    if(ret == -3) {
+    } else if(ret == -3) {
       fprintf(stderr, "syntax error: -4 and -6 are mutual exclusive\n\n");
-    }
-    if(ret == -4) {
+    } else if(ret == -4) {
       fprintf(stderr, "syntax error: unknown role name\n\n");
-    }
-    if(ret == -5) {
+    } else if(ret == -5) {
       options_print_version();
     }
 
-    if(ret != -2 && ret != -5)
+    if(ret != -2 && ret != -5 && ret != -6)
       options_print_usage();
 
     if(ret == -1 || ret == -5)
@@ -351,6 +347,8 @@ int main(int argc, char* argv[])
 
   log_printf(NOTICE, "just started...");
   options_parse_post(&opt);
+
+  options_print(&opt);
 
   priv_info_t priv;
   if(opt.username_)

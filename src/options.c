@@ -57,6 +57,7 @@
 #include <ctype.h>
 
 #include "log.h"
+#include "cfg_parser.h"
 
 #ifndef NO_CRYPT
 #include "auth_algo.h"
@@ -250,6 +251,12 @@ int options_parse(options_t* opt, int argc, char* argv[])
       return -1;
     else if(!strcmp(str,"-v") || !strcmp(str,"--version"))
       return -5;
+    else if(!strcmp(str,"-F") || !strcmp(str,"--config-file")) {
+      if(argc < 1) return i;
+      if(read_configfile(argv[i+1], opt)) return -6;
+      argc--;
+      i++;
+    }
     PARSE_INVERSE_BOOL_PARAM("-D","--nodaemonize", opt->daemonize_)
     PARSE_STRING_PARAM("-u","--username", opt->username_)
     PARSE_STRING_PARAM("-g","--groupname", opt->groupname_)
@@ -351,6 +358,7 @@ void options_default(options_t* opt)
     return;
 
   opt->progname_ = strdup("uanytun");
+  opt->config_file_ = NULL;
   opt->daemonize_ = 1;
   opt->username_ = NULL;
   opt->groupname_ = NULL;
@@ -395,6 +403,8 @@ void options_clear(options_t* opt)
 
   if(opt->progname_)
     free(opt->progname_);
+  if(opt->config_file_)
+    free(opt->config_file_);
   if(opt->username_)
     free(opt->username_);
   if(opt->groupname_)
@@ -441,6 +451,7 @@ void options_print_usage()
   printf("USAGE:\n");
   printf("uanytun [-h|--help]                         prints this...\n");
   printf("        [-v|--version]                      print version info and exit\n");
+  printf("        [-F|--config-file] <path>           path to the configuration file\n");
   printf("        [-D|--nodaemonize]                  don't run in background\n");
   printf("        [-u|--username] <username>          change to this user\n");
   printf("        [-g|--groupname] <groupname>        change to this group\n");
@@ -496,6 +507,7 @@ void options_print(options_t* opt)
     return;
 
   printf("progname: '%s'\n", opt->progname_);
+  printf("config-file: '%s'\n", opt->config_file_);
   printf("daemonize: %d\n", opt->daemonize_);
   printf("username: '%s'\n", opt->username_);
   printf("groupname: '%s'\n", opt->groupname_);

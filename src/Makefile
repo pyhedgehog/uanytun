@@ -59,6 +59,7 @@ OBJ := log.o \
        sig_handler.o \
        sysexec.o \
        options.o \
+       cfg_parser.o \
        tun.o \
        udp.o \
        plain_packet.o \
@@ -77,6 +78,15 @@ SRC := $(OBJ:%.o=%.c)
 .PHONY: clean cleanall distclean manpage install install-bin install-etc install-man uninstall remove purge
 
 all: $(EXECUTABLE)
+
+cfg_parser.c: cfg_parser.rl
+	$(RAGEL) -C -G2 -o $@ $<
+
+cfg_parser.dot: cfg_parser.rl
+	$(RAGEL) -V -p -o $@ $<
+
+cfg_parser.png: cfg_parser.dot
+	@dot -Tpng $< > $@
 
 %.d: %.c
 	@set -e; rm -f $@; \
@@ -109,6 +119,8 @@ clean:
 	rm -f *.o
 	rm -f *.d
 	rm -f *.d.*
+	rm -f cfg_parser.c
+	rm -f cfg_parser.png cfg_parser.dot
 	rm -f $(EXECUTABLE)
 
 cleanall: clean
