@@ -13,16 +13,19 @@ Linux
 using libgcrypt:
 
  build-essential
+ ragel
  libgcrypt11-dev
 
 using ssl crypto library:
 
  build-essential
+ ragel
  libssl-dev
 
 using nettle crypto library:
 
  build-essential
+ ragel
  nettle-dev
 
 if you want clang as compiler
