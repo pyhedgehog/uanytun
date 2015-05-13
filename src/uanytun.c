@@ -52,6 +52,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <signal.h>
 
 #include "log.h"
 #include "sig_handler.h"
@@ -258,9 +262,8 @@ int main_loop(tun_device_t* dev, udp_t* sock, options_t* opt)
 
     if(FD_ISSET(sig_fd, &readyfds)) {
       return_value = signal_handle();
-      if(return_value == 1)
-        break;
-      else if(return_value == 2) {
+      if(return_value == SIGINT || return_value == SIGQUIT || return_value == SIGTERM) break;
+      else if(return_value == SIGHUP) {
         seq_win_clear(&seq_win);
         seq_nr = 0;
         log_printf(NOTICE, "sequence window cleared");
@@ -447,8 +450,11 @@ int main(int argc, char* argv[])
     log_printf(NOTICE, "normal shutdown");
   else if(ret < 0)
     log_printf(NOTICE, "shutdown after error");
-  else
+  else {
     log_printf(NOTICE, "shutdown after signal");
+    log_close();
+    kill(getpid(), ret);
+  }
 
   log_close();
 

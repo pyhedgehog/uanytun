@@ -139,10 +139,10 @@ int signal_handle()
   for(sig=1; sig < NSIG; ++sig) {
     if(sigismember(&set, sig)) {
       switch(sig) {
-      case SIGINT: log_printf(NOTICE, "SIG-Int caught, exitting"); return_value = 1; break;
-      case SIGQUIT: log_printf(NOTICE, "SIG-Quit caught, exitting"); return_value = 1; break;
-      case SIGTERM: log_printf(NOTICE, "SIG-Term caught, exitting"); return_value = 1; break;
-      case SIGHUP: log_printf(NOTICE, "SIG-Hup caught"); return_value = 2; break;
+      case SIGINT: log_printf(NOTICE, "SIG-Int caught, exitting"); return_value = SIGINT; break;
+      case SIGQUIT: log_printf(NOTICE, "SIG-Quit caught, exitting"); return_value = SIGQUIT; break;
+      case SIGTERM: log_printf(NOTICE, "SIG-Term caught, exitting"); return_value = SIGTERM; break;
+      case SIGHUP: log_printf(NOTICE, "SIG-Hup caught"); return_value = SIGHUP; break;
       case SIGUSR1: log_printf(NOTICE, "SIG-Usr1 caught"); break;
       case SIGUSR2: log_printf(NOTICE, "SIG-Usr2 caught"); break;
       default: log_printf(WARNING, "unknown signal %d caught, ignoring", sig); break;
