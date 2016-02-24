@@ -59,10 +59,10 @@ if you want to rebuild the manpage:
 Installation
 ============
 
-Getting the source via subversion:
-----------------------------------
+Getting the source via GIT:
+---------------------------
 
-svn co http://svn.anytun.org/uanytun/trunk uanytun
+git clone https://git.spreadspace.org/anytun/uanytun.git
 cd uanytun
 
 Building from source
