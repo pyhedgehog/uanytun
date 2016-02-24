@@ -161,18 +161,53 @@ static int udp_resolv_local(udp_t* sock, const char* local_addr, const char* por
   return 0;
 }
 
-int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type)
+static int udp_split_port_range(const char* port, const char* colon, u_int32_t* low, u_int32_t* high)
+{
+  *low = atoi(port);
+  *high = atoi(colon+1);
+  if(*low < 1 || *low > 65535 || *high < 1 || *high > 65535 || *high < *low) {
+    log_printf(ERROR, "illegal port range");
+    return -1;
+  }
+  return 0;
+}
+
+int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type, int rail_mode)
 {
   if(!sock || !port)
     return -1;
 
   sock->socks_ = NULL;
   sock->active_sock_ = NULL;
+  sock->rail_mode_ = rail_mode;
 
   unsigned int idx = 0;
-  int ret = udp_resolv_local(sock, local_addr, port, resolv_type, &idx);
-  if(ret)
-    return ret;
+  const char* colon = strchr(port, ':');
+  if(!colon) {
+    int ret = udp_resolv_local(sock, local_addr, port, resolv_type, &idx);
+    if(ret)
+      return ret;
+  } else {
+    if(!rail_mode)
+      log_printf(WARNING, "A port range has been defined - enabling RAIL mode");
+    sock->rail_mode_ = 1;
+
+    u_int32_t port_num, port_end;
+    if(udp_split_port_range(port, colon, &port_num, &port_end))
+      return -1;
+    do {
+      char port_str[10];
+      snprintf(port_str, sizeof(port_str), "%d", port_num);
+      int ret = udp_resolv_local(sock, local_addr, port_str, resolv_type, &idx);
+      if(ret)
+        return ret;
+
+      port_num++;
+    } while(port_num <= port_end);
+  }
+
+  if(sock->rail_mode_)
+    log_printf(NOTICE, "RAIL mode enabled");
 
   return 0;
 }
@@ -193,7 +228,7 @@ int udp_fill_fd_set(udp_t* sock, fd_set* set)
 
 int udp_has_remote(udp_t* sock)
 {
-  if(!sock->active_sock_ || !sock->active_sock_->remote_end_set_)
+  if(!sock->rail_mode_ && (!sock->active_sock_ || !sock->active_sock_->remote_end_set_))
     return 0;
 
   udp_socket_t* s = sock->socks_;
@@ -206,12 +241,9 @@ int udp_has_remote(udp_t* sock)
   return 0;
 }
 
-int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
+static int udp_resolv_remote__(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
 {
   struct addrinfo hints, *res;
-
-  if(!sock || !remote_addr || !port)
-    return -1;
 
   res = NULL;
   memset (&hints, 0, sizeof (hints));
@@ -264,6 +296,36 @@ int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, re
 
   if(!found)
     log_printf(WARNING, "no remote address for '%s' found that fits any of the local address families", remote_addr);
+
+  return 0;
+}
+
+int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type)
+{
+  if(!sock || !remote_addr || !port)
+    return -1;
+
+  const char* colon = strchr(port, ':');
+  if(!colon) {
+    return udp_resolv_remote__(sock, remote_addr, port, resolv_type);
+  } else {
+    if(!sock->rail_mode_)
+      log_printf(WARNING, "A port range has been defined - enabling RAIL mode");
+    sock->rail_mode_ = 1;
+
+    u_int32_t port_num, port_end;
+    if(udp_split_port_range(port, colon, &port_num, &port_end))
+      return -1;
+    do {
+      char port_str[10];
+      snprintf(port_str, sizeof(port_str), "%d", port_num);
+      int ret = udp_resolv_remote__(sock, remote_addr, port_str, resolv_type);
+      if(ret)
+        return ret;
+
+      port_num++;
+    } while(port_num <= port_end);
+  }
 
   return 0;
 }
@@ -351,10 +413,37 @@ int udp_read(udp_t* sock, int fd, u_int8_t* buf, u_int32_t len, udp_endpoint_t* 
 }
 
 
-int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
+static int udp_write_active_sock(udp_t* sock, u_int8_t* buf, u_int32_t len)
 {
-  if(!sock || !buf || !sock->active_sock_ || !sock->active_sock_->remote_end_set_)
+  if(!sock->active_sock_ || !sock->active_sock_->remote_end_set_)
     return 0;
 
   return sendto(sock->active_sock_->fd_, buf, len, 0, (struct sockaddr *)&(sock->active_sock_->remote_end_.addr_), sock->active_sock_->remote_end_.len_);
+}
+
+static int udp_write_rail(udp_t* sock, u_int8_t* buf, u_int32_t len)
+{
+  int i=0;
+
+  udp_socket_t* s = sock->socks_;
+  while(s) {
+    if(s->remote_end_set_) {
+      sendto(s->fd_, buf, len, 0, (struct sockaddr *)&(s->remote_end_.addr_), s->remote_end_.len_);
+      i++;
+    }
+    s = s->next_;
+  }
+
+  return len;
+}
+
+int udp_write(udp_t* sock, u_int8_t* buf, u_int32_t len)
+{
+  if(!sock || !buf)
+    return 0;
+
+  if(sock->rail_mode_)
+    return udp_write_rail(sock, buf, len);
+
+  return udp_write_active_sock(sock, buf, len);
 }

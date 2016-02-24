@@ -72,10 +72,11 @@ typedef struct udp_socket_struct udp_socket_t;
 struct udp_struct {
   udp_socket_t* socks_;
   udp_socket_t* active_sock_;
+  int rail_mode_;
 };
 typedef struct udp_struct udp_t;
 
-int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type);
+int udp_init(udp_t* sock, const char* local_addr, const char* port, resolv_addr_type_t resolv_type, int rail_mode);
 int udp_fill_fd_set(udp_t* sock, fd_set* set);
 int udp_has_remote(udp_t* sock);
 int udp_resolv_remote(udp_t* sock, const char* remote_addr, const char* port, resolv_addr_type_t resolv_type);

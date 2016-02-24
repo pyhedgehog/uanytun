@@ -42,9 +42,10 @@ uanytun \- micro anycast tunneling daemon
   [ \fB\-L|\-\-log\fR <target>:<level>[,<param1>[,<param2>[\&.\&.]]] ]
   [ \fB\-U|\-\-debug\fR ]
   [ \fB\-i|\-\-interface\fR <ip\-address> ]
-  [ \fB\-p|\-\-port\fR <port> ]
+  [ \fB\-p|\-\-port\fR <port>[:<port>] ]
+  [ \fB\-Y|\-\-rail\-mode\fR ]
   [ \fB\-r|\-\-remote\-host\fR <hostname|ip> ]
-  [ \fB\-o|\-\-remote\-port\fR <port> ]
+  [ \fB\-o|\-\-remote\-port\fR <port>[:<port>] ]
   [ \fB\-4|\-\-ipv4\-only\fR ]
   [ \fB\-6|\-\-ipv6\-only\fR ]
   [ \fB\-d|\-\-dev\fR <name> ]
@@ -148,9 +149,22 @@ to run in debug mode\&. It implicits
 This IP address is used as the sender address for outgoing packets\&. The default is to not use a special inteface and just bind on all interfaces\&.
 .RE
 .PP
-\fB\-p, \-\-port \fR\fB\fI<port>\fR\fR
+\fB\-p, \-\-port \fR\fB\fI<port>[:<port>]\fR\fR
 .RS 4
-The local UDP port that is used to send and receive the payload data\&. The two tunnel endpoints can use different ports\&. default: 4444
+The local UDP port that is used to send and receive the payload data\&. The two tunnel endpoints can use different ports\&. The default port is 4444\&. In
+\fBRAIL\fR
+mode you must specify a port range\&. See section
+\fBRAIL\fR
+below to find out what this is\&.
+.RE
+.PP
+\fB\-Y, \-\-rail\-mode\fR
+.RS 4
+This option instructs
+\fBuAnytun\fR
+to run in RAIL mode\&. See section
+\fBRAIL\fR
+below to find out what this is\&.
 .RE
 .PP
 \fB\-r, \-\-remote\-host \fR\fB\fI<hostname|ip>\fR\fR
@@ -158,9 +172,12 @@ The local UDP port that is used to send and receive the payload data\&. The two 
 This option can be used to specify the remote tunnel endpoint\&. In case of anycast tunnel endpoints, the anycast IP address has to be used\&. If you do not specify an address, it is automatically determined after receiving the first data packet\&.
 .RE
 .PP
-\fB\-o, \-\-remote\-port \fR\fB\fI<port>\fR\fR
+\fB\-o, \-\-remote\-port \fR\fB\fI<port>[:<port>]\fR\fR
 .RS 4
-The UDP port used for payload data by the remote host (specified with \-p on the remote host)\&. If you do not specify a port, it is automatically determined after receiving the first data packet\&.
+The UDP port used for payload data by the remote host (specified with \-p on the remote host)\&. If you do not specify a port, it is automatically determined after receiving the first data packet\&. When RAIL mode is enabled the port range must be of the same length as the range defined with
+\fB\-p, \-\-port\fR\&. See section
+\fBRAIL\fR
+below for more information about this mode\&.
 .RE
 .PP
 \fB\-4, \-\-ipv4\-only\fR
@@ -368,6 +385,9 @@ The number of bytes to use for the auth tag\&. This value defaults to 10 bytes u
 \fInull\fR
 auth algo is used in which case it defaults to 0\&.
 .RE
+.SH "RAIL"
+.sp
+\fBRAIL\fR stands for Redundant Array of Inexpensive Links\&. Like RAID spreads the blocks of a disk volume over multiple physical disks, \fBRAIL\fR will spread the UDP packets over multiple physical links\&. More precisly for each packet \fBuAnytun\fR reads, from the TUN/TAP device, it will send out multiple UDP packets\&. All of those to the same host but with different destination ports\&. Using policy\-based routing mechanisms these packets can now be seperated and sent out on several interfaces\&. The server\-side will then pick the first of the packets that arrive and discards all others\&. For this to work the size of the sequence window (\fB\-w\fR) must not be set to 0\&. As soon as the server\-side learns the remote endpoints of all or some of the links it will as well send multiple UDP packets for each payload packet\&.
 .SH "EXAMPLES"
 .SS "P2P Setup between two unicast enpoints:"
 .sp
@@ -414,6 +434,29 @@ uanytun \-r anycast\&.anytun\&.org \-d anytun0 \-t tun \-n 192\&.0\&.2\&.2/30 \-
 .RS 4
 .sp
 As \fBuAnytun\fR can\(cqt work as an anycast endpoint it can\(cqt be used for this purpose\&. You have to use \fBAnytun\fR for that job\&.
+.RE
+.SS "Rail Setup for 3 links:"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBClient:\fR
+.RS 4
+.sp
+uanytun \-t tun \-n 192\&.168\&.42\&.2/30 \-c aes\-ctr\-256 \-k aes\-ctr\-256 \-E rail_MODE_is_VERY_cool \-e client \-w 64 \-Y \-p 1233:1235 \-r rail\&.example\&.com \-o 4440:4442
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBServer:\fR
+.RS 4
+.sp
+uanytun \-t tun \-n 192\&.168\&.42\&.1/30 \-c aes\-ctr\-256 \-k aes\-ctr\-256 \-E rail_MODE_is_VERY_cool \-e server \-w 64 \-Y \-p 4440:4442
 .RE
 .SH "BUGS"
 .sp

@@ -75,6 +75,7 @@ struct options_struct {
   char* local_addr_;
   char* local_port_;
   sender_id_t sender_id_;
+  int rail_mode_;
   char* remote_addr_;
   char* remote_port_;
   resolv_addr_type_t resolv_addr_type_;

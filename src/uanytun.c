@@ -188,16 +188,21 @@ int process_sock_data(tun_device_t* dev, int fd, udp_t* sock, options_t* opt, pl
   }
 #endif
 
+  if(sock->rail_mode_)
+    udp_update_remote(sock, fd, &remote);
+
   int result = seq_win_check_and_add(seq_win, encrypted_packet_get_sender_id(encrypted_packet), encrypted_packet_get_seq_nr(encrypted_packet));
   if(result > 0) {
-    log_printf(WARNING, "detected replay attack, discarding packet");
+    if(!(sock->rail_mode_))
+      log_printf(WARNING, "detected replay attack, discarding packet");
     return 0;
   } else if(result < 0) {
     log_printf(ERROR, "memory error at sequence window");
     return -2;
   }
 
-  udp_update_remote(sock, fd, &remote);
+  if(!sock->rail_mode_)
+    udp_update_remote(sock, fd, &remote);
 
   if(encrypted_packet_get_payload_length(encrypted_packet) <= plain_packet_get_header_length()) {
     log_printf(WARNING, "ignoring packet with zero length payload");
@@ -390,7 +395,7 @@ int main(int argc, char* argv[])
 
 
   udp_t sock;
-  ret = udp_init(&sock, opt.local_addr_, opt.local_port_, opt.resolv_addr_type_);
+  ret = udp_init(&sock, opt.local_addr_, opt.local_port_, opt.resolv_addr_type_, opt.rail_mode_);
   if(ret) {
     log_printf(ERROR, "error on udp_init, exitting");
     tun_close(&dev);

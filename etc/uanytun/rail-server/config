@@ -1,0 +1,91 @@
+#############################
+## Main options             #
+#############################
+
+role server
+
+## device type tun = ip/ipv6, tap = ethernet
+type tun
+
+## Automaticaly configure the interface
+## the address hast to be supplied in CIDR notation
+ifconfig 192.168.42.1/30
+
+## payload encryption algorithm
+#cipher null
+#cipher aes-ctr-128
+#cipher aes-ctr-192
+#cipher aes-ctr-256
+cipher aes-ctr
+
+## message authentication algorithm
+#auth-algo null
+auth-algo sha1
+
+##message auth tag length
+#auth-tag-length 10
+
+## Passphrase
+## this is used to generate the crypto-key and salt
+## this should be al least 30 characters
+passphrase RAID_is_nice_but_RAIL_is_cooler
+
+## local ip address to bind to (for tunnel data)
+## (if you run an anycast cluster this has to be the anycast ip address)
+#interface <ip-address>
+
+## local port to bind to (for tunnel data)
+## the number of ports here must be at least as high as the number of
+## remote ports defined at the client configuration (in this case 5)
+port 8880:8884
+
+## The remote host and port will be learned from the first messages
+#remote-host client.unknown
+#remote-port 8880:8884
+
+## enable RAIL mode
+rail-mode
+
+#############################
+## Debug options            #
+#############################
+
+## don't run in background
+#nodaemonize
+
+## additional log to standard output with a level of 5
+#log stdout:5
+
+
+#############################
+## Expert options           #
+#############################
+
+## log to syslog with a level of 3
+log syslog:3,uanytun-rail-server,daemon
+
+## change user and group after init
+#username uanytun
+#groupname uanytun
+
+## chroot to users home directory
+#chroot /var/run/uanytun
+
+## key derivation pseudo random function
+#kd-prf null
+#kd-prf aes-ctr
+#kd-prf aes-ctr-128
+#kd-prf aes-ctr-192
+#kd-prf aes-ctr-256
+
+## Device name
+dev rail0
+
+## Manually set encryption key and salt
+## (this replaces the passphrase)
+#key 0123456789ABCDEF0123456789ABCDEF
+#salt 0123456789ABCD0123456789ABCD
+
+## Setting a window size > 0 will enable replay protection
+## This is needed for RAIL to work
+window-size 100

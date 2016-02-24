@@ -21,9 +21,10 @@ uanytun
   [ -L|--log <target>:<level>[,<param1>[,<param2>[..]]] ]
   [ -U|--debug ]
   [ -i|--interface <ip-address> ]
-  [ -p|--port <port> ]
+  [ -p|--port <port>[:<port>] ]
+  [ -Y|--rail-mode ]
   [ -r|--remote-host <hostname|ip> ]
-  [ -o|--remote-port <port> ]
+  [ -o|--remote-port <port>[:<port>] ]
   [ -4|--ipv4-only ]
   [ -6|--ipv6-only ]
   [ -d|--dev <name> ]
@@ -110,10 +111,16 @@ passed to the daemon:
    packets. The default is to not use a special inteface and just
    bind on all interfaces.
 
-*-p, --port '<port>'*::
+*-p, --port '<port>[:<port>]'*::
    The local UDP port that is used to send and receive the
    payload data. The two tunnel endpoints can use different
-   ports. default: 4444
+   ports. The default port is 4444.
+   In *RAIL* mode you must specify a port range. See section
+   *RAIL* below to find out what this is.
+
+*-Y, --rail-mode*::
+   This option instructs *uAnytun* to run in RAIL mode. See section
+   *RAIL* below to find out what this is.
 
 *-r, --remote-host '<hostname|ip>'*::
    This option can be used to specify the remote tunnel
@@ -122,11 +129,14 @@ passed to the daemon:
    an address, it is automatically determined after receiving
    the first data packet.
 
-*-o, --remote-port '<port>'*::
+*-o, --remote-port '<port>[:<port>]'*::
    The UDP port used for payload data by the remote host
    (specified with -p on the remote host). If you do not specify
    a port, it is automatically determined after receiving
    the first data packet.
+   When RAIL mode is enabled the port range must be of the same length
+   as the range defined with *-p, --port*.
+   See section *RAIL* below for more information about this mode.
 
 *-4, --ipv4-only*::
    Resolv to IPv4 addresses only. The default is to resolv both
@@ -248,6 +258,21 @@ passed to the daemon:
    unless the 'null' auth algo is used in which case it defaults to 0.
 
 
+RAIL
+----
+
+*RAIL* stands for Redundant Array of Inexpensive Links. Like RAID spreads
+the blocks of a disk volume over multiple physical disks, *RAIL* will spread the
+UDP packets over multiple physical links. More precisly for each packet *uAnytun*
+reads, from the TUN/TAP device, it will send out multiple UDP packets. All of those to
+the same host but with different destination ports. Using policy-based routing mechanisms
+these packets can now be seperated and sent out on several interfaces.
+The server-side will then pick the first of the packets that arrive and discards all others.
+For this to work the size of the sequence window (*-w*) must not be set to 0.
+As soon as the server-side learns the remote endpoints of all or some of the links it will
+as well send multiple UDP packets for each payload packet.
+
+
 EXAMPLES
 --------
 
@@ -278,6 +303,21 @@ Anycast tunnel endpoints:
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 As *uAnytun* can't work as an anycast endpoint it can't be used for this purpose. You
 have to use *Anytun* for that job.
+
+
+Rail Setup for 3 links:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Client:
+^^^^^^^
+
+uanytun -t tun -n 192.168.42.2/30 -c aes-ctr-256 -k aes-ctr-256 -E rail_MODE_is_VERY_cool
+        -e client -w 64 -Y -p 1233:1235 -r rail.example.com -o 4440:4442
+
+Server:
+^^^^^^^
+uanytun -t tun -n 192.168.42.1/30 -c aes-ctr-256 -k aes-ctr-256 -E rail_MODE_is_VERY_cool
+        -e server -w 64 -Y -p 4440:4442
 
 
 BUGS
