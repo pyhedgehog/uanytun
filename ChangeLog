@@ -1,7 +1,13 @@
 201?.??.?? -- Version 0.?.?
 
 * added RAIL mode
+
+2017.01.04 -- Version 0.3.6
+
 * moved to GIT
+* make build reproducible
+* the return code after receiving a signal now correctly contains
+  the signal number which caused the shutdown.
 
 2014.06.21 -- Version 0.3.5
 
