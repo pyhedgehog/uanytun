@@ -183,28 +183,33 @@ case $TARGET in
   ;;
 esac
 
-
+CRYPTO_LIB_NAME=""
 case $CRYPTO_LIB in
   gcrypt)
     CFLAGS=$CFLAGS' -DUSE_GCRYPT'
     LDFLAGS=$LDFLAGS' -lgcrypt'
-    echo "using gcrypt library"
+    CRYPTO_LIB_NAME="libgcrypt"
   ;;
   nettle)
     CFLAGS=$CFLAGS' -DUSE_NETTLE'
     LDFLAGS=$LDFLAGS' -lnettle'
-    echo "using nettle library"
+    CRYPTO_LIB_NAME="Nettle"
   ;;
   ssl)
     CFLAGS=$CFLAGS' -DUSE_SSL_CRYPTO'
     LDFLAGS=$LDFLAGS' -lcrypto'
-    echo "using ssl crypto library"
+    CRYPTO_LIB_NAME="OpenSSL"
   ;;
   none)
     CFLAGS=$CFLAGS' -DNO_CRYPT'
-    echo "disabling crypto"
+    CRYPTO_LIB_NAME="none"
+  ;;
+  *)
+    echo "unknown crypto library: $$CRYPTO_LIB"
+    exit 1
   ;;
 esac
+echo "crypto-library: $CRYPTO_LIB_NAME"
 
 if [ $PASSPHRASE -eq 0 ]; then
   CFLAGS=$CFLAGS' -DNO_PASSPHRASE'
@@ -283,6 +288,7 @@ cat > version.h <<EOF
 #define UANYTUN_version_h_INCLUDED
 
 #define VERSION_STRING "uanytun version $VERSION"
+#define CRYPTO_LIB_NAME "$CRYPTO_LIB_NAME"
 
 #endif
 
