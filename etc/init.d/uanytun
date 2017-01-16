@@ -22,6 +22,8 @@ if [ -f /etc/default/uanytun ] ; then
   . /etc/default/uanytun
 fi
 
+. /lib/lsb/init-functions
+
 start_vpn () {
   STATUS="OK"
   if [ -f $CONFIG_DIR/$VPNNAME/config ] ; then
