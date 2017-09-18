@@ -6,3 +6,4 @@ src/tun.c
 src/include.mk
 src/version.h
 src/uanytun
+src/testvectors

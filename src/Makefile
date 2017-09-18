@@ -51,6 +51,7 @@ include include.mk
 endif
 
 EXECUTABLE := uanytun
+EXECUTABLE_TEST := testvectors
 
 CRYPT_OBJ := key_derivation.o \
              auth_algo.o
@@ -72,7 +73,12 @@ ifndef NO_CRYPT_OBJ
 OBJ += $(CRYPT_OBJ)
 endif
 
+OBJ_TEST := key_derivation.o \
+						log.o \
+						testvectors.o
+
 SRC := $(OBJ:%.o=%.c)
+SRC_TEST := $(OBJ_TEST:%.o=%.c)
 
 .PHONY: clean cleanall distclean manpage install install-bin install-etc install-man uninstall remove purge
 
@@ -90,6 +96,9 @@ endif
 
 $(EXECUTABLE): $(OBJ)
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
+
+testvectors: $(OBJ_TEST)
+	$(CC) $(OBJ_TEST) -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
