@@ -103,7 +103,7 @@ int tun_init(tun_device_t* dev, const char* dev_name, const char* dev_type, cons
   }
 
   if(dev_name)
-    strncpy(ifr.ifr_name, dev_name, IFNAMSIZ);
+    strncpy(ifr.ifr_name, dev_name, IFNAMSIZ-1);
 
   if(!ioctl(dev->fd_, TUNSETIFF, &ifr)) {
     dev->actual_name_ = strdup(ifr.ifr_name);
