@@ -51,7 +51,9 @@
 #include "key_derivation.h"
 
 #if defined(USE_SSL_CRYPTO)
+#include <openssl/crypto.h>
 #include <openssl/sha.h>
+#include <openssl/modes.h>
 #elif defined(USE_NETTLE)
 #include <nettle/sha1.h>
 #include <nettle/sha2.h>
@@ -467,13 +469,13 @@ int key_derivation_aesctr_generate(key_derivation_t* kd, key_derivation_dir_t di
 
 #if defined(USE_SSL_CRYPTO)
   if(KD_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
-    log_printf(ERROR, "failed to set key derivation CTR: size don't fits");
+    log_printf(ERROR, "failed to set key derivation CTR: size doesn't fit");
     return -1;
   }
   u_int32_t num = 0;
-  memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
   memset(key, 0, len);
-  AES_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
+  memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
+  CRYPTO_ctr128_encrypt(key, key, len, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num, (block128_f)AES_encrypt);
 #elif defined(USE_NETTLE)
   if(KD_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
     log_printf(ERROR, "failed to set cipher CTR: size doesn't fit");
