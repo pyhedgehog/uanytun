@@ -60,6 +60,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/uio.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <net/if.h>
