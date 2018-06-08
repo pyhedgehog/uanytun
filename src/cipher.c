@@ -338,7 +338,8 @@ int32_t cipher_aesctr_crypt(cipher_t* c, key_derivation_t* kd, key_derivation_di
   }
   u_int32_t num = 0;
   memset(params->ecount_buf_, 0, AES_BLOCK_SIZE);
-  AES_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_, params->ecount_buf_, &num);
+  CRYPTO_ctr128_encrypt(in, out, (ilen < olen) ? ilen : olen, &params->aes_key_, params->ctr_.buf_,
+  			params->ecount_buf_, &num, (block128_f)AES_encrypt);
 #elif defined(USE_NETTLE)
   if(C_AESCTR_CTR_LENGTH != AES_BLOCK_SIZE) {
     log_printf(ERROR, "failed to set cipher CTR: size doesn't fit");

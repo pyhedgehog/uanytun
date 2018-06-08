@@ -51,7 +51,9 @@
 
 #ifndef NO_CRYPT
 #if defined(USE_SSL_CRYPTO)
+#include <openssl/crypto.h>
 #include <openssl/aes.h>
+#include <openssl/modes.h>
 #elif defined(USE_NETTLE)
 #include <nettle/aes.h>
 #else  // USE_GCRYPT is the default

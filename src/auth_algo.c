@@ -161,14 +161,25 @@ int auth_algo_sha1_init(auth_algo_t* aa)
 
   if(aa->params_)
     free(aa->params_);
-  aa->params_ = malloc(sizeof(auth_algo_sha1_param_t));
+  aa->params_ = calloc(1, sizeof(auth_algo_sha1_param_t));
   if(!aa->params_)
     return -2;
 
 #if defined(USE_SSL_CRYPTO)
   auth_algo_sha1_param_t* params = aa->params_;
-  HMAC_CTX_init(&params->ctx_);
-  HMAC_Init_ex(&params->ctx_, NULL, 0, EVP_sha1(), NULL);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  if ((params->ctx_ = HMAC_CTX_new()) == NULL) {
+    log_printf(ERROR, "failed to allocate HMAC_CTX");
+    return -2;
+  }
+# else
+  if ((params->ctx_ = calloc(1, sizeof(HMAC_CTX))) == NULL) {
+    log_printf(ERROR, "failed to allocate HMAC_CTX");
+    return -2;
+  }
+  HMAC_CTX_init(params->ctx_);
+# endif
+  HMAC_Init_ex(params->ctx_, NULL, 0, EVP_sha1(), NULL);
 #elif defined(USE_NETTLE)
   // nothing here
 #else  // USE_GCRYPT is the default
@@ -191,7 +202,14 @@ void auth_algo_sha1_close(auth_algo_t* aa)
   if(aa->params_) {
 #if defined(USE_SSL_CRYPTO)
     auth_algo_sha1_param_t* params = aa->params_;
-    HMAC_CTX_cleanup(&params->ctx_);
+    if(params->ctx_) {
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+      HMAC_CTX_free(params->ctx_);
+# else
+      HMAC_CTX_cleanup(params->ctx_);
+      free(params->ctx_);
+# endif
+    }
 #elif defined(USE_NETTLE)
     // nothing here
 #else  // USE_GCRYPT is the default
@@ -225,11 +243,11 @@ void auth_algo_sha1_generate(auth_algo_t* aa, key_derivation_t* kd, key_derivati
     return;
 
 #if defined(USE_SSL_CRYPTO)
-  HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
+  HMAC_Init_ex(params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
 
   u_int8_t hmac[SHA1_LENGTH];
-  HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
-  HMAC_Final(&params->ctx_, hmac, NULL);
+  HMAC_Update(params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
+  HMAC_Final(params->ctx_, hmac, NULL);
 #elif defined(USE_NETTLE)
   hmac_sha1_set_key(&params->ctx_, aa->key_.length_, aa->key_.buf_);
 
@@ -279,11 +297,11 @@ int auth_algo_sha1_check_tag(auth_algo_t* aa, key_derivation_t* kd, key_derivati
     return 0;
 
 #if defined(USE_SSL_CRYPTO)
-  HMAC_Init_ex(&params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
+  HMAC_Init_ex(params->ctx_, aa->key_.buf_, aa->key_.length_, EVP_sha1(), NULL);
 
   u_int8_t hmac[SHA1_LENGTH];
-  HMAC_Update(&params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
-  HMAC_Final(&params->ctx_, hmac, NULL);
+  HMAC_Update(params->ctx_, encrypted_packet_get_auth_portion(packet), encrypted_packet_get_auth_portion_length(packet));
+  HMAC_Final(params->ctx_, hmac, NULL);
 #elif defined(USE_NETTLE)
   hmac_sha1_set_key(&params->ctx_, aa->key_.length_, aa->key_.buf_);
 
