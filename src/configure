@@ -153,12 +153,12 @@ if [ -n "$ERRORS" ] && [ $EBUILD_COMPAT -ne 1 ]; then
 fi
 
 if [ $USE_CLANG -eq 0 ]; then
-  CFLAGS=$CFLAGS'-g -Wall -O2'
-  LDFLAGS=$LDFLAGS'-g -Wall -O2'
+  CFLAGS=$CFLAGS' -g -Wall -O2'
+  LDFLAGS=$LDFLAGS' -g -Wall -O2'
   COMPILER='gcc'
 else
-  CFLAGS=$CFLAGS'-g -O2'
-  LDFLAGS=$LDFLAGS'-g -O2'
+  CFLAGS=$CFLAGS' -g -O2'
+  LDFLAGS=$LDFLAGS' -g -O2'
   COMPILER='clang'
 fi
 
