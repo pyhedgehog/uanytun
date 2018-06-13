@@ -108,7 +108,7 @@ passed to the daemon:
 
 *-i, --interface '<ip address>'*::
    This IP address is used as the sender address for outgoing
-   packets. The default is to not use a special inteface and just
+   packets. The default is to not use a special interface and just
    bind on all interfaces.
 
 *-p, --port '<port>[:<port>]'*::
