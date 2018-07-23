@@ -16,7 +16,7 @@
 #  tunneling and relaying of packets of any protocol.
 #
 #
-#  Copyright (C) 2007-2014 Christian Pointner <equinox@anytun.org>
+#  Copyright (C) 2007-2017 Christian Pointner <equinox@anytun.org>
 #
 #  This file is part of uAnytun.
 #
@@ -153,12 +153,12 @@ if [ -n "$ERRORS" ] && [ $EBUILD_COMPAT -ne 1 ]; then
 fi
 
 if [ $USE_CLANG -eq 0 ]; then
-  CFLAGS=$CFLAGS'-g -Wall -O2'
-  LDFLAGS=$LDFLAGS'-g -Wall -O2'
+  if [ -z "$CFLAGS" ]; then CFLAGS='-g -Wall -O2'; fi
+  if [ -z "$LDFLAGS" ]; then LDFLAGS='-g -Wall -O2'; fi
   COMPILER='gcc'
 else
-  CFLAGS=$CFLAGS'-g -O2'
-  LDFLAGS=$LDFLAGS'-g -O2'
+  if [ -z "$CFLAGS" ]; then CFLAGS='-g -O2'; fi
+  if [ -z "$LDFLAGS" ]; then LDFLAGS='-g -O2'; fi
   COMPILER='clang'
 fi
 
@@ -174,7 +174,7 @@ case $TARGET in
     rm -f tun.c
     ln -sf bsd/tun.c
     echo "loading BSD specific TUN Device"
-    CFLAGS=$CFLAGS' -I/usr/local/include'
+    CPPFLAGS=$CPPFLAGS' -I/usr/local/include'
     LDFLAGS=$LDFLAGS' -L/usr/local/lib'
   ;;
   *)
@@ -186,22 +186,22 @@ esac
 CRYPTO_LIB_NAME=""
 case $CRYPTO_LIB in
   gcrypt)
-    CFLAGS=$CFLAGS' -DUSE_GCRYPT'
+    CPPFLAGS=$CPPFLAGS' -DUSE_GCRYPT'
     LDFLAGS=$LDFLAGS' -lgcrypt'
     CRYPTO_LIB_NAME="libgcrypt"
   ;;
   nettle)
-    CFLAGS=$CFLAGS' -DUSE_NETTLE'
+    CPPFLAGS=$CPPFLAGS' -DUSE_NETTLE'
     LDFLAGS=$LDFLAGS' -lnettle'
     CRYPTO_LIB_NAME="Nettle"
   ;;
   ssl)
-    CFLAGS=$CFLAGS' -DUSE_SSL_CRYPTO'
+    CPPFLAGS=$CPPFLAGS' -DUSE_SSL_CRYPTO'
     LDFLAGS=$LDFLAGS' -lcrypto'
     CRYPTO_LIB_NAME="OpenSSL"
   ;;
   none)
-    CFLAGS=$CFLAGS' -DNO_CRYPT'
+    CPPFLAGS=$CPPFLAGS' -DNO_CRYPT'
     CRYPTO_LIB_NAME="none"
   ;;
   *)
@@ -212,7 +212,7 @@ esac
 echo "crypto-library: $CRYPTO_LIB_NAME"
 
 if [ $PASSPHRASE -eq 0 ]; then
-  CFLAGS=$CFLAGS' -DNO_PASSPHRASE'
+  CPPFLAGS=$CPPFLAGS' -DNO_PASSPHRASE'
   echo "disabling master key and salt passphrase"
 fi
 
@@ -239,6 +239,7 @@ cat > include.mk <<EOF
 
 TARGET := $TARGET
 CC := $COMPILER
+CPPFLAGS := $CPPFLAGS
 CFLAGS := $CFLAGS
 LDFLAGS := $LDFLAGS
 STRIP := strip
