@@ -80,7 +80,7 @@ all: $(EXECUTABLE)
 
 %.d: %.c
 	@set -e; rm -f $@; \
-  $(CC) -MM $(CFLAGS) $< > $@.$$$$; \
+  $(CC) -MM $(CPPFLAGS) $< > $@.$$$$; \
   sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
   rm -f $@.$$$$; echo '(re)building $@'
 
@@ -92,7 +92,7 @@ $(EXECUTABLE): $(OBJ)
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 
 strip: $(EXECUTABLE)
